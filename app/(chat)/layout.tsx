@@ -1,0 +1,69 @@
+import { MotionConfig } from "motion/react";
+import { cookies } from "next/headers";
+import Script from "next/script";
+import { Suspense } from "react";
+import { Toaster } from "sonner";
+import { AppSidebar } from "@/components/chat/app-sidebar";
+import { ChatProvider } from "@/components/chat/chat-provider";
+import { ChatShellWrapper } from "@/components/chat/chat-shell-wrapper";
+import { DataStreamProvider } from "@/components/chat/data-stream-provider";
+import { HeaderActionsProvider } from "@/components/chat/header-actions-context";
+import { MobileTabBar } from "@/components/chat/mobile-tab-bar-wrapper";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { isAdmin } from "@/lib/utils";
+import { GlobalHeader } from "@/components/chat/global-header";
+import { auth } from "../(auth)/auth";
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Script
+        src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
+        strategy="lazyOnload"
+      />
+      <DataStreamProvider>
+        <MotionConfig reducedMotion="user">
+          <Suspense fallback={<div className="flex h-dvh bg-sidebar" />}>
+            <SidebarShell>{children}</SidebarShell>
+          </Suspense>
+        </MotionConfig>
+      </DataStreamProvider>
+    </>
+  );
+}
+
+async function SidebarShell({ children }: { children: React.ReactNode }) {
+  const [session, cookieStore] = await Promise.all([auth(), cookies()]);
+  const isCollapsed = cookieStore.get("sidebar_state")?.value !== "true";
+  const isAdminUser = isAdmin(session?.user ?? {});
+  const userRole = session?.user?.role === "admin" ? "admin" : "user";
+  const accountType = (session?.user?.accountType as "personal" | "enterprise") ?? "personal";
+  const teamRole = (session?.user?.teamRole as string) ?? null;
+  const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
+
+  return (
+    <SidebarProvider defaultOpen={!isCollapsed}>
+      <HeaderActionsProvider>
+        <ChatProvider>
+          <AppSidebar isAdmin={isAdminUser} isEnterpriseAdmin={isEnterpriseAdmin} user={session?.user} />
+          <SidebarInset>
+            <GlobalHeader />
+            <Toaster
+              position="top-center"
+              theme="system"
+              toastOptions={{
+                className:
+                  "!bg-card !text-foreground !border-border/50 !shadow-lg",
+              }}
+            />
+            <Suspense fallback={<div className="flex h-dvh" />}>
+              <ChatShellWrapper />
+            </Suspense>
+            {children}
+            <MobileTabBar role={userRole} accountType={accountType} />
+          </SidebarInset>
+        </ChatProvider>
+      </HeaderActionsProvider>
+    </SidebarProvider>
+  );
+}
