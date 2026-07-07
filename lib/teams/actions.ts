@@ -15,7 +15,6 @@ import {
   updateTeamMemberRole,
   logActivity,
 } from "@/lib/db/queries";
-import { ActivityType } from "@/lib/db/schema";
 
 /**
  * SaaS 多租户：团队与权限 Server Actions
@@ -81,7 +80,7 @@ export async function createTeamAction(name: string): Promise<ActionResult<{ tea
     await logActivity({
       teamId: newTeam.id,
       userId: session.user.id,
-      action: ActivityType.CREATE_TEAM,
+      action: "CREATE_TEAM" as const,
     });
 
     revalidatePath("/");
@@ -127,7 +126,7 @@ export async function inviteMemberAction(
     await logActivity({
       teamId,
       userId: ctx.session.user.id,
-      action: ActivityType.INVITE_TEAM_MEMBER,
+      action: "INVITE_TEAM_MEMBER" as const,
     });
 
     revalidatePath(`/team/${teamId}`);
@@ -158,7 +157,7 @@ export async function acceptInvitationAction(
     await logActivity({
       teamId: result.teamId,
       userId: session.user.id,
-      action: ActivityType.ACCEPT_INVITATION,
+      action: "ACCEPT_INVITATION" as const,
     });
 
     revalidatePath("/");
@@ -204,7 +203,7 @@ export async function removeMemberAction(
     await logActivity({
       teamId,
       userId: ctx.session.user.id,
-      action: ActivityType.REMOVE_TEAM_MEMBER,
+      action: "REMOVE_TEAM_MEMBER" as const,
     });
 
     revalidatePath(`/team/${teamId}`);

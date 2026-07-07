@@ -43,7 +43,7 @@ export const requestSuggestions = ({
 
       const suggestions: Omit<
         Suggestion,
-        "userId" | "createdAt" | "documentCreatedAt"
+        "userId" | "createdAt"
       >[] = [];
 
       const { partialOutputStream } = streamText({
@@ -106,7 +106,6 @@ export const requestSuggestions = ({
             ...suggestion,
             userId,
             createdAt: new Date(),
-            documentCreatedAt: document.createdAt,
           })),
         });
       }

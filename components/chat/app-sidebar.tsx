@@ -5,16 +5,20 @@ import {
   Bot,
   ClipboardList,
   CreditCard,
+  Crown,
   DollarSign,
   FileCheck,
   FileText,
+  Home,
   MessagesSquareIcon,
   PanelLeftIcon,
   PenSquareIcon,
   Pin,
   Receipt,
+  Settings,
+  Shield,
   ShoppingCart,
-  TrashIcon,
+  Sparkles,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -57,7 +61,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 // 扩展 User 类型以包含 SaaS 多租户字段（与 auth.ts 中的 Session 声明一致）
 type SidebarUser = User & {
   type?: "guest" | "regular";
-  accountType?: "personal" | "enterprise";
+  accountType?: "personal" | "enterprise" | "platform";
   teamRole?: "owner" | "admin" | "member" | null;
 };
 
@@ -113,20 +117,28 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
 
           {/* SaaS 多租户：团队切换器 — 仅企业账号显示（个人账号/访客无团队功能） */}
           {user && user.type !== "guest" && user.accountType === "enterprise" && (
-            <div className="group-data-[collapsible=icon]:hidden">
-              <TeamSwitcher />
-            </div>
+            <TeamSwitcher />
           )}
         </SidebarHeader>
 
         <SidebarContent>
-          {/* ===== 工作台 ===== */}
+          {/* ===== 智能助手 ===== */}
           <SidebarGroup className="px-2 pt-3">
             <SidebarGroupLabel className="mb-1 px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
-              工作台
+              智能助手
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* 首页 */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname === "/"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="首页">
+                    <Link href="/" onClick={() => setOpenMobile(false)}>
+                      <Home className="size-5" />
+                      <span>首页</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
                 {/* 新建对话 */}
                 <SidebarMenuItem>
                   <SidebarMenuButton 
@@ -217,11 +229,11 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* ===== 工作台（按账号类型显示不同入口） ===== */}
+          {/* ===== 我的资源（按账号类型显示不同入口） ===== */}
           {user && user.type !== "guest" && (
             <SidebarGroup className="px-2 pt-1">
               <SidebarGroupLabel className="mb-1 px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
-                工作台
+                我的资源
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -235,19 +247,20 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
-                  {/* 创作者中心 — 个人账号 + 企业管理员 */}
-                  {(user.accountType === "personal" || isEnterpriseAdmin) && (
+                  {/* 团队OPC管理 — 仅企业账号（管理员+成员均具备 OPC 管理功能） */}
+                  {user.accountType === "enterprise" && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={pathname === "/creator"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip={isEnterpriseAdmin ? "团队OPC管理" : "创作者中心"} >
+                      <SidebarMenuButton asChild isActive={pathname === "/creator"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="团队OPC管理" >
                         <Link href="/creator" onClick={() => setOpenMobile(false)}>
                           <DollarSign className="size-5" />
-                          <span>{isEnterpriseAdmin ? "团队OPC管理" : "创作者中心"}</span>
+                          <span>团队OPC管理</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
 
-                  {/* 交易市场 — 所有用户可浏览 */}
+                  {/* 交易市场 — 个人用户 + 企业管理员（普通企业成员不可见） */}
+                  {(user.accountType === "personal" || isEnterpriseAdmin) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/marketplace"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="交易市场" >
                       <Link href="/marketplace" onClick={() => setOpenMobile(false)}>
@@ -256,26 +269,28 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  )}
 
-                  {/* 团队设置 — 仅企业账号（个人账号无团队功能，可升级企业账号获得） */}
+                  {/* 团队设置 — 仅企业账号（图标改为 Settings，避免与升级企业账号冲突） */}
                   {user.accountType === "enterprise" && (
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={pathname === "/team"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="团队设置" >
                         <Link href="/team" onClick={() => setOpenMobile(false)}>
-                          <Users className="size-5" />
+                          <Settings className="size-5" />
                           <span>团队设置</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
 
-                  {/* 升级企业 — 仅个人账号（升级后获得团队功能并成为企业管理员） */}
-                  {user.accountType === "personal" && (
+                  {/* 升级企业 — 仅个人普通用户（排除平台管理员、企业账号、已加入团队的企业成员） */}
+                  {user.accountType === "personal" && !isAdmin && !user.teamRole && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={pathname === "/register-enterprise"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="升级企业账号" >
+                      <SidebarMenuButton asChild isActive={pathname === "/register-enterprise"} className="h-9 gap-2.5 rounded-lg border border-primary/30 bg-primary/5 text-[15px] font-medium text-primary transition-all duration-150 hover:bg-primary/10 hover:border-primary/50 data-[active=true]:bg-primary/10 data-[active=true]:text-primary" tooltip="升级企业账号" >
                         <Link href="/register-enterprise" onClick={() => setOpenMobile(false)}>
-                          <Users className="size-5" />
+                          <Crown className="size-5" />
                           <span>升级企业账号</span>
+                          <Sparkles className="ml-auto size-3.5 text-primary/60" />
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -308,7 +323,7 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/admin"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="管理后台" >
                       <Link href="/admin" onClick={() => setOpenMobile(false)}>
-                        <PanelLeftIcon className="size-5" />
+                        <Shield className="size-5" />
                         <span>管理后台</span>
                       </Link>
                     </SidebarMenuButton>
@@ -361,7 +376,8 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                   </SidebarMenuItem>
                   )}
 
-                  {/* 用户管理 — 平台管理员 + 企业团队管理员 */}
+                  {/* 用户管理 — 仅平台管理员（企业管理员不可见） */}
+                  {isAdmin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/users")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="用户管理" >
                       <Link href="/admin/users" onClick={() => setOpenMobile(false)}>
@@ -370,6 +386,7 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -388,21 +405,12 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
 
         {/* ===== 底部 ===== */}
         <SidebarFooter className="border-t border-sidebar-border px-2 pb-2 pt-2">
-          <SidebarMenu>
-            {user && (
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  className="h-9 gap-2.5 rounded-lg text-[14px] text-sidebar-foreground/35 transition-all duration-150 hover:bg-destructive/12 hover:text-destructive/80" 
-                  onClick={() => setShowDeleteAllDialog(true)} 
-                  tooltip="清空全部对话"
-                >
-                  <TrashIcon className="size-4" />
-                  <span>清空全部对话</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-          </SidebarMenu>
-          {user && <SidebarUserNav user={user} />}
+          {user && (
+            <SidebarUserNav
+              user={user}
+              onClearAllChats={() => setShowDeleteAllDialog(true)}
+            />
+          )}
         </SidebarFooter>
 
         <SidebarRail />

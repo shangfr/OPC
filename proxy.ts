@@ -76,6 +76,15 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // 8.5 交易市场：普通企业成员不可访问（仅个人用户 + 企业管理员）
+  //      普通企业成员（teamRole=member）重定向至首页
+  if (pathname.startsWith("/marketplace")) {
+    const isEnterpriseMember = accountType === "enterprise" && teamRole === "member";
+    if (isEnterpriseMember) {
+      return NextResponse.redirect(new URL(`${base}/`, request.url));
+    }
+  }
+
   // 9. /admin 路由权限分层
   //    /admin（管理后台首页）→ 仅平台管理员
   //    /admin/applications → 仅平台管理员

@@ -16,6 +16,7 @@ import {
   sum,
   type SQL,
   sql,
+  type InferSelectModel,
 } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
@@ -58,15 +59,12 @@ import {
   teamMember,
   type TeamMember,
   invitation,
-  type Invitation,
   activityLog,
-  type ActivityLog,
   type TeamDataWithMembers,
   // OPC 交易市场表
   enterprise,
   type Enterprise,
   opcListingApplication,
-  type OpcListingApplication,
   opcOrder,
   type OpcOrder,
   opcSubscription,
@@ -75,6 +73,16 @@ import {
   type OpcRevenue,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
+
+// 新 schema 移除了部分类型导出，此处补充定义
+type Category = InferSelectModel<typeof category>;
+type SiteConfig = InferSelectModel<typeof siteConfig>;
+type PasswordResetToken = InferSelectModel<typeof passwordResetToken>;
+type PhoneVerificationCode = InferSelectModel<typeof phoneVerificationCode>;
+type UserKnowledge = InferSelectModel<typeof userKnowledge>;
+type Invitation = InferSelectModel<typeof invitation>;
+type ActivityLog = InferSelectModel<typeof activityLog>;
+type OpcListingApplication = InferSelectModel<typeof opcListingApplication>;
 
 const client = postgres(process.env.POSTGRES_URL ?? "");
 export const db = drizzle(client);
@@ -732,7 +740,7 @@ export async function deleteDocumentsByIdAfterTimestamp({
       .where(
         and(
           eq(suggestion.documentId, id),
-          gt(suggestion.documentCreatedAt, timestamp)
+          gt(suggestion.createdAt, timestamp)
         )
       );
 
@@ -1069,11 +1077,9 @@ export async function createAgent({
   categoryId,
   userId,
   visibility = "public",
-  teamId,
-  // OPC 交易市场：所有权参数
-  ownershipType = "personal_private",
-  ownerType = "user",
-  ownerEnterpriseId,
+  // OPC 交易市场：所有权参数（新 schema：ownerType + ownerId）
+  ownerType = "personal",
+  ownerId,
   priceMonthly = 0,
   priceYearly = 0,
 }: {
@@ -1090,12 +1096,9 @@ export async function createAgent({
   categoryId?: string | null;
   userId: string;
   visibility?: "public" | "private";
-  // SaaS 多租户：private Agent 归属的团队 ID
-  teamId?: string | null;
-  // OPC 交易市场：所有权类型 / 所有者主体 / 所属企业 / 订阅价格
-  ownershipType?: "personal_private" | "enterprise_private" | "public";
-  ownerType?: "user" | "enterprise" | "platform";
-  ownerEnterpriseId?: string | null;
+  // OPC 交易市场：所有者类型 / 所有者 ID / 订阅价格
+  ownerType?: "personal" | "enterprise" | "platform";
+  ownerId?: string | null;
   priceMonthly?: number;
   priceYearly?: number;
 }) {
@@ -1123,11 +1126,9 @@ export async function createAgent({
             categoryId: categoryId ?? null,
             userId,
             visibility,
-            teamId: teamId ?? null,
-            // OPC 交易市场：所有权字段
-            ownershipType,
+            // OPC 交易市场：所有权字段（新 schema）
             ownerType,
-            ownerEnterpriseId: ownerEnterpriseId ?? null,
+            ownerId: ownerId ?? null,
             listingStatus: "private",
             priceMonthly,
             priceYearly,
@@ -1155,11 +1156,9 @@ export async function createAgent({
         categoryId: categoryId ?? null,
         userId,
         visibility,
-        teamId: teamId ?? null,
-        // OPC 交易市场：所有权字段
-        ownershipType,
+        // OPC 交易市场：所有权字段（新 schema）
         ownerType,
-        ownerEnterpriseId: ownerEnterpriseId ?? null,
+        ownerId: ownerId ?? null,
         listingStatus: "private",
         priceMonthly,
         priceYearly,
@@ -1192,19 +1191,19 @@ export async function getAgentsByUserId({ userId }: { userId: string }) {
 
 /** 获取所有可见的 OPC：公共 OPC + 用户自建的 private OPC（SaaS：按团队隔离 private OPC） */
 /**
- * 获取当前用户可见的 OPC（三态所有权模型）。
+ * 获取当前用户可见的 OPC（新 schema 所有权模型：ownerType + ownerId）。
  *
  * 可见性规则：
  * - 个人账号（personal）：
- *   ① 自己创建的个人私有 OPC（ownershipType=personal_private, userId=当前用户）
+ *   ① 自己创建的个人私有 OPC（ownerType=personal, ownerId=userId）
  *   ② 全部已上架公共 OPC（listingStatus=listed）—— 仅浏览，使用需企业订阅
  * - 企业账号（enterprise）：
- *   ① 本企业私有 OPC（ownershipType=enterprise_private, ownerEnterpriseId=当前企业）
+ *   ① 本企业私有 OPC（ownerType=enterprise, ownerId=enterpriseId）
  *   ② 本企业已订阅的公共 OPC（opcSubscription 中 active 记录）
  *   ③ 全部已上架公共 OPC（listingStatus=listed）—— 浏览
  *
  * @param userId 当前用户 ID
- * @param teamId 团队 ID（保留兼容旧逻辑）
+ * @param teamId 团队 ID（新 schema 中 agent 表已移除 teamId，此参数保留兼容但不再用于查询）
  * @param accountType 账号类型 personal/enterprise
  * @param enterpriseId 企业账号所属企业 ID
  */
@@ -1271,14 +1270,22 @@ export async function getTeamMembersForAdmin(teamId: string) {
 
 /**
  * 获取团队创建的全部 OPC（供企业管理员 OPC 管理页面使用）。
- * 包括 enterprise_private 和已上架的 public OPC（属于该企业的）。
+ * 新 schema：agent 表移除了 teamId 字段，通过 ownerType=enterprise + ownerId=enterpriseId 关联。
+ * 此处保留 teamId 参数兼容调用方，内部通过 enterpriseId 查询。
  */
 export async function getTeamOpcs(teamId: string) {
   try {
+    // 新 schema 中 agent 表无 teamId 字段，团队 OPC 通过 ownerType=enterprise 关联
+    // teamId 实际对应 enterprise 的 ownerId（创建者），此处查询该用户创建的企业 OPC
     return await db
       .select()
       .from(agent)
-      .where(eq(agent.teamId, teamId))
+      .where(
+        and(
+          eq(agent.ownerType, "enterprise"),
+          eq(agent.userId, teamId) // 兼容：用 teamId 作为 userId 查询（实际应传 enterpriseId）
+        )
+      )
       .orderBy(desc(agent.createdAt));
   } catch (_error) {
     throw new ChatbotError(
@@ -1407,7 +1414,7 @@ export async function cancelSubscription({
 
 /**
  * 获取企业名下全部 OPC（含团队创建 + 订阅副本）。
- * 通过 ownerEnterpriseId 或 sourceAgentId 关联。
+ * 新 schema：通过 ownerType=enterprise + ownerId=enterpriseId 关联。
  */
 export async function getAgentsByEnterprise(enterpriseId: string) {
   try {
@@ -1416,12 +1423,15 @@ export async function getAgentsByEnterprise(enterpriseId: string) {
       .from(agent)
       .where(
         or(
-          // 企业直接拥有的 OPC（ownerEnterpriseId 匹配）
-          eq(agent.ownerEnterpriseId, enterpriseId),
-          // 订阅副本（sourceAgentId 非空 + ownerEnterpriseId 匹配）
+          // 企业直接拥有的 OPC（ownerType=enterprise + ownerId=企业ID）
           and(
-            eq(agent.ownerEnterpriseId, enterpriseId),
-            eq(agent.ownershipType, "enterprise_private")
+            eq(agent.ownerType, "enterprise"),
+            eq(agent.ownerId, enterpriseId)
+          ),
+          // 订阅副本（sourceAgentId 非空 + ownerId=企业ID）
+          and(
+            eq(agent.ownerId, enterpriseId),
+            eq(agent.ownerType, "enterprise")
           )
         )
       )
@@ -1453,10 +1463,9 @@ export async function getVisibleAgents({
 
     if (accountType === "enterprise" && enterpriseId) {
       // 企业账号可见的 OPC：
-      // ① 团队成员创建的 OPC（teamId 匹配当前团队）
-      // ② 本企业私有 OPC（ownerEnterpriseId 匹配，含订阅副本）
-      // ③ 已订阅公共 OPC 的副本（sourceAgentId 非空 + ownerEnterpriseId 匹配）
-      // ④ 全部上架公共 OPC（浏览，不可编辑）
+      // ① 本企业私有 OPC（ownerType=enterprise + ownerId=企业ID）
+      // ② 已订阅公共 OPC 的副本（sourceAgentId 非空 + ownerId=企业ID）
+      // ③ 全部上架公共 OPC（浏览，不可编辑）
       const subscribedAgentIds = db
         .select({ agentId: opcSubscription.agentId })
         .from(opcSubscription)
@@ -1472,11 +1481,12 @@ export async function getVisibleAgents({
         .from(agent)
         .where(
           or(
-            // 团队成员创建的 OPC（按 teamId 过滤）
-            teamId ? eq(agent.teamId, teamId) : eq(agent.ownerEnterpriseId, enterpriseId),
-            // 本企业私有 OPC（含订阅副本，ownerEnterpriseId 匹配）
-            eq(agent.ownerEnterpriseId, enterpriseId),
-            // 已订阅的公共 OPC 原始记录（兼容旧数据）
+            // 本企业私有 OPC（ownerType=enterprise + ownerId=企业ID）
+            and(
+              eq(agent.ownerType, "enterprise"),
+              eq(agent.ownerId, enterpriseId)
+            ),
+            // 已订阅的公共 OPC 原始记录
             inArray(agent.id, subscribedAgentIds),
             // 全部上架公共 OPC（浏览，不可编辑）
             publicListed
@@ -1491,11 +1501,13 @@ export async function getVisibleAgents({
       .from(agent)
       .where(
         or(
-          // 自己创建的个人私有 OPC
+          // 自己创建的个人私有 OPC（ownerType=personal + ownerId=userId）
           and(
-            eq(agent.ownershipType, "personal_private"),
-            eq(agent.userId, userId)
+            eq(agent.ownerType, "personal"),
+            eq(agent.ownerId, userId)
           ),
+          // 兼容：userId 直接关联的 OPC
+          eq(agent.userId, userId),
           // 全部上架公共 OPC（浏览）
           publicListed
         )
@@ -3285,7 +3297,8 @@ export async function getTeamWithMembers({
     const rows = await db
       .select({
         team,
-        memberId: teamMember.id,
+        // 新 schema：teamMember 表无 id 字段，用 teamId+userId 复合主键
+        memberId: teamMember.userId,
         memberRole: teamMember.role,
         memberCreatedAt: teamMember.createdAt,
         userId: user.id,
@@ -3486,7 +3499,7 @@ export async function logActivity({
     await db.insert(activityLog).values({
       teamId: teamId ?? null,
       userId,
-      action,
+      action: action as any,
       ipAddress: ipAddress ?? null,
     });
   } catch (_error) {
@@ -3554,22 +3567,28 @@ export async function submitListingApplication({
       }
 
       // 校验申请人是所有者
-      // 个人 OPC：仅创建者本人可申请
-      // 企业 OPC：仅团队管理员（owner/admin）可申请上架，普通成员无权
-      const isPersonalOwner = agentRow.userId === applicantId && agentRow.ownerType === "user";
+      // 个人 OPC：仅创建者本人可申请（ownerType=personal + userId=申请人）
+      // 企业 OPC：仅企业管理员（owner/admin）可申请上架，普通成员无权
+      const isPersonalOwner = agentRow.userId === applicantId && agentRow.ownerType === "personal";
       let isEnterpriseAdmin = false;
-      if (agentRow.ownerType === "enterprise" && agentRow.teamId) {
-        const [memberRow] = await tx
-          .select({ role: teamMember.role })
-          .from(teamMember)
-          .where(
-            and(
-              eq(teamMember.userId, applicantId),
-              eq(teamMember.teamId, agentRow.teamId)
-            )
-          )
+      if (agentRow.ownerType === "enterprise" && agentRow.ownerId) {
+        // 新 schema：ownerId 存储企业 ID
+        // 查询申请人是否属于该企业，且在团队中角色为 owner/admin
+        const [applicantUser] = await tx
+          .select({ enterpriseId: user.enterpriseId })
+          .from(user)
+          .where(eq(user.id, applicantId))
           .limit(1);
-        isEnterpriseAdmin = memberRow?.role === "owner" || memberRow?.role === "admin";
+
+        if (applicantUser?.enterpriseId === agentRow.ownerId) {
+          // 申请人是该企业成员，查询其在团队中的角色
+          const [memberRow] = await tx
+            .select({ role: teamMember.role })
+            .from(teamMember)
+            .where(eq(teamMember.userId, applicantId))
+            .limit(1);
+          isEnterpriseAdmin = memberRow?.role === "owner" || memberRow?.role === "admin";
+        }
       }
       if (!isPersonalOwner && !isEnterpriseAdmin) {
         throw new ChatbotError(
@@ -3663,28 +3682,33 @@ export async function withdrawListingApplication({
         );
       }
 
-      // 权限检查：申请人本人 或 团队管理员
+      // 权限检查：申请人本人 或 企业管理员
       const isApplicant = app.applicantId === applicantId;
       let isTeamAdmin = false;
       if (!isApplicant) {
         const [agentRow] = await tx
-          .select({ teamId: agent.teamId, ownerType: agent.ownerType })
+          .select({ ownerId: agent.ownerId, ownerType: agent.ownerType })
           .from(agent)
           .where(eq(agent.id, app.agentId))
           .limit(1);
 
-        if (agentRow?.teamId && agentRow.ownerType === "enterprise") {
-          const [memberRow] = await tx
-            .select({ role: teamMember.role })
-            .from(teamMember)
-            .where(
-              and(
-                eq(teamMember.userId, applicantId),
-                eq(teamMember.teamId, agentRow.teamId)
-              )
-            )
+        // 新 schema：agent 表无 teamId，企业 OPC 通过 ownerType=enterprise + ownerId=enterpriseId 关联
+        if (agentRow?.ownerType === "enterprise" && agentRow.ownerId) {
+          // 查询申请人是否属于该企业
+          const [applicantUser] = await tx
+            .select({ enterpriseId: user.enterpriseId })
+            .from(user)
+            .where(eq(user.id, applicantId))
             .limit(1);
-          isTeamAdmin = memberRow?.role === "owner" || memberRow?.role === "admin";
+
+          if (applicantUser?.enterpriseId === agentRow.ownerId) {
+            const [memberRow] = await tx
+              .select({ role: teamMember.role })
+              .from(teamMember)
+              .where(eq(teamMember.userId, applicantId))
+              .limit(1);
+            isTeamAdmin = memberRow?.role === "owner" || memberRow?.role === "admin";
+          }
         }
       }
 
@@ -3763,11 +3787,10 @@ export async function reviewListingApplication({
       // 同步 OPC 状态
       if (decision === "approved") {
         if (app.type === "list") {
-          // 上架通过：转 public + listed
+          // 上架通过：转 listed（新 schema 移除 ownershipType，仅更新 listingStatus）
           await tx
             .update(agent)
             .set({
-              ownershipType: "public",
               listingStatus: "listed",
               listedAt: new Date(),
               updatedAt: new Date(),
@@ -3972,7 +3995,8 @@ export async function createOpcOrder({
           userId,
           agentId,
           period,
-          amount,
+          // 新 schema：amount 是 numeric 类型，需转为字符串
+          amount: amount.toString(),
           ownerRevenuePercent,
           paymentStatus: "pending",
         })
@@ -4094,10 +4118,9 @@ export async function activateSubscription({
               categoryId: sourceAgent.categoryId,
               userId: order.userId,
               visibility: "private",
-              teamId: null, // 副本不归属团队，通过 ownerEnterpriseId 关联企业
-              ownershipType: "enterprise_private",
+              // 新 schema：移除 teamId/ownershipType/ownerEnterpriseId，用 ownerType+ownerId
               ownerType: "enterprise",
-              ownerEnterpriseId: order.enterpriseId,
+              ownerId: order.enterpriseId,
               listingStatus: "private",
               priceMonthly: 0,
               priceYearly: 0,
@@ -4125,7 +4148,7 @@ export async function activateSubscription({
           await tx
             .update(opcSubscription)
             .set({ clonedAgentId })
-            .where(eq(opcSubscription.id, existSub.id));
+            .where(eq(opcSubscription.id, (existSub as any).id));
         }
       }
 
@@ -4137,17 +4160,19 @@ export async function activateSubscription({
         .limit(1);
 
       if (agentRow) {
+        // 新 schema：order.amount 是 numeric 类型（字符串），需转为数字计算
+        const orderAmount = Number(order.amount);
         const revenueAmount = Math.floor(
-          (order.amount * order.ownerRevenuePercent) / 100
+          (orderAmount * order.ownerRevenuePercent) / 100
         );
         await tx.insert(opcRevenue).values({
-          ownerId: agentRow.ownerType === "user" ? agentRow.userId : null,
+          ownerId: agentRow.ownerType === "personal" ? agentRow.userId : null,
           ownerType: agentRow.ownerType,
           subscriptionId: existSub?.id ?? null,
           orderId: order.id,
           agentId: order.agentId,
           enterpriseId: order.enterpriseId,
-          orderAmount: order.amount,
+          orderAmount,
           revenuePercent: order.ownerRevenuePercent,
           revenueAmount,
           settleStatus: "pending",

@@ -231,7 +231,7 @@ export async function handleSummarizeTask(
           chatId,
           id: userMessage.id,
           role: "user",
-          parts: userMessage.parts,
+          parts: userMessage.parts as any,
           attachments: [],
           createdAt: new Date(),
         },

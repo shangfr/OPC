@@ -49,7 +49,7 @@ function listingStatusBadge(status: string | undefined) {
   }
 }
 
-export function AgentCards() {
+export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
   const { agents, categories, loading, userGroups, activeCount, searchAgents, handleStartChat, ctxValue, refresh } = useAgents();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -494,8 +494,8 @@ export function AgentCards() {
                         >
                           <Edit className="size-3.5" />
                         </button>
-                        {/* 上架/撤回按钮 */}
-                        {ls === "private" && !applications.find((a) => a.agentId === agent.id) && (
+                        {/* 上架/撤回按钮 — 仅对有上架权限的用户显示 */}
+                        {canListOpc && ls === "private" && !applications.find((a) => a.agentId === agent.id) && (
                           <button
                             className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-2 py-1.5 text-xs transition-colors hover:bg-primary/5 hover:text-primary"
                             disabled={applying === agent.id}
@@ -506,7 +506,7 @@ export function AgentCards() {
                             {applying === agent.id ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
                           </button>
                         )}
-                        {applications.find((a) => a.agentId === agent.id) && (
+                        {canListOpc && applications.find((a) => a.agentId === agent.id) && (
                           <button
                             className="touch-target inline-flex items-center justify-center rounded-lg border border-amber-500/30 px-2 py-1.5 text-xs text-amber-600 transition-colors hover:bg-amber-500/5"
                             disabled={applying === agent.id}

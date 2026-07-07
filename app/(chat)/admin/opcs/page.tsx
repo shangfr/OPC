@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { auth } from "@/app/(auth)/auth";
 import { db } from "@/lib/db/queries";
 import { agent } from "@/lib/db/schema";
@@ -21,10 +21,13 @@ export default async function AdminOpcsPage() {
 
   if (isPlatformAdmin) {
     // 平台管理员：查询全部 listed/delisted 的公共 OPC
+    // 新 schema：移除 ownershipType，用 listingStatus=listed/delisted 查询
     opcs = await db
       .select()
       .from(agent)
-      .where(eq(agent.ownershipType, "public"))
+      .where(
+        inArray(agent.listingStatus, ["listed", "delisted"])
+      )
       .orderBy(agent.listedAt);
   } else if (isEnterpriseAdmin && session?.user?.enterpriseId) {
     // 企业团队管理员：查看已订阅 OPC 的企业副本

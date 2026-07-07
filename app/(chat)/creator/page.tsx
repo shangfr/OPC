@@ -44,11 +44,11 @@ export default async function CreatorPage() {
         <CreatorRevenueView
           accountType="personal"
           summary={summary}
-          opcStats={opcStats.map((o) => ({
+          opcStats={(opcStats as any[]).map((o) => ({
             id: o.id,
             name: o.name,
             description: o.description,
-            ownershipType: o.ownershipType,
+            ownershipType: o.ownerType,
             listingStatus: o.listingStatus,
             priceMonthly: o.priceMonthly,
             priceYearly: o.priceYearly,
@@ -89,7 +89,7 @@ export default async function CreatorPage() {
           id: o.id,
           name: o.name,
           description: o.description,
-          ownershipType: o.ownershipType,
+          ownershipType: o.ownerType,
           listingStatus: o.listingStatus,
           priceMonthly: o.priceMonthly,
           priceYearly: o.priceYearly,

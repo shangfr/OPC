@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { config } from "dotenv";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { generateHashedPassword } from "./utils";
@@ -1441,8 +1441,12 @@ async function seed() {
     const [existingMember] = await db
       .select()
       .from(teamMember)
-      .where(eq(teamMember.teamId, teamId))
-      .where(eq(teamMember.userId, enterpriseUser.id))
+      .where(
+        and(
+          eq(teamMember.teamId, teamId),
+          eq(teamMember.userId, enterpriseUser.id)
+        )
+      )
       .limit(1);
 
     if (!existingMember) {
@@ -1512,9 +1516,8 @@ async function seed() {
 
     const [existing] = await db.select().from(agent).where(eq(agent.id, id));
 
-    // 初始化平台 OPC 属性
+    // 初始化平台 OPC 属性（新 schema：移除 ownershipType，用 ownerType=platform）
     const platformProps = {
-      ownershipType: "public" as const,
       ownerType: "platform" as const,
       visibility: "public" as const,
       listingStatus: "listed" as const,

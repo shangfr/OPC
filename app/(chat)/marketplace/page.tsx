@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/app/(auth)/auth";
 import { getMarketplaceAgents, getSubscribedOpcs } from "@/lib/db/queries";
 import { SubscribeButton } from "./subscribe-button";
@@ -7,10 +8,11 @@ import { SubscribeButton } from "./subscribe-button";
  * OPC 交易市场：服务商城页
  *
  * 展示全部已上架公共 OPC（listingStatus=listed）。
- * - 企业账号：显示「订阅」或「已订阅·取消订阅」按钮
- * - 个人账号：仅浏览市场行情（无订阅按钮）
+ * - 企业管理员：显示「订阅」或「已订阅·取消订阅」按钮
+ * - 个人用户：仅浏览市场行情（无订阅按钮）
+ * - 普通企业成员：不可访问此页面（重定向至首页）
  *
- * 所有登录用户均可浏览。
+ * 访问权限：个人用户、企业管理员（accountType=enterprise && teamRole=owner/admin）
  */
 export default async function MarketplacePage({
   searchParams,
@@ -18,6 +20,18 @@ export default async function MarketplacePage({
   searchParams: Promise<{ search?: string; categoryId?: string }>;
 }) {
   const session = await auth();
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  const accountType = (session.user.accountType as "personal" | "enterprise") ?? "personal";
+  const teamRole = (session.user.teamRole as string) ?? null;
+  const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
+  // 普通企业成员不可访问交易市场
+  if (accountType === "enterprise" && !isEnterpriseAdmin) {
+    redirect("/");
+  }
+
   const params = await searchParams;
 
   const [agents, subscribedOpcs] = await Promise.all([
@@ -30,7 +44,8 @@ export default async function MarketplacePage({
       : [],
   ]);
 
-  const isEnterprise = session?.user?.accountType === "enterprise";
+  // 仅企业管理员可订阅；个人用户和普通企业成员仅浏览
+  const canSubscribe = isEnterpriseAdmin;
   // 已订阅的 agentId 集合
   const subscribedAgentIds = new Set(subscribedOpcs.map((s) => s.agent.id));
 
@@ -102,7 +117,7 @@ export default async function MarketplacePage({
                 </div>
 
                 <div className="mt-4 flex gap-2">
-                  {isEnterprise ? (
+                  {canSubscribe ? (
                     isSubscribed ? (
                       <SubscribeButton
                         agentId={agent.id}

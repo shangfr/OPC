@@ -78,13 +78,14 @@ async function checkAgentOwnership(agentId: string, userId: string) {
   }
 
   // 企业团队管理员可操作本企业 OPC（含团队创建的 + 订阅副本）
+  // 新 schema：用 ownerType=enterprise + ownerId=enterpriseId 判断
   const accountType = (session?.user?.accountType as string) ?? "personal";
   const teamRole = (session?.user?.teamRole as string) ?? null;
   if (
     accountType === "enterprise" &&
     (teamRole === "owner" || teamRole === "admin") &&
-    existing.ownerEnterpriseId &&
-    existing.ownerEnterpriseId === session?.user?.enterpriseId
+    existing.ownerType === "enterprise" &&
+    existing.ownerId === session?.user?.enterpriseId
   ) {
     return existing;
   }
@@ -179,19 +180,23 @@ export async function POST(request: Request) {
       }
     }
 
-    // OPC 交易市场：按账号类型设定所有权
-    // - 个人账号 → personal_private（ownerType=user）
-    // - 企业账号 → enterprise_private（ownerType=enterprise, ownerEnterpriseId=当前企业）
-    // - 管理员 → 可创建 public（ownerType=platform），由 body.ownershipType 指定
+    // OPC 交易市场：按账号类型设定所有权（新 schema：ownerType + ownerId）
+    // - 个人账号 → ownerType=personal, ownerId=userId
+    // - 企业账号 → ownerType=enterprise, ownerId=enterpriseId
+    // - 管理员 → 可创建 public（ownerType=platform）
     const accountType = (session.user.accountType as "personal" | "enterprise") ?? "personal";
-    const ownershipType =
+    const ownerType: "personal" | "enterprise" | "platform" =
       userIsAdmin && body.visibility === "public"
-        ? "public"
+        ? "platform"
         : accountType === "enterprise"
-          ? "enterprise_private"
-          : "personal_private";
-    const ownerType: "user" | "enterprise" | "platform" =
-      ownershipType === "public" ? "platform" : ownershipType === "enterprise_private" ? "enterprise" : "user";
+          ? "enterprise"
+          : "personal";
+    const ownerId =
+      ownerType === "enterprise"
+        ? session.user.enterpriseId ?? null
+        : ownerType === "personal"
+          ? session.user.id
+          : null;
 
     const result = await createAgent({
       name: body.name,
@@ -207,12 +212,9 @@ export async function POST(request: Request) {
       categoryId: body.categoryId,
       userId: session.user.id,
       visibility,
-      // SaaS 多租户：private OPC 归属当前团队
-      teamId: session.user.teamId ?? null,
-      // OPC 交易市场：所有权字段
-      ownershipType,
+      // OPC 交易市场：所有权字段（新 schema）
       ownerType,
-      ownerEnterpriseId: session.user.enterpriseId ?? null,
+      ownerId,
       priceMonthly: body.priceMonthly ?? 0,
       priceYearly: body.priceYearly ?? 0,
     });

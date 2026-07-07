@@ -127,17 +127,17 @@ export function DocumentPreview({
   }
 
   const document: Document | null = previewDocument
-    ? previewDocument
+    ? (previewDocument as Document)
     : artifact.status === "streaming"
-      ? {
+      ? ({
           title: artifact.title,
-          kind: artifact.kind,
+          kind: artifact.kind as any,
           content: artifact.content,
           id: artifact.documentId,
           createdAt: new Date(),
           userId: "noop",
           chatId: "noop",
-        }
+        } as Document)
       : null;
 
   if (!document) {

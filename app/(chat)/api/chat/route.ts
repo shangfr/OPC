@@ -150,7 +150,7 @@ export async function POST(request: Request) {
         userMessage: message,
         selectedVisibilityType,
         agentId,
-        agentRecord,
+        agentRecord: agentRecord as any,
         chatModel,
         session,
         summarizeTask,

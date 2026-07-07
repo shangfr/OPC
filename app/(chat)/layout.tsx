@@ -45,7 +45,7 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen={!isCollapsed}>
       <HeaderActionsProvider>
         <ChatProvider>
-          <AppSidebar isAdmin={isAdminUser} isEnterpriseAdmin={isEnterpriseAdmin} user={session?.user} />
+          <AppSidebar isAdmin={isAdminUser} isEnterpriseAdmin={isEnterpriseAdmin} user={session?.user as any} />
           <SidebarInset>
             <GlobalHeader />
             <Toaster

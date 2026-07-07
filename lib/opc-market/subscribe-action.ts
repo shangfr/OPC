@@ -10,11 +10,14 @@ import type { ActionResult } from "@/lib/enterprise/actions";
  * OPC 交易市场：订阅雇佣 Server Action
  *
  * 流程：
- * 1. 校验当前用户是企业账号（accountType=enterprise）
+ * 1. 校验当前用户是企业管理员（accountType=enterprise && teamRole=owner/admin）
  * 2. 创建订单（pending 状态）
  * 3. Stripe 已配置：创建 Checkout Session → 跳转支付
  *    Mock 模式：直接激活订阅（无需支付）
  * 4. 支付成功 → activateSubscription 激活订阅 + 写入收益记录
+ *
+ * 权限：仅企业管理员可订阅（代表企业订阅 OPC 服务）
+ * 普通企业成员（teamRole=member）和个人用户无权订阅。
  */
 
 export async function subscribeOpcAction(formData: FormData): Promise<ActionResult> {
@@ -23,8 +26,14 @@ export async function subscribeOpcAction(formData: FormData): Promise<ActionResu
     if (!session?.user?.id) {
       return { success: false, error: "未登录" };
     }
-    if (session.user.accountType !== "enterprise" || !session.user.enterpriseId) {
-      return { success: false, error: "仅企业账号可订阅" };
+
+    const accountType = (session.user.accountType as "personal" | "enterprise") ?? "personal";
+    const teamRole = (session.user.teamRole as string) ?? null;
+    const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
+
+    // 仅企业管理员可订阅；普通企业成员和个人用户不可
+    if (!isEnterpriseAdmin || !session.user.enterpriseId) {
+      return { success: false, error: "仅企业管理员可订阅" };
     }
 
     const agentId = formData.get("agentId") as string;
@@ -64,7 +73,7 @@ export async function subscribeOpcAction(formData: FormData): Promise<ActionResu
               name: `${agentRow.name} - ${period === "monthly" ? "月度" : "年度"}订阅`,
               description: agentRow.description || undefined,
             },
-            unit_amount: order.amount,
+            unit_amount: Number(order.amount),
           },
           quantity: 1,
         },

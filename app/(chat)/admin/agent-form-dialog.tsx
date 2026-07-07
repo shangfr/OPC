@@ -28,7 +28,7 @@ type AgentFormData = {
   isDefault: boolean;
   sortOrder: number;
   categoryId: string;
-  visibility: "public" | "private"; // 兼容旧字段，实际可见性由 listingStatus/ownershipType 决定
+  visibility: "public" | "private"; // 兼容旧字段，实际可见性由 listingStatus/ownerType 决定
 };
 
 // 上架状态展示映射（只读，避免与审核上架流程冲突）

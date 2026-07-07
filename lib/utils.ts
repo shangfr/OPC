@@ -92,14 +92,13 @@ export function isAdmin(user: { role?: string | null }): boolean {
 
 export function hasPermission(
   user: { role?: string | null } | null,
-  requiredRole: 'user' | 'moderator' | 'admin'
+  requiredRole: 'user' | 'admin'
 ): boolean {
   if (!user?.role) return false;
 
   const roleHierarchy = {
     user: 0,
-    moderator: 1,
-    admin: 2,
+    admin: 1,
   };
 
   const userLevel = roleHierarchy[user.role as keyof typeof roleHierarchy] ?? 0;

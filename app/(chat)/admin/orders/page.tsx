@@ -54,7 +54,7 @@ export default async function AdminOrdersPage() {
                   {o.period === "monthly" ? "月度" : "年度"}
                 </td>
                 <td className="px-4 py-3 text-foreground">
-                  ¥{(o.amount / 100).toFixed(2)}
+                  ¥{(Number(o.amount) / 100).toFixed(2)}
                 </td>
                 <td className="px-4 py-3">
                   <span

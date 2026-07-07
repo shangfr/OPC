@@ -21,7 +21,7 @@ export async function PATCH(request: Request) {
       throw new ChatbotError("bad_request:users", "缺少用户ID或角色");
     }
 
-    if (!["user", "moderator", "admin"].includes(role)) {
+    if (!["user", "admin"].includes(role)) {
       throw new ChatbotError("bad_request:users", "无效的角色类型");
     }
 

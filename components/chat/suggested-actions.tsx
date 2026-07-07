@@ -128,7 +128,7 @@ function PureSuggestedActions({
         className="grid w-full grid-cols-2 gap-2 sm:gap-3"
         data-testid="suggested-actions"
       >
-        {suggestedActions.map((suggestedAction, index) => (
+        {suggestedActions.map((suggestedAction: any, index: number) => (
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             className="w-full"
