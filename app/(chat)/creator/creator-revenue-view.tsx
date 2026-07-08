@@ -1,7 +1,6 @@
 "use client";
-
 import { useState } from "react";
-import { Loader2, Upload, RotateCcw } from "lucide-react";
+import { Loader2, Upload, RotateCcw, AlertCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   submitListingApplicationAction,
@@ -47,6 +46,8 @@ type ListingApplication = {
   agentName: string;
   status: string;
   type: string;
+  rejectReason?: string | null;
+  reviewedAt?: Date | string | null;
 };
 
 const listingStatusText: Record<string, string> = {
@@ -84,11 +85,12 @@ export function CreatorRevenueView({
   const [withdrawPending, setWithdrawPending] = useState<string | null>(null);
   const [applications, setApplications] = useState<ListingApplication[]>([]);
 
-  // 加载当前用户的 pending 上架申请（用于撤回按钮）
+  // 加载当前用户的申请记录（含 pending + rejected，用于驳回提示）
   const loadApplications = useCallback(async () => {
     try {
       const apps = await getMyApplicationsAction();
-      setApplications(apps.filter((a: any) => a.status === "pending"));
+      // 保留 pending（审核中）和 rejected（已驳回，需提示用户）
+      setApplications(apps.filter((a: any) => a.status === "pending" || a.status === "rejected"));
     } catch {
       // 静默忽略
     }
@@ -122,7 +124,9 @@ export function CreatorRevenueView({
   async function handleWithdraw(applicationId: string) {
     setWithdrawPending(applicationId);
     try {
-      const result = await withdrawListingApplicationAction({ applicationId });
+      const result = await withdrawListingApplicationAction({
+        applicationId,
+      });
       if (result.success) {
         toast.success("申请已撤回");
         await loadApplications();
@@ -139,6 +143,16 @@ export function CreatorRevenueView({
   // 查找某个 OPC 的 pending 申请
   function getPendingApp(agentId: string): ListingApplication | undefined {
     return applications.find((a) => a.agentId === agentId && a.status === "pending");
+  }
+
+  // 查找某个 OPC 的 rejected 申请（用于驳回提示）
+  function getRejectedApp(agentId: string): ListingApplication | undefined {
+    return applications.find((a) => a.agentId === agentId && a.status === "rejected");
+  }
+
+  // 关闭驳回提示（从本地 state 移除）
+  function dismissRejected(agentId: string) {
+    setApplications((prev) => prev.filter((a) => !(a.agentId === agentId && a.status === "rejected")));
   }
 
   const isEnterprise = accountType === "enterprise";
@@ -267,6 +281,7 @@ export function CreatorRevenueView({
           )}
           {opcStats.map((opc) => {
             const pendingApp = getPendingApp(opc.id);
+            const rejectedApp = getRejectedApp(opc.id);
             return (
               <div
                 key={opc.id}
@@ -344,6 +359,36 @@ export function CreatorRevenueView({
                     <span className="text-xs text-amber-600">
                       ⏳ 上架申请审核中，请耐心等待管理员审核
                     </span>
+                  </div>
+                )}
+                {/* 驳回提示：管理员驳回后，OPC 回到 private 状态，此处展示驳回原因 */}
+                {rejectedApp && opc.listingStatus === "private" && (
+                  <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <XCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                        <div>
+                          <p className="text-xs font-medium text-destructive">
+                            上架申请已被驳回
+                          </p>
+                          {rejectedApp.rejectReason && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              驳回原因：{rejectedApp.rejectReason}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            可修改后重新申请上架。
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => dismissRejected(opc.id)}
+                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted"
+                        title="关闭提示"
+                      >
+                        <XCircle className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
