@@ -25,13 +25,16 @@ export default async function AdminUsersPage() {
     ]);
   } else if (isEnterpriseAdmin && session?.user?.teamId) {
     // 企业团队管理员：仅查看团队成员
-    users = await getTeamMembersForAdmin(session.user.teamId);
+    users = await getTeamMembersForAdmin({
+      teamId: session.user.teamId,
+      currentUserId: session.user.id,
+    });
     pendingEnterprises = [];
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground">用户管理</h1>
+    <div className="page-container pb-tabbar">
+      <h1 className="page-title">用户管理</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {isPlatformAdmin
           ? "管理用户账号、审核企业资质、封禁违规账号、调整用户类型与订阅套餐。"

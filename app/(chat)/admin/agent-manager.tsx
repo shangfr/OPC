@@ -64,7 +64,7 @@ export function AgentManager() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">OPC 智库管理</h1>
+              <h1 className="page-title">OPC 智库管理</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 管理平台 OPC 角色、分类和站点配置
               </p>

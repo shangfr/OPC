@@ -145,45 +145,90 @@ export function CreatorRevenueView({
   const opcLabel = isEnterprise ? "团队 OPC" : "我的 OPC";
 
   return (
-    <div className="mt-8 space-y-6">
-      {/* 收益汇总卡片 */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <DollarSign className="size-4" />
-            <span className="text-xs">总收益</span>
-          </div>
-          <p className="mt-2 text-xl font-bold text-foreground">
-            {formatYuan(summary.totalRevenue)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <TrendingUp className="size-4" />
-            <span className="text-xs">本月收益</span>
-          </div>
-          <p className="mt-2 text-xl font-bold text-foreground">
-            {formatYuan(summary.monthRevenue)}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Package className="size-4" />
-            <span className="text-xs">OPC 数量</span>
-          </div>
-          <p className="mt-2 text-xl font-bold text-foreground">
-            {summary.opcCount ?? 0}
-          </p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="size-4" />
-            <span className="text-xs">活跃订阅</span>
-          </div>
-          <p className="mt-2 text-xl font-bold text-foreground">
-            {summary.totalSubscriptions ?? 0}
-          </p>
-        </div>
+    <div className="mt-6 space-y-6 sm:mt-8">
+      {/* 汇总卡片：个人创作者显示收益，企业管理员显示团队 OPC 指标 */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {isEnterprise ? (
+          <>
+            {/* 企业管理员：团队 OPC 概览（不显示收益，收益仅个人创作者可用） */}
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Package className="size-4" />
+                <span className="text-xs">团队 OPC</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {summary.opcCount ?? 0}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="size-4" />
+                <span className="text-xs">已上架</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {opcStats.filter((o) => o.listingStatus === "listed").length}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <TrendingUp className="size-4" />
+                <span className="text-xs">审核中</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {opcStats.filter((o) => o.listingStatus === "pending").length}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <DollarSign className="size-4" />
+                <span className="text-xs">私有 OPC</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {opcStats.filter((o) => o.listingStatus === "private").length}
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* 个人创作者：收益概览 */}
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <DollarSign className="size-4" />
+                <span className="text-xs">总收益</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {formatYuan(summary.totalRevenue)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <TrendingUp className="size-4" />
+                <span className="text-xs">本月收益</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {formatYuan(summary.monthRevenue)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Package className="size-4" />
+                <span className="text-xs">OPC 数量</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {summary.opcCount ?? 0}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="size-4" />
+                <span className="text-xs">活跃订阅</span>
+              </div>
+              <p className="mt-2 text-xl font-bold text-foreground">
+                {summary.totalSubscriptions ?? 0}
+              </p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Tab 切换 */}
@@ -309,16 +354,16 @@ export function CreatorRevenueView({
 
       {/* 收益明细 */}
       {!isEnterprise && tab === "revenue" && (
-        <div className="overflow-hidden rounded-lg border border-border">
+        <div className="table-wrapper rounded-lg border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr className="text-left text-xs text-muted-foreground">
-                <th className="px-4 py-3">OPC</th>
-                <th className="px-4 py-3">订阅企业</th>
-                <th className="px-4 py-3">订单金额</th>
-                <th className="px-4 py-3">分成比例</th>
-                <th className="px-4 py-3">收益</th>
-                <th className="px-4 py-3">时间</th>
+                <th className="whitespace-nowrap px-4 py-3">OPC</th>
+                <th className="whitespace-nowrap px-4 py-3">订阅企业</th>
+                <th className="whitespace-nowrap px-4 py-3">订单金额</th>
+                <th className="whitespace-nowrap px-4 py-3">分成比例</th>
+                <th className="whitespace-nowrap px-4 py-3">收益</th>
+                <th className="whitespace-nowrap px-4 py-3">时间</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">

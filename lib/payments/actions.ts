@@ -98,6 +98,8 @@ async function ensurePersonalTeam(userId: string): Promise<string> {
  * 发起 Stripe Checkout（订阅升级）。
  * Mock 模式下直接升级套餐，不跳转支付。
  * 个人账号无团队时，Mock 模式下自动创建个人团队用于配额跟踪。
+ *
+ * 权限：个人账号可自由升级；企业账号仅团队管理员（owner/admin）可操作。
  */
 export async function checkoutAction(formData: FormData) {
   const priceId = formData.get("priceId") as string;
@@ -108,6 +110,14 @@ export async function checkoutAction(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("未登录");
+  }
+
+  // 企业账号：仅团队管理员可升级套餐
+  if (session.user.accountType === "enterprise") {
+    const teamRole = session.user.teamRole as string | undefined;
+    if (teamRole !== "owner" && teamRole !== "admin") {
+      throw new Error("无权限：仅团队管理员可管理订阅套餐");
+    }
   }
 
   // Mock 模式
@@ -139,13 +149,22 @@ export async function checkoutAction(formData: FormData) {
 /**
  * 打开 Stripe Customer Portal（管理账单/取消订阅）。
  * Mock 模式下跳转到设置页。
+ *
+ * 权限：企业账号仅团队管理员（owner/admin）可操作。
  */
 export async function customerPortalAction() {
   if (!isStripeEnabled) {
     redirect("/settings");
   }
 
-  const { teamRecord } = await getCurrentTeamRecord();
+  const { teamRecord, role } = await getCurrentTeamRecord();
+
+  // 企业账号：仅团队管理员可管理账单
+  const session = await auth();
+  if (session?.user?.accountType === "enterprise" && role !== "owner" && role !== "admin") {
+    throw new Error("无权限：仅团队管理员可管理账单");
+  }
+
   const portalSession = await createCustomerPortalSession(teamRecord);
   redirect(portalSession.url);
 }

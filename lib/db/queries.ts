@@ -1609,13 +1609,26 @@ export async function cancelSubscription({
 
 export async function getAgentsByEnterprise(enterpriseId: string) {
   try {
+    // 查询企业自建 OPC（ownerType=enterprise）+ 企业已订阅的克隆 OPC（通过 opcSubscription.clonedAgentId 关联）
+    const subscribedClonedIds = db
+      .select({ clonedAgentId: opcSubscription.clonedAgentId })
+      .from(opcSubscription)
+      .where(
+        and(
+          eq(opcSubscription.enterpriseId, enterpriseId),
+          eq(opcSubscription.status, "active")
+        )
+      );
+
     return await db
       .select()
       .from(agent)
-      .where(or(
-        and(eq(agent.ownerType, "enterprise"), eq(agent.ownerId, enterpriseId)),
-        and(eq(agent.ownerId, enterpriseId), eq(agent.ownerType, "enterprise"))
-      ))
+      .where(
+        or(
+          and(eq(agent.ownerType, "enterprise"), eq(agent.ownerId, enterpriseId)),
+          inArray(agent.id, subscribedClonedIds)
+        )
+      )
       .orderBy(desc(agent.createdAt));
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to get agents by enterprise");
@@ -1922,8 +1935,12 @@ export async function activateSubscription({
         const [sourceAgent] = await tx.select().from(agent).where(eq(agent.id, order.agentId)).limit(1);
         let clonedAgentId: string | null = null;
         if (sourceAgent) {
+          // 克隆 OPC 时在名称后加「（企业副本）」后缀，避免与公开市场同名 OPC 混淆
+          const clonedName = sourceAgent.name.length > 50
+            ? `${sourceAgent.name.slice(0, 50)}…（企业副本）`
+            : `${sourceAgent.name}（企业副本）`;
           const [cloned] = await tx.insert(agent).values({
-            name: sourceAgent.name, description: sourceAgent.description, avatar: sourceAgent.avatar,
+            name: clonedName, description: sourceAgent.description, avatar: sourceAgent.avatar,
             systemPrompt: sourceAgent.systemPrompt, phone: sourceAgent.phone, knowledgeId: sourceAgent.knowledgeId,
             starterQuestions: sourceAgent.starterQuestions, isActive: true, sortOrder: 999, categoryId: sourceAgent.categoryId,
             userId: order.userId, visibility: "private", ownerType: "enterprise", ownerId: order.enterpriseId,
@@ -2367,6 +2384,75 @@ export async function checkUserKnowledgeOwnership(
   } catch {
     return false;
   }
+}
+
+/**
+ * 检查用户是否有权访问指定知识库（扩展版）。
+ * 权限来源：
+ * 1. 用户自己创建的知识库（userKnowledge 表）
+ * 2. 用户所属企业已订阅的 OPC 挂载了该知识库（通过 opcSubscription → agent.knowledgeId）
+ * 3. 用户所属企业的自建 OPC 挂载了该知识库
+ *
+ * 用于聊天检索、文档管理等场景，确保企业团队成员可使用订阅 OPC 的知识库。
+ */
+export async function checkKnowledgeAccess(
+  userId: string,
+  knowledgeId: string,
+  options?: { accountType?: string | null; enterpriseId?: string | null; teamRole?: string | null }
+): Promise<boolean> {
+  // 1. 自己创建的知识库
+  const owns = await checkUserKnowledgeOwnership(userId, knowledgeId);
+  if (owns) return true;
+
+  // 2. 企业账号：检查企业订阅的 OPC 或自建 OPC 是否挂载了该知识库
+  const accountType = options?.accountType;
+  const enterpriseId = options?.enterpriseId;
+  if (accountType === "enterprise" && enterpriseId) {
+    try {
+      // 查询企业已订阅的原始 OPC 的 knowledgeId + 克隆 OPC 的 knowledgeId
+      const subRows = await db
+        .select({ knowledgeId: agent.knowledgeId })
+        .from(opcSubscription)
+        .innerJoin(agent, eq(agent.id, opcSubscription.agentId))
+        .where(
+          and(
+            eq(opcSubscription.enterpriseId, enterpriseId),
+            eq(opcSubscription.status, "active")
+          )
+        );
+      // 克隆 OPC 的 knowledgeId
+      const clonedRows = await db
+        .select({ knowledgeId: agent.knowledgeId })
+        .from(opcSubscription)
+        .innerJoin(agent, eq(agent.id, opcSubscription.clonedAgentId))
+        .where(
+          and(
+            eq(opcSubscription.enterpriseId, enterpriseId),
+            eq(opcSubscription.status, "active")
+          )
+        );
+      // 企业自建 OPC 的 knowledgeId
+      const entRows = await db
+        .select({ knowledgeId: agent.knowledgeId })
+        .from(agent)
+        .where(
+          and(
+            eq(agent.ownerType, "enterprise"),
+            eq(agent.ownerId, enterpriseId)
+          )
+        );
+
+      const allKbIds = new Set<string>();
+      for (const r of [...subRows, ...clonedRows, ...entRows]) {
+        if (r.knowledgeId) allKbIds.add(r.knowledgeId);
+      }
+      if (allKbIds.has(knowledgeId)) return true;
+    } catch {
+      // 查询失败，保守返回 false
+    }
+  }
+
+  return false;
 }
 
 // ============================================================

@@ -7,6 +7,18 @@ export function register() {
   }
 }
 
+// 使用非静态可分析的动态 import，避免 bundler（webpack/turbopack）
+// 在构建时尝试解析含原生绑定的 OpenTelemetry / gRPC 包。
+// 这些包仅在运行时按需加载，不应被打包进 server bundle。
+async function safeDynamicImport(moduleName: string): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  const dynamicImport = new Function(
+    "m",
+    "return import(m)",
+  ) as (m: string) => Promise<any>;
+  return dynamicImport(moduleName);
+}
+
 async function initOpenTelemetry() {
   const isProd = process.env.NODE_ENV === "production";
   const otelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
@@ -23,24 +35,24 @@ async function initOpenTelemetry() {
   }
 
   try {
-    const { NodeSDK } = await import("@opentelemetry/sdk-node");
-    const { getNodeAutoInstrumentations } = await import(
-      "@opentelemetry/auto-instrumentations-node"
+    const { NodeSDK } = await safeDynamicImport("@opentelemetry/sdk-node");
+    const { getNodeAutoInstrumentations } = await safeDynamicImport(
+      "@opentelemetry/auto-instrumentations-node",
     );
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let traceExporter: any;
 
     if (otelEndpoint) {
-      const { OTLPTraceExporter } = await import(
-        "@opentelemetry/exporter-trace-otlp-http"
+      const { OTLPTraceExporter } = await safeDynamicImport(
+        "@opentelemetry/exporter-trace-otlp-http",
       );
       traceExporter = new OTLPTraceExporter({ url: otelEndpoint });
     } else {
       // Dev verbose mode: opt-in via OTEL_CONSOLE=true
       diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.WARN);
-      const { ConsoleSpanExporter } = await import(
-        "@opentelemetry/sdk-trace-node"
+      const { ConsoleSpanExporter } = await safeDynamicImport(
+        "@opentelemetry/sdk-trace-node",
       );
       traceExporter = new ConsoleSpanExporter();
     }
@@ -65,7 +77,7 @@ async function initOpenTelemetry() {
           .shutdown()
           .then(() => console.log("[OTel] Tracing terminated"))
           .catch((error: unknown) =>
-            console.error("[OTel] Shutdown error:", error)
+            console.error("[OTel] Shutdown error:", error),
           );
       });
     }
@@ -74,7 +86,7 @@ async function initOpenTelemetry() {
     if (!isProd) {
       console.warn(
         "[OTel] Tracing not initialized. Install SDK packages to enable:",
-        "@opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node"
+        "@opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node",
       );
     }
   }

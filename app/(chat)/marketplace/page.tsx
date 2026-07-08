@@ -40,7 +40,10 @@ export default async function MarketplacePage({
       search: params.search ?? null,
     }),
     session?.user?.enterpriseId
-      ? getSubscribedOpcs(session.user.enterpriseId)
+      ? getSubscribedOpcs({
+          enterpriseId: session.user.enterpriseId,
+          currentUserId: session.user.id,
+        })
       : [],
   ]);
 
@@ -52,7 +55,7 @@ export default async function MarketplacePage({
   return (
     <main className="page-container mx-auto max-w-6xl pb-tabbar">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-foreground">OPC 服务商城</h1>
+        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">OPC 服务商城</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           浏览全部已上架的公共 OPC 智能体。企业账号可订阅雇佣，将 OPC 接入团队工作流。
         </p>
@@ -65,22 +68,22 @@ export default async function MarketplacePage({
           name="search"
           placeholder="搜索 OPC 名称或描述..."
           defaultValue={params.search ?? ""}
-          className="flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm text-foreground"
+          className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
         />
         <button
           type="submit"
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="touch-target rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           搜索
         </button>
       </form>
 
       {agents.length === 0 ? (
-        <div className="py-16 text-center">
+        <div className="empty-state">
           <p className="text-sm text-muted-foreground">暂无已上架的公共 OPC</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="card-grid">
           {agents.map((agent) => {
             const isSubscribed = subscribedAgentIds.has(agent.id);
             return (
@@ -101,7 +104,7 @@ export default async function MarketplacePage({
                 <p className="mb-4 line-clamp-2 text-xs text-muted-foreground">
                   {agent.description}
                 </p>
-                <div className="mb-4 flex items-baseline gap-4">
+                <div className="mb-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
                   <div>
                     <span className="text-lg font-bold text-foreground">
                       ¥{(agent.priceMonthly / 100).toFixed(2)}

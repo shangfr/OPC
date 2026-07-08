@@ -121,21 +121,24 @@ export async function GET(request: Request) {
       agents = await getAgents();
     } else if (isEnterpriseAdmin && session.user.teamId) {
       // 企业团队管理员：返回团队 OPC + 可见的公共 OPC
-      agents = await getVisibleAgents({
+      const visible = await getVisibleAgents({
         userId: session.user.id,
         teamId: session.user.teamId,
         accountType,
         enterpriseId: session.user.enterpriseId ?? null,
         teamRole,
       });
+      // getVisibleAgents 返回 { agent, isSubscribed }[]，展平为 Agent[]
+      agents = visible.map((v) => v.agent);
     } else {
-      agents = await getVisibleAgents({
+      const visible = await getVisibleAgents({
         userId: session.user.id,
         teamId: session.user.teamId ?? null,
         accountType,
         enterpriseId: session.user.enterpriseId ?? null,
         teamRole,
       });
+      agents = visible.map((v) => v.agent);
     }
 
     return Response.json(agents, { status: 200 });

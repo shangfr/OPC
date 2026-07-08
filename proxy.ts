@@ -51,9 +51,19 @@ export async function proxy(request: NextRequest) {
   }
 
   // 5. 正式用户访问登录/注册页 → 跳转首页
-  const PUBLIC_AUTH_ROUTES = ["/login", "/register", "/register-enterprise", "/forgot-password"];
+  //    注意：/register-enterprise 是「升级企业账号」入口，
+  //    个人账号（personal）已登录后仍需访问，不应被重定向。
+  const PUBLIC_AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
   if (isRegular && PUBLIC_AUTH_ROUTES.includes(pathname)) {
     return NextResponse.redirect(new URL(`${base}/`, request.url));
+  }
+
+  // 5.1 /register-enterprise：仅允许未登录用户和个人账号访问
+  //     企业账号和平台管理员访问时重定向到首页
+  if (pathname === "/register-enterprise" && isLoggedIn) {
+    if (accountType === "enterprise" || isPlatformAdmin) {
+      return NextResponse.redirect(new URL(`${base}/`, request.url));
+    }
   }
 
   // 6. 个人设置页：仅正式用户

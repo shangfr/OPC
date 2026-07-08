@@ -32,7 +32,7 @@ export default async function TeamPage() {
 
   return (
     <main className="page-container mx-auto max-w-3xl pb-tabbar">
-      <h1 className="text-2xl font-semibold text-foreground">团队设置</h1>
+      <h1 className="page-title">团队设置</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         管理你的团队、成员和配额。
       </p>

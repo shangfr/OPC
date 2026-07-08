@@ -449,6 +449,66 @@ select:focus-visible,
   .pb-tabbar {
     @apply pb-12 md:pb-0;
   }
+
+  /*
+   * 移动端卡片式列表：在移动端把表格行渲染为卡片，
+   * 桌面端恢复表格布局。用于用户列表、OPC 列表等管理后台表格。
+   *
+   * 用法：给 <table> 加 class="table-to-card"，配合 data-label 属性。
+   * 移动端 thead 隐藏，td 以卡片形式展示，每个 td 前显示 data-label。
+   */
+  @media (max-width: 640px) {
+    .table-to-card thead {
+      display: none;
+    }
+    .table-to-card,
+    .table-to-card tbody,
+    .table-to-card tr,
+    .table-to-card td {
+      display: block;
+      width: 100%;
+    }
+    .table-to-card tr {
+      @apply mb-3 rounded-lg border border-border bg-card p-3;
+    }
+    .table-to-card td {
+      @apply flex justify-between gap-2 px-0 py-2 text-sm;
+      border: none;
+      text-align: right;
+    }
+    .table-to-card td::before {
+      content: attr(data-label);
+      @apply font-medium text-muted-foreground;
+      text-align: left;
+    }
+    .table-to-card td:last-child {
+      @apply justify-end pt-3;
+    }
+  }
+
+  /*
+   * 响应式页面标题：移动端 text-xl，桌面端 text-2xl。
+   * 用于各页面 <h1>，保持视觉层级一致。
+   */
+  .page-title {
+    @apply text-xl font-semibold text-foreground sm:text-2xl;
+  }
+
+  /*
+   * 响应式区块标题：移动端 text-base，桌面端 text-lg。
+   * 用于各页面 <h2> section 标题。
+   */
+  .section-title {
+    @apply text-base font-medium text-foreground sm:text-lg;
+  }
+
+  /*
+   * 响应式卡片内边距：移动端 p-4，桌面端 p-6。
+   * 用于各页面 section/card 容器。
+   */
+  .card-padding {
+    @apply p-4 sm:p-6;
+  }
 }
 
 /* ===== 全局移动端适配重置（根治 90% 移动端疑难杂症）===== */

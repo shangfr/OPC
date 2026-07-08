@@ -27,7 +27,7 @@ export default function RegisterEnterprisePage() {
   const [pending, setPending] = useState(false);
 
   const [state, formAction] = useActionState<
-    { success?: boolean; error?: string; data?: { id: string } },
+    { success: boolean; error?: string; data?: { id: string } },
     FormData
   >(async (_prev, formData) => {
     setPending(true);
@@ -42,7 +42,7 @@ export default function RegisterEnterprisePage() {
     } finally {
       setPending(false);
     }
-  }, {});
+  }, { success: false });
 
   useEffect(() => {
     if (state?.success) {

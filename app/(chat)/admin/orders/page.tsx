@@ -14,23 +14,23 @@ export default async function AdminOrdersPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground">订单流水</h1>
+    <div className="page-container pb-tabbar">
+      <h1 className="page-title">订单流水</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         全平台 OPC 订阅订单记录。
       </p>
 
-      <div className="mt-8 overflow-hidden rounded-lg border border-border">
-        <table className="w-full text-sm">
+      <div className="table-wrapper mt-6 rounded-lg border border-border">
+        <table className="table-to-card w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left">订单号</th>
-              <th className="px-4 py-3 text-left">OPC</th>
-              <th className="px-4 py-3 text-left">订阅企业</th>
-              <th className="px-4 py-3 text-left">周期</th>
-              <th className="px-4 py-3 text-left">金额</th>
-              <th className="px-4 py-3 text-left">状态</th>
-              <th className="px-4 py-3 text-left">时间</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">订单号</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">OPC</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">订阅企业</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">周期</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">金额</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">状态</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">时间</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
@@ -43,20 +43,20 @@ export default async function AdminOrdersPage() {
             )}
             {orders.map((o) => (
               <tr key={o.id}>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                <td data-label="订单号" className="px-4 py-3 font-mono text-xs text-muted-foreground">
                   {o.orderNo}
                 </td>
-                <td className="px-4 py-3 text-foreground">{o.agentName}</td>
-                <td className="px-4 py-3 text-muted-foreground">
+                <td data-label="OPC" className="px-4 py-3 text-foreground">{o.agentName}</td>
+                <td data-label="订阅企业" className="px-4 py-3 text-muted-foreground">
                   {o.enterpriseName}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                <td data-label="周期" className="px-4 py-3 text-muted-foreground">
                   {o.period === "monthly" ? "月度" : "年度"}
                 </td>
-                <td className="px-4 py-3 text-foreground">
+                <td data-label="金额" className="px-4 py-3 text-foreground">
                   ¥{(Number(o.amount) / 100).toFixed(2)}
                 </td>
-                <td className="px-4 py-3">
+                <td data-label="状态" className="px-4 py-3">
                   <span
                     className={`rounded px-2 py-0.5 text-xs ${
                       o.paymentStatus === "paid"
@@ -69,7 +69,7 @@ export default async function AdminOrdersPage() {
                     {paymentStatusText[o.paymentStatus] ?? o.paymentStatus}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
+                <td data-label="时间" className="px-4 py-3 text-xs text-muted-foreground">
                   {new Date(o.createdAt).toLocaleString()}
                 </td>
               </tr>

@@ -306,8 +306,8 @@ export function UserManageView({
           </select>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
+        <div className="table-wrapper mt-4 rounded-lg border border-border">
+          <table className="table-to-card w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
                 <th className="whitespace-nowrap px-4 py-3 text-left">邮箱</th>
@@ -332,30 +332,30 @@ export function UserManageView({
                 const planMeta = getPlanLabel(u.planName);
                 return (
                   <tr key={u.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-foreground">
+                    <td data-label="邮箱" className="whitespace-nowrap px-4 py-3 text-foreground">
                       {u.email}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">
+                    <td data-label="姓名" className="px-4 py-3 text-muted-foreground">
                       {u.name ?? "-"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="用户类型" className="px-4 py-3">
                       <span
                         className={`rounded px-2 py-0.5 text-xs font-medium ${typeMeta.className}`}
                       >
                         {typeMeta.text}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="订阅套餐" className="px-4 py-3">
                       <span
                         className={`rounded px-2 py-0.5 text-xs font-medium ${planMeta.className}`}
                       >
                         {planMeta.text}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td data-label="所属企业" className="px-4 py-3 text-xs text-muted-foreground">
                       {u.enterpriseName ?? "-"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="状态" className="px-4 py-3">
                       {u.bannedAt ? (
                         <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
                           已封禁
@@ -366,7 +366,7 @@ export function UserManageView({
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td data-label="操作" className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         {/* 平台管理员可调整用户类型与套餐 */}
                         {isAdmin && (
@@ -465,11 +465,11 @@ function EditUserDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg"
+        className="dialog-mobile-friendly w-full rounded-t-2xl border border-border bg-card p-6 shadow-lg sm:max-w-md sm:rounded-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-lg font-medium text-foreground">用户管理</h3>

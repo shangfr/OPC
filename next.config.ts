@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
       }
     : {}),
   output: "standalone",
+  // 将含原生绑定的 Node.js 包标记为外部包，避免被 bundler 打包
+  // （webpack 模式下 @grpc/grpc-js 等原生模块无法被打包）
+  serverExternalPackages: [
+    "@opentelemetry/sdk-node",
+    "@opentelemetry/auto-instrumentations-node",
+    "@opentelemetry/exporter-trace-otlp-http",
+    "@opentelemetry/sdk-trace-node",
+    "@grpc/grpc-js",
+  ],
   env: {
     NEXT_PUBLIC_BASE_PATH: basePath,
   },
@@ -47,7 +56,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  allowedDevOrigins: ['10.137.109.204','192.168.3.6'],
+  // 允许的开发来源：通过环境变量 ALLOWED_DEV_ORIGINS 配置（逗号分隔），
+  // 避免将开发者本地 IP 硬编码到源码中。
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS
+    ? process.env.ALLOWED_DEV_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
+    : [],
 };
 
 export default nextConfig;

@@ -5,7 +5,7 @@ import {
   listDocuments,
   uploadDocument,
 } from "@/lib/ai/zhipu-knowledge";
-import { checkUserKnowledgeOwnership } from "@/lib/db/queries";
+import { checkKnowledgeAccess } from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 import { isAdmin } from "@/lib/utils";
 
@@ -20,16 +20,21 @@ async function checkAuth() {
 /**
  * 检查用户是否有权操作指定知识库
  * - 管理员：始终通过
- * - 普通用户：必须拥有该知识库
+ * - 普通用户：必须拥有该知识库，或企业已订阅/自建 OPC 挂载了该知识库
  */
-async function checkKnowledgeAccess(
+async function checkKnowledgeAccessForUser(
   knowledgeId: string,
   userId: string,
-  admin: boolean
+  admin: boolean,
+  session: { user: { accountType?: string | null; enterpriseId?: string | null; teamRole?: string | null } }
 ) {
   if (admin) return;
-  const owns = await checkUserKnowledgeOwnership(userId, knowledgeId);
-  if (!owns) {
+  const hasAccess = await checkKnowledgeAccess(userId, knowledgeId, {
+    accountType: session.user.accountType,
+    enterpriseId: session.user.enterpriseId,
+    teamRole: session.user.teamRole,
+  });
+  if (!hasAccess) {
     throw new ChatbotError("forbidden:agent");
   }
 }
@@ -53,7 +58,7 @@ export async function GET(request: Request) {
       ).toResponse();
     }
 
-    await checkKnowledgeAccess(knowledgeId, session.user.id, admin);
+    await checkKnowledgeAccessForUser(knowledgeId, session.user.id, admin, session);
 
     const result = await listDocuments(knowledgeId, page, size);
 
@@ -94,7 +99,7 @@ export async function POST(request: Request) {
       ).toResponse();
     }
 
-    await checkKnowledgeAccess(knowledgeId, session.user.id, admin);
+    await checkKnowledgeAccessForUser(knowledgeId, session.user.id, admin, session);
 
     const files = formData.getAll("files").filter(
       (f): f is File => f instanceof File
@@ -177,7 +182,7 @@ export async function DELETE(request: Request) {
       return new ChatbotError("bad_request:api", "缺少参数 id").toResponse();
     }
 
-    // 普通用户必须提供 knowledgeId 以验证所有权
+    // 普通用户必须提供 knowledgeId 以验证访问权限
     if (!admin) {
       if (!knowledgeId) {
         return new ChatbotError(
@@ -185,7 +190,7 @@ export async function DELETE(request: Request) {
           "缺少参数 knowledgeId"
         ).toResponse();
       }
-      await checkKnowledgeAccess(knowledgeId, session.user.id, admin);
+      await checkKnowledgeAccessForUser(knowledgeId, session.user.id, admin, session);
     }
 
     const result = await deleteDocument(id);

@@ -36,11 +36,11 @@ export default async function CreatorPage() {
     const [summary, opcStats, revenueList] = await Promise.all([
       getCreatorRevenueSummary({ userId: session.user.id }),
       getCreatorOpcStats({ userId: session.user.id }),
-      getCreatorRevenueList({ userId: session.user.id }),
+      getCreatorRevenueList({ userId: session.user.id, currentUserId: session.user.id }),
     ]);
 
     return (
-      <main className="flex flex-1 flex-col gap-8 p-4 md:p-8">
+      <main className="page-container flex flex-1 flex-col gap-6 pb-tabbar sm:gap-8">
         <CreatorRevenueView
           accountType="personal"
           summary={summary}
@@ -76,7 +76,7 @@ export default async function CreatorPage() {
     : [];
 
   return (
-    <main className="flex flex-1 flex-col gap-8 p-4 md:p-8">
+    <main className="page-container flex flex-1 flex-col gap-6 pb-tabbar sm:gap-8">
       <CreatorRevenueView
         accountType="enterprise"
         summary={{

@@ -94,6 +94,9 @@ export async function createCheckoutSession({
   team: Team;
   priceId: string;
 }) {
+  if (!isStripeEnabled || !stripe) {
+    throw new Error("Stripe 未配置，无法创建 Checkout Session");
+  }
   const appUrl = process.env.APP_URL || "http://localhost:3000";
 
   return stripe.checkout.sessions.create({
@@ -125,6 +128,9 @@ export async function createCustomerPortalSession(teamRecord: Team) {
   if (!teamRecord.stripeCustomerId) {
     throw new Error("该团队尚未绑定 Stripe 客户，无法打开账单管理");
   }
+  if (!isStripeEnabled || !stripe) {
+    throw new Error("Stripe 未配置，无法创建 Customer Portal Session");
+  }
 
   const appUrl = process.env.APP_URL || "http://localhost:3000";
 
@@ -146,6 +152,10 @@ export async function handleSubscriptionChange(
   subscription: Stripe.Subscription,
   customerId: string
 ) {
+  if (!isStripeEnabled || !stripe) {
+    console.warn("[stripe] Stripe 未配置，跳过订阅变更同步");
+    return;
+  }
   // 通过 stripeCustomerId 反查团队
   const [teamRecord] = await db
     .select()

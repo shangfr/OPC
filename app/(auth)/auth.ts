@@ -27,8 +27,8 @@ declare module "next-auth" {
       teamId?: string | null;
       // SaaS 多租户：当前用户在团队中的角色（owner/admin/member）
       teamRole?: "owner" | "admin" | "member" | null;
-      // OPC 交易市场：账号类型 personal(2C) / enterprise(2B)
-      accountType?: "personal" | "enterprise" | null;
+      // OPC 交易市场：账号类型 personal(2C) / enterprise(2B) / platform(平台)
+      accountType?: "personal" | "enterprise" | "platform" | null;
       // 企业账号所属企业 ID
       enterpriseId?: string | null;
     } & DefaultSession["user"];
@@ -42,7 +42,7 @@ declare module "next-auth" {
     phone?: string | null;
     teamId?: string | null;
     teamRole?: "owner" | "admin" | "member" | null;
-    accountType?: "personal" | "enterprise" | null;
+    accountType?: "personal" | "enterprise" | "platform" | null;
     enterpriseId?: string | null;
   }
 }
@@ -58,7 +58,7 @@ declare module "next-auth/jwt" {
     // SaaS 多租户：当前用户在团队中的角色
     teamRole?: "owner" | "admin" | "member" | null;
     // OPC 交易市场：账号类型与企业归属
-    accountType?: "personal" | "enterprise" | null;
+    accountType?: "personal" | "enterprise" | "platform" | null;
     enterpriseId?: string | null;
   }
 }

@@ -8,7 +8,7 @@ import {
   listKnowledgeBases,
 } from "@/lib/ai/zhipu-knowledge";
 import {
-  checkUserKnowledgeOwnership,
+  checkKnowledgeAccess,
   createUserKnowledgeRecord,
   deleteUserKnowledgeRecord,
   getUserKnowledgeBases,
@@ -41,11 +41,11 @@ async function checkAdmin() {
 /**
  * GET /api/knowledge — 列出知识库
  * - 管理员：列出所有知识库 + 用量信息
- * - 普通用户：仅列出自己创建的知识库
+ * - 普通用户：列出自己创建的知识库 + 企业订阅/自建 OPC 挂载的知识库（只读）
  *
  * GET /api/knowledge?id=xxx — 获取单个知识库详情（实时统计）
  * - 管理员：可查看任意知识库
- * - 普通用户：仅可查看自己创建的知识库
+ * - 普通用户：可查看自己创建的或企业 OPC 挂载的知识库
  */
 export async function GET(request: Request) {
   try {
@@ -56,10 +56,14 @@ export async function GET(request: Request) {
 
     // Single KB detail (real-time stats)
     if (id) {
-      // 普通用户只能查看自己的知识库
+      // 普通用户：检查访问权限（自己创建的或企业 OPC 挂载的）
       if (!admin) {
-        const owns = await checkUserKnowledgeOwnership(session.user.id, id);
-        if (!owns) {
+        const hasAccess = await checkKnowledgeAccess(session.user.id, id, {
+          accountType: session.user.accountType,
+          enterpriseId: session.user.enterpriseId,
+          teamRole: session.user.teamRole,
+        });
+        if (!hasAccess) {
           throw new ChatbotError("forbidden:agent");
         }
       }
@@ -97,8 +101,49 @@ export async function GET(request: Request) {
       );
     }
 
-    // 普通用户：仅列出自己创建的知识库
+    // 普通用户：列出自己创建的知识库 + 企业订阅/自建 OPC 挂载的知识库（只读）
     const userKbs = await getUserKnowledgeBases({ userId: session.user.id });
+
+    // 企业账号：额外查询企业订阅/自建 OPC 挂载的知识库
+    let enterpriseKbIds: { knowledgeId: string; agentName: string }[] = [];
+    if (session.user.accountType === "enterprise" && session.user.enterpriseId) {
+      const { db } = await import("@/lib/db/queries");
+      const { agent, opcSubscription } = await import("@/lib/db/schema");
+      const { and, eq } = await import("drizzle-orm");
+      try {
+        // 订阅的原始 OPC 的知识库
+        const subKbs = await db
+          .select({ knowledgeId: agent.knowledgeId, agentName: agent.name })
+          .from(opcSubscription)
+          .innerJoin(agent, eq(agent.id, opcSubscription.agentId))
+          .where(and(eq(opcSubscription.enterpriseId, session.user.enterpriseId), eq(opcSubscription.status, "active")));
+        // 克隆 OPC 的知识库
+        const clonedKbs = await db
+          .select({ knowledgeId: agent.knowledgeId, agentName: agent.name })
+          .from(opcSubscription)
+          .innerJoin(agent, eq(agent.id, opcSubscription.clonedAgentId))
+          .where(and(eq(opcSubscription.enterpriseId, session.user.enterpriseId), eq(opcSubscription.status, "active")));
+        // 企业自建 OPC 的知识库
+        const entKbs = await db
+          .select({ knowledgeId: agent.knowledgeId, agentName: agent.name })
+          .from(agent)
+          .where(and(eq(agent.ownerType, "enterprise"), eq(agent.ownerId, session.user.enterpriseId)));
+
+        const seen = new Set<string>();
+        for (const r of [...subKbs, ...clonedKbs, ...entKbs]) {
+          if (r.knowledgeId && !seen.has(r.knowledgeId)) {
+            seen.add(r.knowledgeId);
+            enterpriseKbIds.push({ knowledgeId: r.knowledgeId, agentName: r.agentName });
+          }
+        }
+      } catch {
+        // 查询失败，忽略
+      }
+    }
+
+    // 合并：自己创建的 + 企业 OPC 挂载的（去重）
+    const ownKbIds = new Set(userKbs.map((k) => k.knowledgeId));
+    const extraEnterpriseKbs = enterpriseKbIds.filter((k) => !ownKbIds.has(k.knowledgeId));
 
     // 批量获取每个知识库的详情（文档数量等）
     const detailedKbs = await Promise.all(
@@ -111,6 +156,7 @@ export async function GET(request: Request) {
               localId: ukb.id,
               name: ukb.name || detail.data.name,
               description: ukb.description || detail.data.description,
+              source: "own" as const,
             };
           }
           return {
@@ -121,6 +167,7 @@ export async function GET(request: Request) {
             length: 0,
             word_num: 0,
             localId: ukb.id,
+            source: "own" as const,
           };
         } catch {
           return {
@@ -131,6 +178,45 @@ export async function GET(request: Request) {
             length: 0,
             word_num: 0,
             localId: ukb.id,
+            source: "own" as const,
+          };
+        }
+      })
+    );
+
+    // 企业 OPC 挂载的知识库（只读，标记 source=enterprise）
+    const enterpriseDetailedKbs = await Promise.all(
+      extraEnterpriseKbs.map(async (ekb) => {
+        try {
+          const detail = await getKnowledgeBaseDetail(ekb.knowledgeId);
+          if (detail.code === 200 && detail.data) {
+            return {
+              ...detail.data,
+              name: `${detail.data.name}（来自：${ekb.agentName}）`,
+              source: "enterprise" as const,
+              readOnly: true,
+            };
+          }
+          return {
+            id: ekb.knowledgeId,
+            name: `${ekb.agentName}的知识库`,
+            description: "企业订阅 OPC 挂载的知识库（只读）",
+            document_size: 0,
+            length: 0,
+            word_num: 0,
+            source: "enterprise" as const,
+            readOnly: true,
+          };
+        } catch {
+          return {
+            id: ekb.knowledgeId,
+            name: `${ekb.agentName}的知识库`,
+            description: "企业订阅 OPC 挂载的知识库（只读）",
+            document_size: 0,
+            length: 0,
+            word_num: 0,
+            source: "enterprise" as const,
+            readOnly: true,
           };
         }
       })
@@ -138,8 +224,8 @@ export async function GET(request: Request) {
 
     return Response.json(
       {
-        total: detailedKbs.length,
-        list: detailedKbs,
+        total: detailedKbs.length + enterpriseDetailedKbs.length,
+        list: [...detailedKbs, ...enterpriseDetailedKbs],
       },
       { status: 200 }
     );
@@ -217,10 +303,14 @@ export async function DELETE(request: Request) {
       return new ChatbotError("bad_request:api", "缺少参数 id").toResponse();
     }
 
-    // 普通用户：检查所有权
+    // 普通用户：检查访问权限（自己创建的或企业订阅的 OPC 知识库）
     if (!admin) {
-      const owns = await checkUserKnowledgeOwnership(session.user.id, id);
-      if (!owns) {
+      const hasAccess = await checkKnowledgeAccess(session.user.id, id, {
+        accountType: session.user.accountType,
+        enterpriseId: session.user.enterpriseId,
+        teamRole: session.user.teamRole,
+      });
+      if (!hasAccess) {
         throw new ChatbotError("forbidden:agent");
       }
     }

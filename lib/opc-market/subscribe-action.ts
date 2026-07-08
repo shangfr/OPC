@@ -20,7 +20,7 @@ import type { ActionResult } from "@/lib/enterprise/actions";
  * 普通企业成员（teamRole=member）和个人用户无权订阅。
  */
 
-export async function subscribeOpcAction(formData: FormData): Promise<ActionResult> {
+export async function subscribeOpcAction(formData: FormData): Promise<ActionResult<{ orderId: string; mock?: boolean; checkoutUrl?: string | null }>> {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -91,7 +91,7 @@ export async function subscribeOpcAction(formData: FormData): Promise<ActionResu
     // 返回跳转 URL，由客户端跳转
     return {
       success: true,
-      data: { checkoutUrl: checkoutSession.url },
+      data: { orderId: order.id, checkoutUrl: checkoutSession.url },
     };
   } catch (e) {
     return { success: false, error: (e as Error).message };

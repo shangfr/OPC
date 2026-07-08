@@ -210,7 +210,7 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
       <div className="page-container">
         {/* 页面标题 */}
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-foreground">OPC 智库</h1>
+          <h1 className="page-title">OPC 智库</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             浏览平台 OPC 角色或创建专属 OPC
           </p>

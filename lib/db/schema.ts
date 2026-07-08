@@ -16,6 +16,7 @@ import {
   uniqueIndex,
   uuid,
   varchar,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // ============================================================
@@ -169,7 +170,7 @@ export const user = pgTable(
     role: userRoleEnum("role").notNull().default("user"),
     phone: varchar("phone", { length: 20 }),
     accountType: accountTypeEnum("accountType").notNull().default("personal"),
-    enterpriseId: uuid("enterpriseId").references(() => enterprise.id, {
+    enterpriseId: uuid("enterpriseId").references((): AnyPgColumn => enterprise.id, {
       onDelete: "set null",
     }),
     bannedAt: timestamp("bannedAt"),
@@ -549,7 +550,7 @@ export const agent = pgTable(
       onDelete: "set null",
     }),
     delistReason: text("delistReason"),
-    sourceAgentId: uuid("sourceAgentId").references(() => agent.id, {
+    sourceAgentId: uuid("sourceAgentId").references((): AnyPgColumn => agent.id, {
       onDelete: "set null",
     }),
     version: integer("version").notNull().default(0),
@@ -741,13 +742,13 @@ export const enterprise = pgTable(
       "unverified"
     ),
     verifyRejectReason: text("verifyRejectReason"),
-    verifiedBy: uuid("verifiedBy").references(() => user.id, {
+    verifiedBy: uuid("verifiedBy").references((): AnyPgColumn => user.id, {
       onDelete: "set null",
     }),
     verifiedAt: timestamp("verifiedAt"),
     ownerId: uuid("ownerId")
       .notNull()
-      .references(() => user.id, { onDelete: "restrict" }),
+      .references((): AnyPgColumn => user.id, { onDelete: "restrict" }),
     industry: varchar("industry", { length: 100 }),
     address: varchar("address", { length: 255 }),
     legalRepresentative: varchar("legalRepresentative", { length: 50 }),
@@ -895,7 +896,7 @@ export const opcRevenue = pgTable(
   "opc_revenue",
   {
     id: uuid("id").primaryKey().notNull().defaultRandom(),
-    ownerId: uuid("ownerId").references(() => user.id, { onDelete: "restrict" }),
+    ownerId: uuid("ownerId").references((): AnyPgColumn => user.id, { onDelete: "restrict" }),
     ownerType: opcOwnerTypeEnum("ownerType").notNull(),
     subscriptionId: uuid("subscriptionId").references(() => opcSubscription.id, {
       onDelete: "cascade",

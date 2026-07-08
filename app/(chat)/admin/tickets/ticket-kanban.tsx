@@ -72,7 +72,7 @@ export function TicketKanban({
   };
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4">
+    <div className="flex gap-3 overflow-x-auto pb-4 [scrollbar-width:thin] md:gap-4">
       {KANBAN_COLUMNS.map((col) => {
         const colTickets = tickets.filter(
           (t) => t.status === col.status
@@ -81,7 +81,7 @@ export function TicketKanban({
         return (
           <div
             className={cn(
-              "flex w-72 shrink-0 flex-col rounded-xl border bg-muted/20 transition-colors",
+              "flex w-64 shrink-0 flex-col rounded-xl border bg-muted/20 transition-colors sm:w-72",
                 isDropTarget && "border-primary/50 bg-primary/5"
               )}
               key={col.status}

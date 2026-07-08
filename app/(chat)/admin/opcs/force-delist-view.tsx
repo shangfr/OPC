@@ -129,16 +129,16 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border">
-        <table className="w-full text-sm">
+      <div className="table-wrapper rounded-lg border border-border">
+        <table className="table-to-card w-full text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left">OPC 名称</th>
-              <th className="px-4 py-3 text-left">状态</th>
-              <th className="px-4 py-3 text-left">月度价格</th>
-              <th className="px-4 py-3 text-left">上架时间</th>
-              <th className="px-4 py-3 text-left">下架信息</th>
-              <th className="px-4 py-3 text-left">操作</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">OPC 名称</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">状态</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">月度价格</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">上架时间</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">下架信息</th>
+              <th className="whitespace-nowrap px-4 py-3 text-left">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border bg-card">
@@ -154,10 +154,10 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
             )}
             {filteredOpcs.map((opc) => (
               <tr key={opc.id}>
-                <td className="px-4 py-3 font-medium text-foreground">
+                <td data-label="OPC 名称" className="px-4 py-3 font-medium text-foreground">
                   {opc.name}
                 </td>
-                <td className="px-4 py-3">
+                <td data-label="状态" className="px-4 py-3">
                   <span
                     className={`rounded px-2 py-0.5 text-xs ${
                       opc.listingStatus === "listed"
@@ -170,15 +170,15 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
                     {statusText[opc.listingStatus] ?? opc.listingStatus}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">
+                <td data-label="月度价格" className="px-4 py-3 text-muted-foreground">
                   ¥{(opc.priceMonthly / 100).toFixed(2)}
                 </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
+                <td data-label="上架时间" className="px-4 py-3 text-xs text-muted-foreground">
                   {opc.listedAt
                     ? new Date(opc.listedAt).toLocaleDateString()
                     : "-"}
                 </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
+                <td data-label="下架信息" className="px-4 py-3 text-xs text-muted-foreground">
                   {opc.listingStatus === "delisted" ? (
                     <div className="space-y-0.5">
                       {opc.delistedAt && (
@@ -197,7 +197,7 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
                     "-"
                   )}
                 </td>
-                <td className="px-4 py-3">
+                <td data-label="操作" className="px-4 py-3">
                   {opc.listingStatus === "listed" && (
                     <div className="flex flex-col gap-2">
                       <input

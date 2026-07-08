@@ -8,8 +8,8 @@ export default async function AdminApplicationsPage() {
   const applications = await getPendingListingApplications();
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground">上架审核</h1>
+    <div className="page-container pb-tabbar">
+      <h1 className="page-title">上架审核</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         审核创作者/企业提交的 OPC 上架与下架申请。
       </p>

@@ -181,7 +181,9 @@ export function buildGroupFromCategory(cat: {
 }
 
 /** 取名字的首个汉字或大写字母作为头像文字 */
-export function getAvatarChar(name: string): string {
+export function getAvatarChar(name: string | null | undefined): string {
+  // 防御性处理：name 可能为 null/undefined/空字符串（如数据库记录缺失）
+  if (!name || typeof name !== "string") return "?";
   const hanMatch = name.match(/[\u4e00-\u9fff]/);
   if (hanMatch) return hanMatch[0];
   const upperMatch = name.match(/[A-Z]/);

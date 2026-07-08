@@ -40,6 +40,13 @@ export default async function SettingsPage() {
   const currentPlanName = currentTeam?.planName ?? "free";
   const isAdmin = session.user.role === "admin";
 
+  // 企业账号：仅团队管理员（owner/admin）可管理订阅
+  // 个人账号：可自由升级
+  const isEnterpriseMember =
+    session.user.accountType === "enterprise" &&
+    session.user.teamRole !== "owner" &&
+    session.user.teamRole !== "admin";
+
   // 套餐方案（合并自原 /pricing 页）
   const LOCAL_PLANS = [
     {
@@ -73,15 +80,15 @@ export default async function SettingsPage() {
 
   return (
     <main className="page-container mx-auto max-w-5xl pb-tabbar">
-      <h1 className="text-2xl font-semibold text-foreground">订阅管理</h1>
+      <h1 className="text-xl font-semibold text-foreground sm:text-2xl">订阅管理</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         查看你的套餐、用量、账单，并选择适合的套餐方案。
       </p>
 
-      <div className="mt-8 space-y-6">
+      <div className="mt-6 space-y-6 sm:mt-8">
         {/* 当前套餐 */}
-        <section className="rounded-lg border border-border bg-card p-6">
-          <h2 className="text-lg font-medium text-foreground">当前套餐</h2>
+        <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-base font-medium text-foreground sm:text-lg">当前套餐</h2>
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-3xl font-bold capitalize text-foreground">
               {currentPlanName}
@@ -130,21 +137,21 @@ export default async function SettingsPage() {
         </section>
 
         {/* 套餐方案（合并自原 /pricing） */}
-        <section className="rounded-lg border border-border bg-card p-6">
-          <h2 className="text-lg font-medium text-foreground">套餐方案</h2>
+        <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
+          <h2 className="text-base font-medium text-foreground sm:text-lg">套餐方案</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             {isStripeEnabled
               ? "随时升级或降级，按月计费"
               : "当前为模拟模式，升级即时生效（无需支付）"}
           </p>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 md:grid-cols-3">
             {plans.map((plan) => {
               const isCurrent = plan.id === currentPlanName;
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-xl border p-6 ${
+                  className={`relative rounded-xl border p-4 sm:p-6 ${
                     plan.id === "base"
                       ? "border-primary bg-primary/5"
                       : "border-border bg-background"
@@ -189,6 +196,10 @@ export default async function SettingsPage() {
                     ) : isAdmin ? (
                       <span className="block w-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-center text-xs font-medium text-amber-600 dark:text-amber-400">
                         管理员已享 Plus
+                      </span>
+                    ) : isEnterpriseMember ? (
+                      <span className="block w-full rounded-lg border border-border bg-background px-4 py-2 text-center text-xs font-medium text-muted-foreground">
+                        联系管理员升级
                       </span>
                     ) : (
                       <form action={checkoutAction}>

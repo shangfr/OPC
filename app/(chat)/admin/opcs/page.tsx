@@ -31,15 +31,18 @@ export default async function AdminOpcsPage() {
       .orderBy(agent.listedAt);
   } else if (isEnterpriseAdmin && session?.user?.enterpriseId) {
     // 企业团队管理员：查看已订阅 OPC 的企业副本
-    const subscribed = await getSubscribedOpcs(session.user.enterpriseId);
+    const subscribed = await getSubscribedOpcs({
+      enterpriseId: session.user.enterpriseId,
+      currentUserId: session.user.id,
+    });
     opcs = subscribed
       .filter((s) => s.clonedAgent)
       .map((s) => s.clonedAgent);
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground">OPC 管理</h1>
+    <div className="page-container pb-tabbar">
+      <h1 className="page-title">OPC 管理</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {isPlatformAdmin
           ? "管理平台公共 OPC，可强制下架违规 OPC，也可恢复已下架的 OPC。"

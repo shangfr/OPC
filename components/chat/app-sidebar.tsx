@@ -247,8 +247,9 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
-                  {/* 团队OPC管理 — 仅企业账号（管理员+成员均具备 OPC 管理功能） */}
-                  {user.accountType === "enterprise" && (
+                  {/* 团队OPC管理 — 仅企业团队管理员可访问（/creator 页面拦截企业普通成员） */}
+                  {user.accountType === "enterprise" &&
+                    (user.teamRole === "owner" || user.teamRole === "admin") && (
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={pathname === "/creator"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="团队OPC管理" >
                         <Link href="/creator" onClick={() => setOpenMobile(false)}>
