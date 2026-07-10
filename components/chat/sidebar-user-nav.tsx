@@ -67,14 +67,25 @@ export function SidebarUserNav({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              {/* 头像 — 点击跳转个人中心 */}
-              <button
-                type="button"
+              {/* 头像 — 点击跳转个人中心
+                  使用 span[role=button] 而非 <button>，避免与 SidebarMenuButton
+                  渲染出的 <button> 形成嵌套 <button>，从而修复 hydration 错误。 */}
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label="个人中心"
                 onClick={(e) => {
                   e.stopPropagation();
                   router.push("/profile");
                 }}
-                className="relative size-8 shrink-0 overflow-hidden rounded-lg"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    router.push("/profile");
+                  }
+                }}
+                className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {user?.image ? (
                   <Image
@@ -91,7 +102,7 @@ export function SidebarUserNav({
                     {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
-              </button>
+              </span>
 
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
