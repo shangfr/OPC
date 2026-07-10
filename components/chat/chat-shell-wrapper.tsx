@@ -16,6 +16,7 @@ const EXCLUDED_PATHS = [
   "/creator",
   "/team",
   "/settings",
+  "/profile",
   "/marketplace",
 ];
 

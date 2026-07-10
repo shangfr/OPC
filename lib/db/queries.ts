@@ -1172,6 +1172,26 @@ export async function updateUserPassword({ email, password }: { email: string; p
   }
 }
 
+export async function updateUserProfile({
+  userId,
+  name,
+  image,
+}: {
+  userId: string;
+  name?: string;
+  image?: string | null;
+}) {
+  try {
+    const updateData: Partial<typeof user.$inferInsert> = { updatedAt: new Date() };
+    if (name !== undefined) updateData.name = name;
+    if (image !== undefined) updateData.image = image;
+
+    await db.update(user).set(updateData).where(eq(user.id, userId));
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to update user profile");
+  }
+}
+
 // ============================================================
 // Dashboard Stats (admin only)
 // ============================================================

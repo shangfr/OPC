@@ -24,6 +24,10 @@ interface WelcomeDashboardProps {
   isAdmin?: boolean;
   /** 企业团队管理员（owner/admin） */
   isEnterpriseAdmin?: boolean;
+  /** 登录用户名（用于首页问候语） */
+  userName?: string;
+  /** 登录用户邮箱（用于问候语兜底） */
+  userEmail?: string;
 }
 
 function StatCard({
@@ -85,7 +89,13 @@ function StatCard({
   );
 }
 
-export function WelcomeDashboard({ onNewChat, accountType = "personal", isAdmin = false }: WelcomeDashboardProps) {
+export function WelcomeDashboard({
+  onNewChat,
+  accountType = "personal",
+  isAdmin = false,
+  userName,
+  userEmail,
+}: WelcomeDashboardProps) {
   const router = useRouter();
 
   const { data: agents = [], isLoading: agentsLoading } = useSWR<Agent[]>(
@@ -190,11 +200,75 @@ export function WelcomeDashboard({ onNewChat, accountType = "personal", isAdmin 
     [router]
   );
 
+  // 根据当前时间生成问候语（参考 ChatGPT / Claude 首页问候风格）
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 6) return "夜深了";
+    if (hour < 11) return "早上好";
+    if (hour < 14) return "中午好";
+    if (hour < 18) return "下午好";
+    return "晚上好";
+  }, []);
+
+  // 问候对象：优先用户名，其次邮箱前缀
+  const greetingName = useMemo(() => {
+    if (userName && userName.trim()) return userName.trim();
+    if (userEmail) {
+      const prefix = userEmail.split("@")[0];
+      return prefix;
+    }
+    return undefined;
+  }, [userName, userEmail]);
+
+  // 一键发起带预设提示词的新对话：创建会话后通过 ?query= 参数自动发送
+  const handleStartChatWithPrompt = useCallback(
+    async (prompt: string) => {
+      if (onNewChat) {
+        onNewChat();
+      }
+      try {
+        const res = await fetch("/api/chat/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) {
+          throw new Error("Failed to create chat");
+        }
+        const { chatId, agentId } = await res.json();
+        if (agentId) {
+          sessionStorage.setItem(`pending-chat-${chatId}`, agentId);
+        }
+        router.push(`/chat/${chatId}?query=${encodeURIComponent(prompt)}`);
+      } catch {
+        toast.error("创建对话失败，请重试");
+      }
+    },
+    [onNewChat, router]
+  );
+
+  // 首页推荐提示词（参考主流大模型聊天平台的快捷指令卡片）
+  const suggestionPrompts = useMemo(
+    () => [
+      { icon: "\u270d\ufe0f", title: "帮我写一封邮件", prompt: "请帮我写一封正式的工作邮件，主题是申请下周两天年假，语气礼貌简洁。" },
+      { icon: "\ud83d\udca1", title: "头脑风暴点子", prompt: "请帮我头脑风暴 5 个面向年轻人的线下活动创意，要求新颖且可落地。" },
+      { icon: "\ud83d\udcca", title: "总结一篇文章", prompt: "请把下面这段文字总结成 3 个要点：\n\n（在此粘贴需要总结的内容）" },
+      { icon: "\ud83d\udcbb", title: "解释一段代码", prompt: "请用通俗易懂的语言解释下面这段代码的作用：\n\n（在此粘贴代码）" },
+    ],
+    []
+  );
+
   return (
     <div className="flex h-full flex-col items-center overflow-y-auto px-4 py-0 md:px-6">
       <div className="w-full max-w-3xl pt-6 pb-6 md:pt-12 md:pb-8">
         {/* ===== Welcome 标题 ===== */}
         <div className="mb-6 text-center md:mb-10">
+          {/* 时间问候语（参考 ChatGPT / Claude 首页） */}
+          <p className="mb-3 text-sm font-medium text-primary/80">
+            {greeting}
+            {greetingName ? `, ${greetingName}` : ""} \ud83d\udc4b
+          </p>
+
           <div className="mx-auto mb-5 flex size-16 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-primary/10">
             {defaultAgent ? (
               <span className="flex size-full items-center justify-center text-xl font-bold text-foreground">
@@ -353,6 +427,52 @@ export function WelcomeDashboard({ onNewChat, accountType = "personal", isAdmin 
                 />
               </svg>
             </button>
+          </div>
+        </div>
+
+        {/* ===== 灵感提示词（一键发起对话，参考 ChatGPT / Claude 首页快捷指令） ===== */}
+        <div className="mb-8">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            灵感提示词
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {suggestionPrompts.map((s) => (
+              <button
+                key={s.title}
+                type="button"
+                onClick={() => handleStartChatWithPrompt(s.prompt)}
+                className={cn(
+                  "group flex items-start gap-3 text-left transition-all duration-300 hover:-translate-y-0.5",
+                  cardVariants({
+                    variant: "base",
+                    padding: "md",
+                    className:
+                      "hover:border-primary/30 hover:shadow-[0_4px_24px_-4px_rgba(99,102,241,0.15)]",
+                  })
+                )}
+              >
+                <span className="mt-0.5 text-lg leading-none">{s.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold">{s.title}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                    {s.prompt}
+                  </p>
+                </div>
+                <svg
+                  className="mt-1 size-3.5 shrink-0 text-muted-foreground/40 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M9 5l7 7-7 7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            ))}
           </div>
         </div>
 

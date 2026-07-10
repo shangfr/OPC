@@ -12,7 +12,7 @@ import { TeamSettingsView } from "./team-settings-view";
  * SaaS 多租户：团队设置页
  *
  * 展示：当前团队信息、成员列表、配额使用情况、创建团队个人账号入口。
- * 仅企业账号可访问（个人账号/访客无团队功能，可申请升级企业账号获得）。
+ * 仅企业账号可访问（个人账号无团队功能，可申请升级企业账号获得）。
  */
 export default async function TeamPage() {
   const session = await auth();
@@ -20,7 +20,7 @@ export default async function TeamPage() {
     redirect("/login");
   }
 
-  // 仅企业账号可访问团队设置（个人账号/访客无团队功能）
+  // 仅企业账号可访问团队设置（个人账号无团队功能）
   if (session.user.accountType !== "enterprise") {
     redirect("/");
   }

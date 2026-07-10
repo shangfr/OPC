@@ -38,16 +38,17 @@ export async function proxy(request: NextRequest) {
     if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
       return NextResponse.next();  // 放行公开路由
     }
+    // 非公开路由且未登录 → 强制跳转登录页（取消游客模式后必须登录）
+    return NextResponse.redirect(new URL(`${base}/login?redirectUrl=${encodeURIComponent(pathname)}`, request.url));
   }
 
-  // 4. 游客访问限制
+  // 4. 游客模式已下线：历史游客 Token 视为无效，强制重新登录
   if (isGuest) {
-    const guestAllowed = ["/", "/pricing", "/marketplace"];
-    const isAllowed = guestAllowed.some((p) => pathname === p || pathname.startsWith(p + "/"));
-    if (!isAllowed && !pathname.startsWith("/api/")) {
-      return NextResponse.redirect(new URL(`${base}/`, request.url));
+    const PUBLIC_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password", "/pricing"];
+    if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+      return NextResponse.next();
     }
-    return NextResponse.next();
+    return NextResponse.redirect(new URL(`${base}/login?redirectUrl=${encodeURIComponent(pathname)}`, request.url));
   }
 
   // 5. 正式用户访问登录/注册页 → 跳转首页

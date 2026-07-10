@@ -6,7 +6,6 @@ import Credentials from "next-auth/providers/credentials";
 import { cookies } from "next/headers";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import {
-  createGuestUser,
   getUser,
   getUserByPhone,
 } from "@/lib/db/queries";
@@ -98,14 +97,6 @@ export const {
         }
 
         return { ...user, type: "regular" };
-      },
-    }),
-    Credentials({
-      id: "guest",
-      credentials: {},
-      async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
       },
     }),
     // 手机号验证码登录 provider
@@ -249,6 +240,17 @@ export const {
                   .limit(1);
                 token.teamRole = tm?.role ?? null;
               }
+            }
+
+            // 同步刷新用户名和头像（个人页编辑后立即生效）
+            const [latestUser] = await db
+              .select({ name: userTable.name, image: userTable.image })
+              .from(userTable)
+              .where(eq(userTable.id, token.id))
+              .limit(1);
+            if (latestUser) {
+              token.name = latestUser.name ?? null;
+              token.picture = latestUser.image ?? null;
             }
 
             // 读取后清除 cookie

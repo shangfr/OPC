@@ -115,8 +115,8 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
             </SidebarMenuItem>
           </SidebarMenu>
 
-          {/* SaaS 多租户：团队切换器 — 仅企业账号显示（个人账号/访客无团队功能） */}
-          {user && user.type !== "guest" && user.accountType === "enterprise" && (
+          {/* SaaS 多租户：团队切换器 — 仅企业账号显示（个人账号无团队功能） */}
+          {user && user.accountType === "enterprise" && (
             <TeamSwitcher />
           )}
         </SidebarHeader>
@@ -139,11 +139,11 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {/* 新建对话 */}
+                {/* 新建对话 — 主操作 CTA（参考 ChatGPT / Claude 侧边栏顶部主按钮） */}
                 <SidebarMenuItem>
-                  <SidebarMenuButton 
-                    className="h-10 w-full gap-2.5 rounded-lg border border-sidebar-border bg-sidebar-accent/40 text-[15px] font-medium text-sidebar-foreground transition-all duration-150 hover:bg-sidebar-primary/15 hover:text-sidebar-primary hover:border-sidebar-primary/30 disabled:opacity-40 disabled:pointer-events-none" 
-                    disabled={isEmptyChat} 
+                  <SidebarMenuButton
+                    className="h-10 w-full gap-2.5 rounded-lg bg-primary text-[15px] font-semibold text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0"
+                    disabled={isEmptyChat}
                     onClick={async () => {
                       setOpenMobile(false);
                       try {
@@ -230,7 +230,7 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
           </SidebarGroup>
 
           {/* ===== 我的资源（按账号类型显示不同入口） ===== */}
-          {user && user.type !== "guest" && (
+          {user && (
             <SidebarGroup className="px-2 pt-1">
               <SidebarGroupLabel className="mb-1 px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
                 我的资源
