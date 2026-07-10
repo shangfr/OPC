@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { signOutAction } from "./sign-out-action";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface ProfileUserData {
   id: string;
@@ -237,89 +238,7 @@ export function ProfileEditor({ user }: { user: ProfileUserData }) {
         </section>
 
         {/* ===== 快捷操作 ===== */}
-        <section className={cn("mb-6", cardVariants({ variant: "base", padding: "lg" }))}>
-          <h2 className="mb-4 text-base font-semibold">快捷操作</h2>
-          <div className="space-y-2">
-            {isPersonal && !isAdmin && !user.teamRole && (
-              <button
-                type="button"
-                onClick={() => router.push("/register-enterprise")}
-                className="flex w-full items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-left transition-colors hover:bg-primary/10"
-              >
-                <Crown className="size-5 text-primary" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-primary">升级企业账号</p>
-                  <p className="text-xs text-muted-foreground">解锁团队协作与 OPC 交易市场</p>
-                </div>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() => router.push("/settings")}
-              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-muted"
-            >
-              <CreditCard className="size-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">订阅管理（账单）</p>
-                <p className="text-xs text-muted-foreground">查看当前套餐与用量</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-muted"
-            >
-              {resolvedTheme === "dark" ? (
-                <Sun className="size-5 text-muted-foreground" />
-              ) : (
-                <Moon className="size-5 text-muted-foreground" />
-              )}
-              <div className="flex-1">
-                <p className="text-sm font-medium">
-                  切换{resolvedTheme === "light" ? "暗色" : "亮色"}模式
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  当前为{resolvedTheme === "light" ? "亮色" : "暗色"}模式
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                if (confirm("确定要清空全部对话吗？此操作不可撤销。")) {
-                  fetch("/api/history", { method: "DELETE" })
-                    .then(() => {
-                      toast.success("全部对话已删除");
-                      router.refresh();
-                    })
-                    .catch(() => toast.error("操作失败，请重试"));
-                }
-              }}
-              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-destructive/5"
-            >
-              <Trash2 className="size-5 text-destructive/70" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-destructive/70">清空全部对话</p>
-                <p className="text-xs text-muted-foreground">永久删除所有对话记录</p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => signOutAction()}
-              className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left transition-colors hover:bg-muted"
-            >
-              <LogOut className="size-5 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">退出登录</p>
-                <p className="text-xs text-muted-foreground">退出当前账号</p>
-              </div>
-            </button>
-          </div>
-        </section>
+		<ThemeToggle />
       </div>
     </main>
   );
