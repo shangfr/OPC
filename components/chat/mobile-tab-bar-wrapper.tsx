@@ -10,18 +10,20 @@ const HIDDEN_PATHS = ["/chat"];
 /**
  * 移动端底部导航栏包装器
  *
- * 根据用户角色生成不同的 Tab 组合，仅在移动端显示。
+ * 根据用户套餐生成不同的 Tab 组合，仅在移动端显示。
  * 聊天页面隐藏底部导航（避免与消息输入栏冲突）。
  *
- * Auth.js v5 纯 Server Component 模式：role 和 accountType 由
- * Server Component（layout.tsx）调用 auth() 获取后通过 prop 传入。
+ * 套餐驱动型权限：planName 由 Server Component（layout.tsx）
+ * 调用 auth() 获取后通过 prop 传入。
  */
 export function MobileTabBar({
   role = "user",
   accountType = "personal",
+  planName,
 }: {
   role?: "admin" | "user";
   accountType?: "personal" | "enterprise";
+  planName?: string | null;
 }) {
   const pathname = usePathname();
 
@@ -30,7 +32,7 @@ export function MobileTabBar({
     return null;
   }
 
-  const items = getMobileTabs(role, accountType);
+  const items = getMobileTabs(role, accountType, planName);
 
   return <TabBar items={items} />;
 }

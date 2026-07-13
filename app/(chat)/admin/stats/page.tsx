@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Bot, MessageSquare, ThumbsUp, Users } from "lucide-react";
+import { BarChart3, Bot, MessageSquare, RefreshCw, ThumbsUp, Users } from "lucide-react";
 import useSWR from "swr";
 import { Card } from "@/components/ui/card";
 import { fetcher } from "@/lib/utils";
@@ -104,7 +104,7 @@ function PeriodCard({
 }
 
 export default function StatsPage() {
-  const { data: stats, isLoading: loading } = useSWR<DashboardStats>(
+  const { data: stats, isLoading: loading, error, mutate } = useSWR<DashboardStats>(
     "/api/stats",
     fetcher,
     {
@@ -275,7 +275,7 @@ export default function StatsPage() {
                                         ? "bg-emerald-500"
                                         : rate >= 40
                                           ? "bg-amber-500"
-                                          : "bg-red-500"
+                                          : "bg-destructive"
                                     }`}
                                     style={{ width: `${rate}%` }}
                                   />

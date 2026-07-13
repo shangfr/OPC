@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ShoppingCart, Eye } from "lucide-react";
 import { auth } from "@/app/(auth)/auth";
-import { getMarketplaceAgents, getSubscribedOpcs } from "@/lib/db/queries";
+import { getCategories, getMarketplaceAgents, getSubscribedOpcs } from "@/lib/db/queries";
+import { hasPlanTier } from "@/lib/payments/config";
 import { SubscribeButton } from "./subscribe-button";
 
 /**
  * OPC 交易市场：服务商城页
  *
- * 展示全部已上架公共 OPC（listingStatus=listed）。
- * - 企业管理员：显示「订阅」或「已订阅·取消订阅」按钮
- * - 个人用户：仅浏览市场行情（无订阅按钮）
- * - 普通企业成员：不可访问此页面（重定向至首页）
- *
- * 访问权限：个人用户、企业管理员（accountType=enterprise && teamRole=owner/admin）
+ * 套餐驱动型权限：
+ * - Team / Enterprise 套餐用户：可订阅 OPC
+ * - Free / Creator 套餐用户：仅浏览市场行情
+ * - 平台管理员：可浏览
  */
 export default async function MarketplacePage({
   searchParams,
@@ -24,17 +24,14 @@ export default async function MarketplacePage({
     redirect("/login");
   }
 
-  const accountType = (session.user.accountType as "personal" | "enterprise") ?? "personal";
-  const teamRole = (session.user.teamRole as string) ?? null;
-  const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
-  // 普通企业成员不可访问交易市场
-  if (accountType === "enterprise" && !isEnterpriseAdmin) {
-    redirect("/");
-  }
+  const userPlan = session.user.planName ?? "free";
+  const isAdmin = session.user.role === "admin";
+  // Team 及以上套餐可订阅 OPC
+  const canSubscribe = hasPlanTier(userPlan, "team") || isAdmin;
 
   const params = await searchParams;
 
-  const [agents, subscribedOpcs] = await Promise.all([
+  const [agents, subscribedOpcs, categories] = await Promise.all([
     getMarketplaceAgents({
       categoryId: params.categoryId ?? null,
       search: params.search ?? null,
@@ -45,10 +42,11 @@ export default async function MarketplacePage({
           currentUserId: session.user.id,
         })
       : [],
+    getCategories(),
   ]);
 
-  // 仅企业管理员可订阅；个人用户和普通企业成员仅浏览
-  const canSubscribe = isEnterpriseAdmin;
+  // 仅 Team 及以上套餐可订阅
+  const canSubscribeFinal = canSubscribe;
   // 已订阅的 agentId 集合
   const subscribedAgentIds = new Set(subscribedOpcs.map((s) => s.agent.id));
 
@@ -61,8 +59,77 @@ export default async function MarketplacePage({
         </p>
       </div>
 
+      {/* 角色权限提示横幅：按套餐显示差异化操作权限说明 */}
+      {canSubscribe ? (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/[0.04] p-4">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+            <ShoppingCart className="size-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">
+              企业管理员权限
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              您可以为企业团队订阅 OPC 服务，订阅后将自动接入团队工作流。当前已订阅 {subscribedOpcs.length} 个 OPC。
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-4">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+            <Eye className="size-4 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">
+              浏览模式
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {hasPlanTier(userPlan, "team")
+                ? "个人账号仅可浏览市场行情。如需订阅 OPC 服务，请升级至 Team 套餐。"
+                : "当前套餐不支持订阅 OPC 服务。请升级至 Team 套餐解锁订阅功能。"}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 分类筛选 */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <Link
+          href={`/marketplace${params.search ? `?search=${encodeURIComponent(params.search)}` : ""}`}
+          className={`touch-target rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+            !params.categoryId
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-background hover:bg-accent"
+          }`}
+        >
+          全部
+        </Link>
+        {categories.map((cat) => {
+          const active = params.categoryId === cat.id;
+          const href = active
+            ? `/marketplace${params.search ? `?search=${encodeURIComponent(params.search)}` : ""}`
+            : `/marketplace?categoryId=${cat.id}${params.search ? `&search=${encodeURIComponent(params.search)}` : ""}`;
+          return (
+            <Link
+              key={cat.id}
+              href={href}
+              className={`touch-target rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-background hover:bg-accent"
+              }`}
+            >
+              {cat.name}
+            </Link>
+          );
+        })}
+      </div>
+
       {/* 搜索 */}
       <form className="mb-6 flex gap-2">
+        {params.categoryId && (
+          <input type="hidden" name="categoryId" value={params.categoryId} />
+        )}
         <input
           type="text"
           name="search"
@@ -80,7 +147,11 @@ export default async function MarketplacePage({
 
       {agents.length === 0 ? (
         <div className="empty-state">
-          <p className="text-sm text-muted-foreground">暂无已上架的公共 OPC</p>
+          <p className="text-sm text-muted-foreground">
+            {params.search || params.categoryId
+              ? "未找到匹配的 OPC，试试调整搜索条件"
+              : "暂无已上架的公共 OPC"}
+          </p>
         </div>
       ) : (
         <div className="card-grid">

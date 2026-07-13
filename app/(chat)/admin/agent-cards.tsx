@@ -216,6 +216,37 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
           </p>
         </div>
 
+        {/* 角色权限提示横幅：按上架申请权限显示差异化说明 */}
+        <div
+          className={`mb-6 flex items-start gap-3 rounded-lg border p-4 ${
+            canListOpc
+              ? "border-emerald-500/20 bg-emerald-500/[0.04]"
+              : "border-amber-500/20 bg-amber-500/[0.04]"
+          }`}
+        >
+          <div
+            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+              canListOpc ? "bg-emerald-500/10" : "bg-amber-500/10"
+            }`}
+          >
+            {canListOpc ? (
+              <Lightbulb className="size-4 text-emerald-600 dark:text-emerald-400" />
+            ) : (
+              <Lightbulb className="size-4 text-amber-600 dark:text-amber-400" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">
+              {canListOpc ? "可创建并上架 OPC" : "仅可浏览与对话"}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {canListOpc
+                ? "可创建专属 OPC，并将私有 OPC 申请上架到公开市场供其他用户使用。上架申请需经平台管理员审核。"
+                : "企业普通成员可浏览平台 OPC 并发起对话，但无法创建 OPC 或申请上架。如需创建 OPC，请联系团队管理员调整角色。"}
+            </p>
+          </div>
+        </div>
+
         {/* ═══ Tab 切换栏 ═══ */}
         <div className="mb-6 flex gap-4 border-b border-border/40">
 

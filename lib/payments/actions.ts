@@ -112,13 +112,8 @@ export async function checkoutAction(formData: FormData) {
     throw new Error("未登录");
   }
 
-  // 企业账号：仅团队管理员可升级套餐
-  if (session.user.accountType === "enterprise") {
-    const teamRole = session.user.teamRole as string | undefined;
-    if (teamRole !== "owner" && teamRole !== "admin") {
-      throw new Error("无权限：仅团队管理员可管理订阅套餐");
-    }
-  }
+  // 套餐驱动型权限：所有用户均可自行升级套餐
+  // （不再限制仅团队管理员可操作）
 
   // Mock 模式
   if (!isStripeEnabled) {
@@ -127,13 +122,23 @@ export async function checkoutAction(formData: FormData) {
       throw new Error(`未知套餐: ${planName}`);
     }
 
-    // 个人账号无团队时，自动创建个人团队用于配额跟踪
+    // 升级用户套餐：同时更新 user.planName 和 team 配额
     let teamId = session.user.teamId;
     if (!teamId) {
       teamId = await ensurePersonalTeam(session.user.id);
     }
 
     await mockUpgradePlan({ teamId, planName });
+
+    // 同步更新 user 表的 planName
+    const { db } = await import("@/lib/db/queries");
+    const schema = await import("@/lib/db/schema");
+    const { eq } = await import("drizzle-orm");
+    await db
+      .update(schema.user)
+      .set({ planName, updatedAt: new Date() })
+      .where(eq(schema.user.id, session.user.id));
+
     redirect("/settings?upgraded=1");
   }
 
@@ -150,20 +155,14 @@ export async function checkoutAction(formData: FormData) {
  * 打开 Stripe Customer Portal（管理账单/取消订阅）。
  * Mock 模式下跳转到设置页。
  *
- * 权限：企业账号仅团队管理员（owner/admin）可操作。
+ * 套餐驱动型权限：所有用户可管理自己的账单。
  */
 export async function customerPortalAction() {
   if (!isStripeEnabled) {
     redirect("/settings");
   }
 
-  const { teamRecord, role } = await getCurrentTeamRecord();
-
-  // 企业账号：仅团队管理员可管理账单
-  const session = await auth();
-  if (session?.user?.accountType === "enterprise" && role !== "owner" && role !== "admin") {
-    throw new Error("无权限：仅团队管理员可管理账单");
-  }
+  const { teamRecord } = await getCurrentTeamRecord();
 
   const portalSession = await createCustomerPortalSession(teamRecord);
   redirect(portalSession.url);

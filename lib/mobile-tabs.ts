@@ -1,31 +1,31 @@
-// lib/mobile-tabs.ts
-// 移动端底部导航栏配置 —— 按角色生成不同的 Tab 组合
-//
-// 优化后与桌面端侧边栏导航对齐（游客模式已下线，所有用户必须登录）：
-// - 普通用户：首页 + 智库 + 智客 + 智品
-// - 企业用户：首页 + 智库 + 智客 + 市场
-// - 管理员：首页 + 智库 + 智客 + 看板
-//
-// 统一使用"智客"（供需大厅 /tickets）替代原来的"汇总"，
-// 确保移动端与桌面端导航入口一致。
+/**
+ * 移动端底部导航栏配置 — 套餐驱动型
+ *
+ * 套餐决定底部 Tab 可见性，与桌面端侧边栏逻辑对齐：
+ * - Free: 首页 + 智库 + 智客 + 智品
+ * - Creator: 首页 + 智库 + 智客 + 创作
+ * - Team/Enterprise: 首页 + 智库 + 智客 + 市场
+ * - 管理员: 首页 + 智库 + 智客 + 看板
+ */
 
 import {
   Bot,
+  DollarSign,
   FileText,
   Home,
   LayoutDashboard,
   MessageSquare,
   ShoppingCart,
-  Sparkles,
 } from "lucide-react";
 import type { TabBarItem } from "@/components/mobile/tab-bar";
+import { hasPlanTier } from "@/lib/payments/config";
 
 type UserRole = "user" | "admin";
-type AccountType = "personal" | "enterprise";
 
 export function getMobileTabs(
   role: UserRole,
-  accountType: AccountType = "personal"
+  accountType?: string,
+  planName?: string | null,
 ): TabBarItem[] {
   // 管理员：首页 + 智库 + 智客 + 看板
   if (role === "admin") {
@@ -37,8 +37,8 @@ export function getMobileTabs(
     ];
   }
 
-  // 企业用户：首页 + 智库 + 智客 + 市场
-  if (accountType === "enterprise") {
+  // Team 及以上：首页 + 智库 + 智客 + 市场
+  if (hasPlanTier(planName, "team")) {
     return [
       { path: "/", icon: Home, label: "首页" },
       { path: "/explore", icon: Bot, label: "智库" },
@@ -47,7 +47,17 @@ export function getMobileTabs(
     ];
   }
 
-  // 个人用户：首页 + 智库 + 智客 + 智品
+  // Creator：首页 + 智库 + 智客 + 创作
+  if (hasPlanTier(planName, "creator")) {
+    return [
+      { path: "/", icon: Home, label: "首页" },
+      { path: "/explore", icon: Bot, label: "智库" },
+      { path: "/tickets", icon: MessageSquare, label: "智客" },
+      { path: "/creator", icon: DollarSign, label: "创作" },
+    ];
+  }
+
+  // Free：首页 + 智库 + 智客 + 智品
   return [
     { path: "/", icon: Home, label: "首页" },
     { path: "/explore", icon: Bot, label: "智库" },

@@ -5,6 +5,7 @@ import { CreditCard, Loader2 } from "lucide-react";
 import { customerPortalAction } from "@/lib/payments/actions";
 import { isStripeEnabled } from "@/lib/payments/config";
 import { toast } from "@/components/chat/toast";
+import { Button } from "@/components/ui/button";
 
 /**
  * 管理账单按钮：调用 Stripe Customer Portal Server Action。
@@ -32,10 +33,10 @@ export function ManageBillingButton({ teamId }: { teamId: string | null }) {
   }
 
   return (
-    <button
+    <Button
       onClick={handleClick}
       disabled={pending}
-      className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+      variant="outline"
     >
       {pending ? (
         <Loader2 className="size-4 animate-spin" />
@@ -43,6 +44,6 @@ export function ManageBillingButton({ teamId }: { teamId: string | null }) {
         <CreditCard className="size-4" />
       )}
       管理账单
-    </button>
+    </Button>
   );
 }

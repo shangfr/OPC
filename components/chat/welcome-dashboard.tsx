@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, DollarSign, MessageSquare, ShoppingCart } from "lucide-react";
+import { Bot, DollarSign, MessageSquare, ShoppingCart, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
@@ -28,6 +28,8 @@ interface WelcomeDashboardProps {
   userName?: string;
   /** 登录用户邮箱（用于问候语兜底） */
   userEmail?: string;
+  /** 用户套餐（free/creator/team/enterprise） */
+  userPlan?: string | null;
 }
 
 function StatCard({
@@ -78,7 +80,7 @@ function StatCard({
             className={`mt-0.5 text-[11px] ${
               trend.up
                 ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-500"
+                : "text-destructive"
             }`}
           >
             {trend.up ? "↑" : "↓"} {trend.value}
@@ -93,10 +95,16 @@ export function WelcomeDashboard({
   onNewChat,
   accountType = "personal",
   isAdmin = false,
+  isEnterpriseAdmin = false,
   userName,
   userEmail,
+  userPlan,
 }: WelcomeDashboardProps) {
   const router = useRouter();
+
+  // 套餐驱动型权限
+  const plan = userPlan ?? "free";
+  const canCreateOpc = plan === "creator" || plan === "team" || plan === "enterprise" || isAdmin;
 
   const { data: agents = [], isLoading: agentsLoading } = useSWR<Agent[]>(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/agents`,
@@ -266,7 +274,7 @@ export function WelcomeDashboard({
           {/* 时间问候语（参考 ChatGPT / Claude 首页） */}
           <p className="mb-3 text-sm font-medium text-primary/80">
             {greeting}
-            {greetingName ? `, ${greetingName}` : ""} \ud83d\udc4b
+            {greetingName ? `, ${greetingName}` : ""} 
           </p>
 
           <div className="mx-auto mb-5 flex size-16 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-primary/10">
@@ -293,6 +301,23 @@ export function WelcomeDashboard({
               : siteConfig?.siteDescription ||
                 "选择一位 OPC 或直接开始对话，探索 AI 助手的无限可能"}
           </p>
+
+          {/* 套餐信息横幅：显示当前套餐与功能权限 */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+              <Sparkles className="size-3.5" />
+              {(() => {
+                const plan = userPlan || "free";
+                const labels: Record<string, string> = { free: "Free", creator: "Creator", team: "Team", enterprise: "Enterprise" };
+                return labels[plan] ?? "Free";
+              })()} 套餐
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {canCreateOpc
+                ? "可创建 OPC 并获得收益分成"
+                : "升级套餐解锁 OPC 创建、收益分成等功能"}
+            </span>
+          </div>
         </div>
 
         {/* ===== 快速开始 ===== */}

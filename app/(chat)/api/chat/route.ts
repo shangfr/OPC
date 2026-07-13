@@ -9,8 +9,8 @@ import {
 } from "ai";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import { auth, type UserType } from "@/app/(auth)/auth";
-import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import { auth } from "@/app/(auth)/auth";
+import { getMaxMessagesPerHour } from "@/lib/ai/entitlements";
 import {
   allowedModelIds,
   chatModels,
@@ -26,6 +26,9 @@ import { editDocument } from "@/lib/ai/tools/edit-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { webSearch } from "@/lib/ai/tools/web-search";
+import { codeInterpreter } from "@/lib/ai/tools/code-interpreter";
+import { generateImage } from "@/lib/ai/tools/generate-image";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -120,13 +123,16 @@ export async function POST(request: Request) {
       ? selectedChatModel
       : DEFAULT_CHAT_MODEL;
 
-    const userType: UserType = session.user.type;
+    const userPlan = session.user.planName ?? "free";
+    const isAdmin = session.user.role === "admin";
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 1,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerHour) {
+    // 套餐驱动型限流：按套餐设置小时级消息上限
+    const maxPerHour = getMaxMessagesPerHour(userPlan, isAdmin);
+    if (messageCount > maxPerHour) {
       return new ChatbotError("rate_limit:chat").toResponse();
     }
 
@@ -294,6 +300,7 @@ export async function POST(request: Request) {
             stopWhen: stepCountIs(5),
             experimental_activeTools: isReasoningModel && !supportsTools ? [] : [
               "getWeather", "createDocument", "editDocument", "updateDocument", "requestSuggestions",
+              "webSearch", "codeInterpreter", "generateImage",
             ],
             providerOptions: {
               ...(modelConfig?.reasoningEffort && { openai: { reasoningEffort: modelConfig.reasoningEffort } }),
@@ -304,10 +311,13 @@ export async function POST(request: Request) {
               editDocument: editDocument({ dataStream, session}),
               updateDocument: updateDocument({ session, dataStream, modelId: chatModel}),
               requestSuggestions: requestSuggestions({ session, dataStream, modelId: chatModel}),
+              webSearch,
+              codeInterpreter,
+              generateImage,
             },
             experimental_telemetry: { isEnabled: isProductionEnvironment, functionId: "stream-text" },
           }),
-          2,
+          3,
           (attempt, error, delayMs) => {
             console.warn(`[chat] streamText retry ${attempt}:`, error instanceof Error ? error.message : error);
           }
@@ -349,10 +359,31 @@ export async function POST(request: Request) {
         await incrementMessageUsage(session.user.teamId ?? null);
       },
       onError: (error) => {
-        if (error instanceof Error && error.message?.includes("Insufficient Balance")) {
-          return "智谱 API 余额不足，请前往 open.bigmodel.cn 充值。";
+        if (error instanceof Error) {
+          const msg = error.message ?? "";
+          // 智谱 API 余额不足
+          if (msg.includes("Insufficient Balance")) {
+            return "AI 服务余额不足，请联系管理员充值。";
+          }
+          // 智谱 API 限流（429）
+          if (msg.includes("429") || msg.includes("Too Many Requests") || msg.includes("rate_limit")) {
+            return "当前请求量过大，请稍后重试。";
+          }
+          // 智谱 API 内容审核拦截
+          if (msg.includes("content_filter") || msg.includes("Content Filter") || msg.includes("1301")) {
+            return "您的消息包含敏感内容，已被安全系统拦截，请修改后重试。";
+          }
+          // 模型上下文超限
+          if (msg.includes("context_length") || msg.includes("maximum context") || msg.includes("token limit")) {
+            return "对话内容过长，请开启新对话或精简消息后重试。";
+          }
+          // 网络超时
+          if (msg.includes("timeout") || msg.includes("ETIMEDOUT")) {
+            return "请求超时，请检查网络后重试。";
+          }
+          console.error("[chat] streamText error:", msg);
         }
-        return "Oops, an error occurred!";
+        return "AI 服务暂时不可用，请稍后重试。如果问题持续，请联系管理员。";
       },
     });
 
@@ -375,8 +406,20 @@ export async function POST(request: Request) {
   } catch (error) {
     const requestId = request.headers.get("x-request-id") ?? generateUUID();
     if (error instanceof ChatbotError) return error.toResponse();
-    if (error instanceof Error && error.message?.includes("Insufficient Balance")) {
-      return new ChatbotError("bad_request:api").toResponse();
+    if (error instanceof Error) {
+      const msg = error.message ?? "";
+      if (msg.includes("Insufficient Balance")) {
+        return Response.json(
+          { code: "bad_request:api", message: "AI 服务余额不足，请联系管理员充值。" },
+          { status: 400 }
+        );
+      }
+      if (msg.includes("429") || msg.includes("Too Many Requests")) {
+        return Response.json(
+          { code: "rate_limit:api", message: "当前请求量过大，请稍后重试。" },
+          { status: 429 }
+        );
+      }
     }
     console.error("Unhandled error in chat API:", error, { requestId });
     return new ChatbotError("offline:chat").toResponse();

@@ -302,11 +302,26 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
     },
     onFinish: () => {
+      // 仅刷新历史列表第一页（侧边栏可见区域），避免全量 revalidate 所有分页
+      // 标题更新已由 DataStreamHandler 中的 mutate(unstable_serialize(...)) 处理
       mutate(
-        (key: unknown) =>
-          typeof key === "string" &&
-          key.startsWith("$inf$") &&
-          key.includes("/api/history")
+        (key: unknown) => {
+          if (typeof key !== "string" || !key.includes("/api/history")) {
+            return false;
+          }
+          // $inf$ 前缀的 key 是 SWR Infinite 的容器 key（$inf$<first_page_url>）
+          // revalidate 容器会自动触发第一页重新拉取
+          if (key.startsWith("$inf$")) {
+            return true;
+          }
+          // 非 $inf$ 的 key 是各分页的独立缓存 key
+          // 第一页 URL 格式: /api/history?limit=20（无 ending_before 参数）
+          // 后续页 URL 格式: /api/history?ending_before=xxx&limit=20
+          // 只刷新第一页，跳过后续已加载的分页
+          return !key.includes("ending_before");
+        },
+        undefined,
+        { revalidate: true }
       );
     },
     onError: (error) => {
@@ -341,17 +356,40 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   }, [chatId, isNewChat, effectiveData, setMessages]);
 
   const rafRef = useRef<number | null>(null);
+  // 记录上次缓存的消息数，用于判断是否需要更新缓存
+  // 流式输出时 messages 每个 token 都变，但消息数不变 → 跳过缓存写入
+  // 仅在消息数变化（新消息加入）或流结束时才更新缓存
+  const cachedMessageCountRef = useRef<number>(0);
+  // 记录上次缓存的 chatId，切换对话时强制刷新缓存
+  const cachedChatIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!isNewChat && messages.length > 0) {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-      rafRef.current = requestAnimationFrame(() => {
-        updateChatMessages(chatId, messages);
-        rafRef.current = null;
-      });
+    if (isNewChat || messages.length === 0) {
+      cachedMessageCountRef.current = 0;
+      cachedChatIdRef.current = chatId;
+      return;
     }
-  }, [chatId, isNewChat, messages]);
+
+    // 切换对话时强制更新缓存（即使消息数相同）
+    const chatIdChanged = cachedChatIdRef.current !== chatId;
+    const countChanged = messages.length !== cachedMessageCountRef.current;
+    // status === "ready" 或 "error" 表示流式结束，需要持久化最终状态
+    const streamEnded = status === "ready" || status === "error";
+
+    if (!chatIdChanged && !countChanged && !streamEnded) {
+      return;
+    }
+
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    rafRef.current = requestAnimationFrame(() => {
+      updateChatMessages(chatId, messages);
+      cachedMessageCountRef.current = messages.length;
+      cachedChatIdRef.current = chatId;
+      rafRef.current = null;
+    });
+  }, [chatId, isNewChat, messages, status]);
 
   useEffect(() => {
     if (effectiveData && isNewChat ? false : !!effectiveData) {

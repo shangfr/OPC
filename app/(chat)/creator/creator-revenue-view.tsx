@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Loader2, Upload, RotateCcw, AlertCircle, XCircle } from "lucide-react";
+import { Loader2, Upload, RotateCcw, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   submitListingApplicationAction,
@@ -160,6 +160,37 @@ export function CreatorRevenueView({
 
   return (
     <div className="mt-6 space-y-6 sm:mt-8">
+      {/* 角色标识横幅：区分个人创作者与企业团队管理员视图 */}
+      <div
+        className={`flex items-start gap-3 rounded-lg border p-4 ${
+          isEnterprise
+            ? "border-blue-500/20 bg-blue-500/[0.04]"
+            : "border-emerald-500/20 bg-emerald-500/[0.04]"
+        }`}
+      >
+        <div
+          className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+            isEnterprise ? "bg-blue-500/10" : "bg-emerald-500/10"
+          }`}
+        >
+          {isEnterprise ? (
+            <Users className="size-4 text-blue-600 dark:text-blue-400" />
+          ) : (
+            <DollarSign className="size-4 text-emerald-600 dark:text-emerald-400" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">
+            {isEnterprise ? "企业团队管理员视图" : "个人创作者视图"}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {isEnterprise
+              ? "管理团队创建的 OPC 与订阅副本，可申请上架到公开市场。收益结算仅对个人创作者开放，企业账号不显示收益数据。"
+              : "管理名下 OPC 的上架状态、订阅情况与收益明细。可将 OPC 申请上架到公开市场，由企业团队订阅后获得分成收益。"}
+          </p>
+        </div>
+      </div>
+
       {/* 汇总卡片：个人创作者显示收益，企业管理员显示团队 OPC 指标 */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {isEnterprise ? (

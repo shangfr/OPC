@@ -196,7 +196,7 @@ export function TicketAIEditor({
 
     setIsSubmitting(true);
     try {
-      // Step 1: 表单 JSON 存入 Vercel Blob（向后兼容，作为备份）
+      // Step 1: 表单 JSON 存入 OSS（向后兼容，作为备份）
       let formSchemaUrl: string | undefined;
       try {
         const storageRes = await fetch("/api/tickets/form-storage", {
@@ -205,12 +205,12 @@ export function TicketAIEditor({
           body: JSON.stringify({ form: formData }),
         });
         if (storageRes.ok) {
-          const blob = await storageRes.json();
-          formSchemaUrl = blob.url;
+          const stored = await storageRes.json();
+          formSchemaUrl = stored.url;
         }
       } catch {
-        // Blob 存储失败不阻断流程：新数据优先存 formData（直存 DB）
-        console.warn("[ai-editor] Blob 存储失败，降级为 formData 直存 DB");
+        // OSS 存储失败不阻断流程：新数据优先存 formData（直存 DB）
+        console.warn("[ai-editor] OSS 存储失败，降级为 formData 直存 DB");
       }
 
       // Step 2: 创建 Ticket，携带 formData（直存 DB）+ 新增产品优化字段

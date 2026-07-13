@@ -223,7 +223,7 @@ const PurePreviewMessage = ({
       if (part.output && "error" in part.output) {
         return (
           <div
-            className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+            className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-destructive dark:bg-destructive/10"
             key={toolCallId}
           >
             创建文档失败: {String(part.output.error)}
@@ -246,7 +246,7 @@ const PurePreviewMessage = ({
       if (part.output && "error" in part.output) {
         return (
           <div
-            className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-500 dark:bg-red-950/50"
+            className="rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-destructive dark:bg-destructive/10"
             key={toolCallId}
           >
             更新文档失败: {String(part.output.error)}
@@ -282,7 +282,7 @@ const PurePreviewMessage = ({
                 errorText={undefined}
                 output={
                   "error" in part.output ? (
-                    <div className="rounded border p-2 text-red-500">
+                    <div className="rounded border p-2 text-destructive">
                       错误: {String(part.output.error)}
                     </div>
                   ) : (

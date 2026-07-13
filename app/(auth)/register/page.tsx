@@ -111,6 +111,15 @@ export default function Page() {
                 登录
               </Link>
             </p>
+            <p className="text-center text-[13px] text-muted-foreground">
+              {"企业用户？"}
+              <Link
+                className="text-foreground underline-offset-4 hover:underline"
+                href="/register-enterprise"
+              >
+                企业注册
+              </Link>
+            </p>
           </div>
         ) : (
           <AuthForm

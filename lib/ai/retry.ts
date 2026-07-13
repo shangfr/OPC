@@ -11,6 +11,14 @@ const RETRYABLE_ERROR_MESSAGES = [
   "Internal Server Error",
   "Bad Gateway",
   "Gateway Timeout",
+  // 智谱 API 特有错误码
+  "1301",       // 内容审核拦截（可重试，用户可能修改后重发）
+  "429",        // 速率限制
+  "rate_limit",
+  "temporarily unavailable",
+  "please retry",
+  "connection reset",
+  "socket hang up",
 ];
 
 function isRetryableError(error: unknown): boolean {
@@ -36,7 +44,7 @@ function getRetryDelayMs(attempt: number): number {
  */
 export async function withRetry<T>(
   fn: () => T | Promise<T>,
-  maxRetries = 2,
+  maxRetries = 3,
   onRetry?: (attempt: number, error: unknown, delayMs: number) => void
 ): Promise<T> {
   let lastError: unknown;

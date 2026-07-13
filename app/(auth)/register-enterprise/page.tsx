@@ -4,7 +4,7 @@ import { Building2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/chat/toast";
 import { registerEnterpriseAction } from "@/lib/enterprise/actions";
 
 /**
@@ -46,10 +46,10 @@ export default function RegisterEnterprisePage() {
 
   useEffect(() => {
     if (state?.success) {
-      toast.success("企业注册成功！已获得团队功能，正在跳转...");
+      toast({ type: "success", description: "企业注册成功！已获得团队功能，正在跳转..." });
       router.push("/team");
     } else if (state?.error) {
-      toast.error(state.error);
+      toast({ type: "error", description: state.error });
     }
   }, [state, router]);
 

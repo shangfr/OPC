@@ -208,7 +208,7 @@ export default function PinnedPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-6">
           {/* 搜索框 */}
-          {chats.length > 5 && (
+          {chats.length > 0 && (
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
               <input

@@ -223,7 +223,7 @@ export function TicketDetailDrawer({
               </Badge>
             )}
             {overdue && (
-              <Badge className="border-0 bg-red-500/10 text-[11px] text-red-600" variant="secondary">逾期</Badge>
+              <Badge className="border-0 bg-destructive/10 text-[11px] text-destructive" variant="secondary">逾期</Badge>
             )}
           </div>
         </DialogHeader>

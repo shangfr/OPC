@@ -29,11 +29,14 @@ export async function subscribeOpcAction(formData: FormData): Promise<ActionResu
 
     const accountType = (session.user.accountType as "personal" | "enterprise") ?? "personal";
     const teamRole = (session.user.teamRole as string) ?? null;
+    const userPlan = session.user.planName ?? "free";
     const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
 
-    // 仅企业管理员可订阅；普通企业成员和个人用户不可
-    if (!isEnterpriseAdmin || !session.user.enterpriseId) {
-      return { success: false, error: "仅企业管理员可订阅" };
+    // 套餐驱动型权限：Team 及以上套餐可订阅 OPC
+    const canSubscribe = userPlan === "team" || userPlan === "enterprise" || isEnterpriseAdmin;
+
+    if (!canSubscribe || !session.user.enterpriseId) {
+      return { success: false, error: "Team 套餐及以上可订阅 OPC，请先升级套餐" };
     }
 
     const agentId = formData.get("agentId") as string;

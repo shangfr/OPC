@@ -38,14 +38,13 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
   const isAdminUser = isAdmin(session?.user ?? {});
   const userRole = session?.user?.role === "admin" ? "admin" : "user";
   const accountType = (session?.user?.accountType as "personal" | "enterprise") ?? "personal";
-  const teamRole = (session?.user?.teamRole as string) ?? null;
-  const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
+  const userPlan = session?.user?.planName ?? "free";
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
       <HeaderActionsProvider>
         <ChatProvider>
-          <AppSidebar isAdmin={isAdminUser} isEnterpriseAdmin={isEnterpriseAdmin} user={session?.user as any} />
+          <AppSidebar isAdmin={isAdminUser} user={session?.user as any} />
           <SidebarInset>
             <GlobalHeader />
             <Toaster
@@ -60,7 +59,7 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
               <ChatShellWrapper />
             </Suspense>
             {children}
-            <MobileTabBar role={userRole} accountType={accountType} />
+            <MobileTabBar role={userRole} accountType={accountType} planName={userPlan} />
           </SidebarInset>
         </ChatProvider>
       </HeaderActionsProvider>

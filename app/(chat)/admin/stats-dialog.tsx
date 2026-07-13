@@ -293,7 +293,7 @@ export function StatsDialog({
                                           ? "bg-emerald-500"
                                           : rate >= 40
                                             ? "bg-amber-500"
-                                            : "bg-red-500"
+                                            : "bg-destructive"
                                       }`}
                                       style={{ width: `${rate}%` }}
                                     />

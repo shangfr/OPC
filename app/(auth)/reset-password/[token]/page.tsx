@@ -114,7 +114,7 @@ function ResetPasswordForm() {
           </div>
 
           {error && (
-            <p className="text-[13px] text-red-500 leading-relaxed">{error}</p>
+            <p className="text-[13px] text-destructive leading-relaxed">{error}</p>
           )}
 
           <SubmitButton isSuccessful={false}>

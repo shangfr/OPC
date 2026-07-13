@@ -63,9 +63,10 @@ type SidebarUser = User & {
   type?: "guest" | "regular";
   accountType?: "personal" | "enterprise" | "platform";
   teamRole?: "owner" | "admin" | "member" | null;
+  planName?: string | null;
 };
 
-export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user: SidebarUser | undefined; isAdmin: boolean; isEnterpriseAdmin?: boolean; }) {
+export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; isAdmin: boolean; }) {
   const router = useRouter();
   const pathname = usePathname();
   const { agentId, messages } = useActiveChat();
@@ -73,6 +74,12 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
   const { setOpenMobile, toggleSidebar } = useSidebar();
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+
+  // 套餐驱动型权限
+  const userPlan = user?.planName ?? "free";
+  const canCreateOpc = userPlan === "creator" || userPlan === "team" || userPlan === "enterprise" || isAdmin;
+  const canSubscribeOpc = userPlan === "team" || userPlan === "enterprise" || isAdmin;
+  const canManageTeam = userPlan === "team" || userPlan === "enterprise" || isAdmin;
 
   const handleDeleteAll = () => {
     setShowDeleteAllDialog(false);
@@ -247,21 +254,20 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
                     </SidebarMenuButton>
                   </SidebarMenuItem>
 
-                  {/* 团队OPC管理 — 仅企业团队管理员可访问（/creator 页面拦截企业普通成员） */}
-                  {user.accountType === "enterprise" &&
-                    (user.teamRole === "owner" || user.teamRole === "admin") && (
+                  {/* 创作者中心 — Creator 及以上套餐可访问 */}
+                  {canCreateOpc && (
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={pathname === "/creator"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="团队OPC管理" >
+                      <SidebarMenuButton asChild isActive={pathname === "/creator"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="创作者中心" >
                         <Link href="/creator" onClick={() => setOpenMobile(false)}>
                           <DollarSign className="size-5" />
-                          <span>团队OPC管理</span>
+                          <span>创作者中心</span>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   )}
 
-                  {/* 交易市场 — 个人用户 + 企业管理员（普通企业成员不可见） */}
-                  {(user.accountType === "personal" || isEnterpriseAdmin) && (
+                  {/* 交易市场 — Team 及以上套餐可见 */}
+                  {canSubscribeOpc && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/marketplace"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="交易市场" >
                       <Link href="/marketplace" onClick={() => setOpenMobile(false)}>
@@ -311,11 +317,11 @@ export function AppSidebar({ user, isAdmin, isEnterpriseAdmin = false }: { user:
             </SidebarGroup>
           )}
 
-          {/* ===== 管理（平台管理员或企业团队管理员可见） ===== */}
-          {user && (isAdmin || isEnterpriseAdmin) && (
+          {/* ===== 管理（平台管理员或 Team+ 套餐可见） ===== */}
+          {user && (isAdmin || canManageTeam) && (
             <SidebarGroup className="px-2 pt-1">
               <SidebarGroupLabel className="mb-1 px-2 text-xs font-medium uppercase tracking-wider text-sidebar-foreground/40">
-                {isEnterpriseAdmin && !isAdmin ? "团队管理" : "管理"}
+                {canManageTeam && !isAdmin ? "团队管理" : "管理"}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

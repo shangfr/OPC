@@ -1319,13 +1319,15 @@ async function seed() {
     console.log(`Found existing admin: ${adminUser.email} (ID: ${adminUser.id})`);
   }
 
-  // ---- 0.5 初始化测试账号（企业用户 + 个人创作者） ----
+  // ---- 0.5 初始化测试账号（各套餐对应账号） ----
+  // 套餐驱动型权限体系：每个测试账号对应一个套餐档位
   const testAccounts = [
     {
-      email: "enterprise@opcbot.com",
-      name: "Enterprise Tester",
+      email: "free@opcbot.com",
+      name: "Free User",
       role: "user" as const,
-      accountType: "enterprise" as const,
+      accountType: "personal" as const,
+      planName: "free",
       password: "Test@123456",
     },
     {
@@ -1333,6 +1335,23 @@ async function seed() {
       name: "Creator Tester",
       role: "user" as const,
       accountType: "personal" as const,
+      planName: "creator",
+      password: "Test@123456",
+    },
+    {
+      email: "team@opcbot.com",
+      name: "Team Tester",
+      role: "user" as const,
+      accountType: "enterprise" as const,
+      planName: "team",
+      password: "Test@123456",
+    },
+    {
+      email: "enterprise@opcbot.com",
+      name: "Enterprise Tester",
+      role: "user" as const,
+      accountType: "enterprise" as const,
+      planName: "enterprise",
       password: "Test@123456",
     },
   ];
@@ -1354,55 +1373,58 @@ async function seed() {
           name: ta.name,
           role: ta.role,
           accountType: ta.accountType,
+          planName: ta.planName,
           emailVerified: true,
         })
         .returning();
-      console.log(`✅ Created test account: ${ta.email} (${ta.accountType})`);
+      console.log(`✅ Created test account: ${ta.email} (plan: ${ta.planName})`);
     } else {
-      // 更新已有测试账号的 role（确保企业测试用户为 admin 角色）
-      if (existing.role !== ta.role) {
+      // 更新已有测试账号的 role 和 planName
+      if (existing.role !== ta.role || existing.planName !== ta.planName) {
         await db
           .update(user)
-          .set({ role: ta.role, accountType: ta.accountType })
+          .set({ role: ta.role, accountType: ta.accountType, planName: ta.planName })
           .where(eq(user.id, existing.id));
-        console.log(` ↻ Updated ${ta.email} role to ${ta.role}`);
+        console.log(` ↻ Updated ${ta.email} (plan: ${ta.planName})`);
       }
-      console.log(`Found existing test account: ${ta.email} (${ta.accountType})`);
+      console.log(`Found existing test account: ${ta.email} (plan: ${ta.planName})`);
     }
   }
 
-  // ---- 0.6 初始化企业测试账号的完整业务闭环 (Enterprise + Team + TeamMember) ----
-  console.log(`\nInitializing business closed-loop for enterprise tester...`);
+  // ---- 0.6 初始化 Team/Enterprise 测试账号的完整业务闭环 (Enterprise + Team + TeamMember) ----
+  console.log(`\nInitializing business closed-loop for team & enterprise testers...`);
   
+  // 为 team@ 和 enterprise@ 账号都创建企业+团队闭环
+  for (const testerEmail of ["team@opcbot.com", "enterprise@opcbot.com"]) {
   const [enterpriseUser] = await db
     .select()
     .from(user)
-    .where(eq(user.email, "enterprise@opcbot.com"))
+    .where(eq(user.email, testerEmail))
     .limit(1);
 
   if (enterpriseUser) {
-    // 1. 创建或更新 Enterprise 企业资质
-    const entId = deterministicUUID("enterprise:opcbot-test");
+    // 1. 创建或更新 Enterprise 企业资质（每个测试账号独立企业）
+    const entId = deterministicUUID(`enterprise:${testerEmail}`);
     const [existingEnt] = await db.select().from(enterprise).where(eq(enterprise.id, entId));
 
     if (!existingEnt) {
       await db.insert(enterprise).values({
         id: entId,
-        name: "OPC测试科技有限公司",
-        creditCode: "91110000MA01TEST42", // 测试用统一社会信用代码
-        contactName: "Enterprise Tester",
+        name: `${testerEmail.split("@")[0]}测试企业`,
+        creditCode: `91110000MA01TEST${testerEmail.charCodeAt(0)}`,
+        contactName: enterpriseUser.name ?? "Tester",
         contactPhone: "13800000000",
         licenseImage: "https://example.com/test-license.png",
-        verifyStatus: "verified", // 直接设为已认证，便于测试
+        verifyStatus: "verified",
         verifiedAt: new Date(),
         verifiedBy: adminUser.id,
         ownerId: enterpriseUser.id,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      console.log(` ✅ Created enterprise record: OPC测试科技有限公司`);
+      console.log(` ✅ Created enterprise record for ${testerEmail}`);
     } else {
-      console.log(` ↻ Found existing enterprise record: OPC测试科技有限公司`);
+      console.log(` ↻ Found existing enterprise record for ${testerEmail}`);
     }
 
     // 将企业 ID 绑定到测试用户
@@ -1415,26 +1437,27 @@ async function seed() {
     }
 
     // 2. 创建或更新 Team SaaS 团队
-    const teamId = deterministicUUID("team:opcbot-test-enterprise");
+    const teamId = deterministicUUID(`team:${testerEmail}`);
     const [existingTeam] = await db.select().from(team).where(eq(team.id, teamId));
 
     if (!existingTeam) {
+      const planName = enterpriseUser.planName ?? "team";
       await db.insert(team).values({
         id: teamId,
-        name: "OPC测试企业团队",
+        name: `${enterpriseUser.name ?? "Tester"}的团队`,
         ownerId: enterpriseUser.id,
-        planName: "plus", // 给个测试套餐
+        planName: planName,
         subscriptionStatus: "active",
         subscriptionStart: new Date(),
         subscriptionEnd: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
-        maxMessages: 10000,
-        maxMembers: 10,
+        maxMessages: planName === "enterprise" ? null : (planName === "team" ? 10000 : 2000),
+        maxMembers: planName === "enterprise" ? null : (planName === "team" ? 10 : 1),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      console.log(` ✅ Created team: OPC测试企业团队`);
+      console.log(` ✅ Created team for ${testerEmail} (plan: ${planName})`);
     } else {
-      console.log(` ↻ Found existing team: OPC测试企业团队`);
+      console.log(` ↻ Found existing team for ${testerEmail}`);
     }
 
     // 3. 创建 TeamMember 将企业用户加入团队并设为 owner
@@ -1453,7 +1476,7 @@ async function seed() {
       await db.insert(teamMember).values({
         teamId: teamId,
         userId: enterpriseUser.id,
-        role: "owner", // 企业账号创建者设为团队所有者
+        role: "owner",
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -1462,8 +1485,9 @@ async function seed() {
       console.log(` ↻ ${enterpriseUser.email} is already a member of the team`);
     }
   } else {
-    console.warn("⚠️ Enterprise tester account not found, skipping business loop initialization.");
+    console.warn(`⚠️ Tester account ${testerEmail} not found, skipping.`);
   }
+  } // end for
 
 
   // ---- 1. Upsert 分类 ----

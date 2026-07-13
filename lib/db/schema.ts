@@ -170,6 +170,8 @@ export const user = pgTable(
     role: userRoleEnum("role").notNull().default("user"),
     phone: varchar("phone", { length: 20 }),
     accountType: accountTypeEnum("accountType").notNull().default("personal"),
+    // 套餐驱动型权限：用户级套餐决定功能权限（free/creator/team/enterprise）
+    planName: varchar("planName", { length: 50 }).default("free"),
     enterpriseId: uuid("enterpriseId").references((): AnyPgColumn => enterprise.id, {
       onDelete: "set null",
     }),

@@ -13,8 +13,8 @@ import {
 const KANBAN_COLUMNS: { status: TicketStatus; label: string; color: string }[] = [
   { status: "pending", label: STATUS_LABELS.pending, color: "bg-slate-400" },
   { status: "in_progress", label: STATUS_LABELS.in_progress, color: "bg-blue-500" },
-  { status: "completed", label: STATUS_LABELS.completed, color: "bg-green-500" },
-  { status: "closed", label: STATUS_LABELS.closed, color: "bg-gray-500" },
+  { status: "completed", label: STATUS_LABELS.completed, color: "bg-emerald-500" },
+  { status: "closed", label: STATUS_LABELS.closed, color: "bg-muted-foreground" },
 ];
 
 export function TicketKanban({

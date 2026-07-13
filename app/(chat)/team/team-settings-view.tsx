@@ -67,7 +67,7 @@ const roleIcon = (role: string) => {
     case "owner":
       return <Crown className="mr-2 size-4 text-amber-500" />;
     case "admin":
-      return <Shield className="mr-2 size-4 text-blue-500" />;
+      return <Shield className="mr-2 size-4 text-primary" />;
     default:
       return <UserIcon className="mr-2 size-4 text-muted-foreground" />;
   }
@@ -192,6 +192,37 @@ export function TeamSettingsView({
 
   return (
     <div className="mt-6 space-y-8">
+      {/* 角色标识横幅：区分团队管理员与普通成员的操作权限 */}
+      <div
+        className={`flex items-start gap-3 rounded-lg border p-4 ${
+          canManage
+            ? "border-blue-500/20 bg-blue-500/[0.04]"
+            : "border-amber-500/20 bg-amber-500/[0.04]"
+        }`}
+      >
+        <div
+          className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
+            canManage ? "bg-blue-500/10" : "bg-amber-500/10"
+          }`}
+        >
+          {canManage ? (
+            <Crown className="size-4 text-blue-600 dark:text-blue-400" />
+          ) : (
+            <UserIcon className="size-4 text-amber-600 dark:text-amber-400" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-foreground">
+            {canManage ? "团队管理员视图" : "团队成员视图（只读）"}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {canManage
+              ? "可管理团队成员、邀请新成员、调整成员角色与移除成员。团队套餐与配额请在「订阅管理」页面调整。"
+              : "仅可查看团队信息、配额使用情况与成员列表。如需邀请成员或调整角色，请联系团队所有者或管理员。"}
+          </p>
+        </div>
+      </div>
+
       {/* 当前团队信息 */}
       <section className="rounded-xl border border-border bg-background p-5">
         <div className="flex items-center justify-between">

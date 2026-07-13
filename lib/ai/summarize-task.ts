@@ -302,7 +302,13 @@ export async function handleSummarizeTask(
         });
       }
     },
-    onError: (error) => "Oops, an error occurred!",
+    onError: (error) => {
+      if (error instanceof Error && error.message?.includes("Insufficient Balance")) {
+        return "智谱 API 余额不足，请前往 open.bigmodel.cn 充值。";
+      }
+      console.error("[chat:summarize] stream error:", error);
+      return "汇总任务执行失败，请稍后重试。";
+    },
   });
 
   return createUIMessageStreamResponse({ stream });

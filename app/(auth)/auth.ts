@@ -30,6 +30,8 @@ declare module "next-auth" {
       accountType?: "personal" | "enterprise" | "platform" | null;
       // 企业账号所属企业 ID
       enterpriseId?: string | null;
+      // 套餐驱动型权限：用户级套餐（free/creator/team/enterprise）
+      planName?: string | null;
     } & DefaultSession["user"];
   }
 
@@ -43,6 +45,7 @@ declare module "next-auth" {
     teamRole?: "owner" | "admin" | "member" | null;
     accountType?: "personal" | "enterprise" | "platform" | null;
     enterpriseId?: string | null;
+    planName?: string | null;
   }
 }
 
@@ -59,6 +62,8 @@ declare module "next-auth/jwt" {
     // OPC 交易市场：账号类型与企业归属
     accountType?: "personal" | "enterprise" | "platform" | null;
     enterpriseId?: string | null;
+    // 套餐驱动型权限
+    planName?: string | null;
   }
 }
 
@@ -149,6 +154,7 @@ export const {
         };
         token.accountType = mu.accountType ?? "personal";
         token.enterpriseId = mu.enterpriseId ?? null;
+        token.planName = (mu as { planName?: string | null }).planName ?? "free";
       }
 
       // SaaS：首次登录若 token 中无 teamId，懒加载用户加入的第一个团队
@@ -207,6 +213,7 @@ export const {
               .select({
                 accountType: userTable.accountType,
                 enterpriseId: userTable.enterpriseId,
+                planName: userTable.planName,
               })
               .from(userTable)
               .where(eq(userTable.id, token.id))
@@ -215,6 +222,7 @@ export const {
             if (latest) {
               token.accountType = latest.accountType;
               token.enterpriseId = latest.enterpriseId ?? null;
+              token.planName = latest.planName ?? "free";
 
               // 若升级为企业账号后尚无 teamId，懒加载第一个团队
               if (!token.teamId) {
@@ -277,6 +285,8 @@ export const {
         // OPC 交易市场：透传账号类型与企业归属
         session.user.accountType = token.accountType ?? "personal";
         session.user.enterpriseId = token.enterpriseId ?? null;
+        // 套餐驱动型权限
+        session.user.planName = token.planName ?? "free";
       }
       return session;
     },

@@ -3,6 +3,15 @@
 import { useState, useMemo } from "react";
 import { Loader2, AlertTriangle, RotateCcw, Search } from "lucide-react";
 import { toast } from "@/components/chat/toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Opc = {
   id: string;
@@ -109,24 +118,28 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Input
             type="text"
             placeholder="搜索 OPC 名称..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+            className="pl-9"
           />
         </div>
-        <select
+        <Select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+          onValueChange={setStatusFilter}
         >
-          <option value="all">全部状态</option>
-          <option value="listed">已上架</option>
-          <option value="delisted">已下架</option>
-          <option value="pending">审核中</option>
-        </select>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部状态</SelectItem>
+            <SelectItem value="listed">已上架</SelectItem>
+            <SelectItem value="delisted">已下架</SelectItem>
+            <SelectItem value="pending">审核中</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="table-wrapper rounded-lg border border-border">
@@ -200,7 +213,7 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
                 <td data-label="操作" className="px-4 py-3">
                   {opc.listingStatus === "listed" && (
                     <div className="flex flex-col gap-2">
-                      <input
+                      <Input
                         type="text"
                         placeholder="下架原因（必填）"
                         value={delistReasons[opc.id] ?? ""}
@@ -210,12 +223,14 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
                             [opc.id]: e.target.value,
                           })
                         }
-                        className="w-48 rounded border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                        className="w-48 h-8 text-xs"
                       />
-                      <button
+                      <Button
                         onClick={() => handleForceDelist(opc.id, opc.name)}
                         disabled={pending === opc.id}
-                        className="flex w-fit items-center gap-1 rounded-lg border border-destructive/30 px-3 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                        variant="outline"
+                        size="sm"
+                        className="w-fit border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         {pending === opc.id ? (
                           <Loader2 className="size-3 animate-spin" />
@@ -223,14 +238,16 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
                           <AlertTriangle className="size-3" />
                         )}
                         强制下架
-                      </button>
+                      </Button>
                     </div>
                   )}
                   {opc.listingStatus === "delisted" && (
-                    <button
+                    <Button
                       onClick={() => handleRestore(opc.id, opc.name)}
                       disabled={pending === opc.id}
-                      className="flex items-center gap-1 rounded-lg border border-emerald-500/30 px-3 py-1 text-xs text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
+                      variant="outline"
+                      size="sm"
+                      className="border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-emerald-400"
                     >
                       {pending === opc.id ? (
                         <Loader2 className="size-3 animate-spin" />
@@ -238,7 +255,7 @@ export function ForceDelistView({ opcs }: { opcs: Opc[] }) {
                         <RotateCcw className="size-3" />
                       )}
                       恢复上架
-                    </button>
+                    </Button>
                   )}
                 </td>
               </tr>

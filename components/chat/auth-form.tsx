@@ -68,7 +68,7 @@ export function AuthForm({
       {error && (
         <p
           aria-live="assertive"
-          className="text-[13px] leading-relaxed text-red-500"
+          className="text-[13px] leading-relaxed text-destructive"
           role="alert"
         >
           {error}

@@ -31,6 +31,7 @@ type SidebarUser = User & {
   accountType?: "personal" | "enterprise" | "platform";
   role?: string | null;
   teamRole?: "owner" | "admin" | "member" | null;
+  planName?: string | null;
 };
 
 export function SidebarUserNav({
@@ -44,19 +45,12 @@ export function SidebarUserNav({
   const { setTheme, resolvedTheme } = useTheme();
 
   const isAdmin = user?.role === "admin";
-  const isPersonal = user?.accountType === "personal";
-  const isEnterprise = user?.accountType === "enterprise";
-  const teamRole = user?.teamRole;
-  const isEnterpriseAdmin =
-    isEnterprise && (teamRole === "owner" || teamRole === "admin");
+  const planLabel: Record<string, string> = { free: "Free", creator: "Creator", team: "Team", enterprise: "Enterprise" };
+  const planName = user?.planName ?? "free";
 
   const roleBadge = isAdmin
-    ? { text: "平台管理员", className: "bg-red-500/10 text-red-600 dark:text-red-400" }
-    : isEnterpriseAdmin
-      ? { text: "企业管理员", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" }
-      : isEnterprise
-        ? { text: "企业成员", className: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" }
-        : { text: "个人账号", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" };
+    ? { text: "平台管理员", className: "bg-primary/10 text-primary" }
+    : { text: `${planLabel[planName] ?? "Free"} 套餐`, className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" };
 
   return (
     <SidebarMenu>
@@ -94,14 +88,14 @@ export function SidebarUserNav({
                     fill
                     className="size-full object-cover"
                     unoptimized
-                    width={32}
-                    height={32}
+                    // 删除了 width={32} 和 height={32}
                   />
                 ) : (
                   <div className="flex size-full items-center justify-center bg-primary/10 text-sm font-bold text-primary">
                     {(user?.name || user?.email || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
+
               </span>
 
               <div className="grid flex-1 text-left text-sm leading-tight">

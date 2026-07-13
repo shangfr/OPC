@@ -5,6 +5,14 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { subscribeOpcAction, cancelSubscriptionAction } from "@/lib/opc-market/subscribe-action";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * 商城订阅按钮：调用 subscribeOpcAction 发起订阅。
@@ -72,36 +80,41 @@ export function SubscribeButton({
 
   if (isSubscribed) {
     return (
-      <button
+      <Button
         onClick={handleCancel}
         disabled={pending}
-        className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50"
+        variant="outline"
+        className="flex-1"
       >
         {pending ? <Loader2 className="size-4 animate-spin" /> : null}
         取消订阅
-      </button>
+      </Button>
     );
   }
 
   return (
     <div className="flex w-full items-center gap-2">
-      <select
+      <Select
         value={period}
-        onChange={(e) => setPeriod(e.target.value as "monthly" | "yearly")}
+        onValueChange={(v) => setPeriod(v as "monthly" | "yearly")}
         disabled={pending}
-        className="rounded-lg border border-border bg-background px-2 py-2 text-xs text-foreground"
       >
-        <option value="monthly">月度</option>
-        <option value="yearly">年度</option>
-      </select>
-      <button
+        <SelectTrigger className="w-[80px] text-xs" size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="monthly">月度</SelectItem>
+          <SelectItem value="yearly">年度</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button
         onClick={handleSubscribe}
         disabled={pending}
-        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        className="flex-1"
       >
         {pending ? <Loader2 className="size-4 animate-spin" /> : null}
         订阅雇佣
-      </button>
+      </Button>
     </div>
   );
 }

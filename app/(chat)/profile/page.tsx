@@ -17,6 +17,7 @@ export default async function ProfilePage() {
     role: session.user.role,
     accountType: session.user.accountType,
     teamRole: session.user.teamRole,
+    planName: session.user.planName ?? "free",
   };
 
   return <ProfileEditor user={user} />;

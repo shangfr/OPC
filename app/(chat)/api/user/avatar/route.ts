@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import { upload as ossUpload } from "@/lib/storage/oss";
 import { NextResponse } from "next/server";
 import { auth } from "@/app/(auth)/auth";
 import { updateUserProfile } from "@/lib/db/queries";
@@ -44,9 +44,9 @@ export async function POST(request: Request) {
     const filename = `avatars/${session.user.id}-${Date.now()}.${ext}`;
     const fileBuffer = await file.arrayBuffer();
 
-    const blob = await put(filename, fileBuffer, {
-      access: "public",
+    const blob = await ossUpload(filename, fileBuffer, {
       contentType: file.type,
+      access: "public",
     });
 
     await updateUserProfile({

@@ -10,6 +10,9 @@ import {
   registerByPhone,
 } from "@/app/(auth)/actions";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface PhoneAuthFormProps {
   mode: "login" | "register";
@@ -106,17 +109,14 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
     <form action={handleSubmit} className="flex w-full flex-col gap-4">
       {/* 手机号输入 */}
       <div className="flex flex-col gap-2">
-        <label
-          className="font-normal text-muted-foreground"
-          htmlFor="phone-input"
-        >
+        <Label className="font-normal text-muted-foreground" htmlFor="phone-input">
           手机号
-        </label>
+        </Label>
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
-          <input
+          <Input
             autoComplete="tel"
-            className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm transition-colors placeholder:text-muted-foreground/40 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"
+            className="pl-10"
             id="phone-input"
             inputMode="numeric"
             maxLength={11}
@@ -133,16 +133,13 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
 
       {/* 验证码输入 + 发送按钮 */}
       <div className="flex flex-col gap-2">
-        <label
-          className="font-normal text-muted-foreground"
-          htmlFor="code-input"
-        >
+        <Label className="font-normal text-muted-foreground" htmlFor="code-input">
           验证码
-        </label>
+        </Label>
         <div className="flex gap-2">
-          <input
+          <Input
             autoComplete="one-time-code"
-            className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm transition-colors placeholder:text-muted-foreground/40 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"
+            className="flex-1"
             id="code-input"
             inputMode="numeric"
             maxLength={6}
@@ -153,9 +150,10 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
             type="text"
             value={code}
           />
-          <button
+          <Button
+            variant="outline"
             className={cn(
-              "h-10 shrink-0 rounded-lg border px-3 text-xs font-medium transition-colors",
+              "h-10 shrink-0 px-3 text-xs font-medium",
               countdown > 0 || sending
                 ? "border-border/50 text-muted-foreground/50"
                 : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
@@ -171,13 +169,13 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
             ) : (
               "获取验证码"
             )}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* 提交按钮 */}
-      <button
-        className="touch-target mt-2 inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+      <Button
+        className="touch-target mt-2 w-full"
         disabled={state.status === "in_progress" || phone.length !== 11 || code.length !== 6}
         type="submit"
       >
@@ -188,7 +186,7 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
         ) : (
           "注册"
         )}
-      </button>
+      </Button>
     </form>
   );
 }

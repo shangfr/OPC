@@ -1,29 +1,30 @@
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/queries";
-import { team } from "@/lib/db/schema";
+import { team, user as userTable } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
+import { getPlanQuota } from "@/lib/payments/config";
 
 /**
- * SaaS 配额管理：消息数/月 限制
+ * SaaS 配额管理：消息数/月 限制（套餐驱动型）
  *
  * 设计：
- * - team 表的 maxMessages 字段标记当前套餐额度（null = 无限）
- * - team 表的 usedMessages 字段累加本月已用消息数
- * - usageResetAt 标记上次重置时间；订阅周期变更（webhook）或月初时重置
+ * - user.planName 字段标记当前套餐（free/creator/team/enterprise）
+ * - team 表的 maxMessages / usedMessages 用于配额跟踪
+ * - usageResetAt 标记上次重置时间；月初时重置
  *
- * 拦截点：/api/chat 处理用户消息前调用 checkAndIncrementMessageQuota
+ * 拦截点：/api/chat 处理用户消息前调用 checkMessageQuota
  */
 
 /**
- * 检查团队本月消息配额是否超限，超限则抛出 ChatbotError("rate_limit:quota")。
+ * 检查用户本月消息配额是否超限，超限则抛出 ChatbotError("rate_limit:quota")。
  * 同时处理按月重置：若 usageResetAt 距今超过 30 天，先重置 usedMessages。
  *
  * @param teamId 当前团队 ID（从 session.user.teamId 获取）
- * @throws ChatbotError 配额超限时抛出，前端引导去 /pricing 升级
+ * @throws ChatbotError 配额超限时抛出，前端引导去 /settings 升级
  */
 export async function checkMessageQuota(teamId: string | null) {
   if (!teamId) {
-    // 无团队（如游客）：不限制，由原有的 rate_limit:chat 按小时限流兜底
+    // 无团队：不限制，由原有的 rate_limit:chat 按小时限流兜底
     return;
   }
 
@@ -106,4 +107,30 @@ export async function getTeamUsage(teamId: string) {
     .limit(1);
 
   return teamRecord ?? null;
+}
+
+/**
+ * 获取用户级套餐配额（从 user.planName 读取，兜底 free）
+ */
+export async function getUserPlanUsage(userId: string) {
+  const [userRecord] = await db
+    .select({
+      planName: userTable.planName,
+    })
+    .from(userTable)
+    .where(eq(userTable.id, userId))
+    .limit(1);
+
+  const planName = userRecord?.planName ?? "free";
+  const quota = getPlanQuota(planName);
+
+  return {
+    planName,
+    maxMessages: quota.maxMessages,
+    maxOpcCreate: quota.maxOpcCreate,
+    canSubscribeOpc: quota.canSubscribeOpc,
+    canCreateTeam: quota.canCreateTeam,
+    canRevenueShare: quota.canRevenueShare,
+    revenuePercent: quota.revenuePercent,
+  };
 }

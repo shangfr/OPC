@@ -9,7 +9,7 @@
 - **流式响应** — 实时流式输出 AI 回复，支持中途停止并持久化停止标记，支持断流自动恢复
 - **思考模式** — 推理模型支持 thinking/reasoning 可视化展示，可开关并降级为普通生成
 - **消息编辑与重生成** — 可编辑历史消息并重新生成回复
-- **附件上传** — 支持图片、PDF、文本等多种文件格式，Vercel Blob 存储
+- **附件上传** — 支持图片、PDF、文本等多种文件格式，阿里云 OSS 存储
 - **流式 Markdown** — 基于 streamdown 的流式渲染，支持 CJK 字符、代码块、数学公式、Mermaid 图表
 
 ### OPC Agent 系统
@@ -21,184 +21,119 @@
 - **延迟持久化** — 新建对话仅在发送第一条消息时写入数据库，避免空会话
 - **Agent 名称冗余** — Chat 表冗余存储 agentName，避免 JOIN 查询，Agent 改名不影响历史对话
 
+### 套餐驱动型权限体系
+
+平台采用**套餐驱动型权限体系**，用户通过升级套餐获得不同功能权限，无需区分账号类型（个人/企业）。
+
+#### 4 档套餐
+
+| 套餐 | 月费 | 消息配额 | OPC 创建 | OPC 订阅 | 团队管理 | 收益分成 |
+|------|------|---------|---------|---------|---------|---------|
+| **Free** | ¥0 | 100条/月 | 1个 | ❌ | ❌ | ❌ |
+| **Creator** | ¥29 | 2000条/月 | 10个 | ❌ | ❌ | 70% |
+| **Team** | ¥99 | 10000条/月 | 20个 | ✅ | 10人 | 80% |
+| **Enterprise** | ¥299 | 无限 | 无限 | ✅ | 无限 | 80% |
+
+#### 权限规则
+
+- **OPC 创建**：Creator 及以上套餐可创建 OPC 智能体并申请上架到公开市场
+- **OPC 订阅**：Team 及以上套餐可订阅交易市场中的 OPC 服务
+- **团队管理**：Team 及以上套餐解锁团队管理功能（成员邀请、角色管理、配额查看）
+- **收益分成**：Creator 及以上套餐可从 OPC 订阅收益中获得分成（Creator 70%，Team/Enterprise 80%）
+- **平台管理员**：admin 角色仅用于后台管理（用户审核、OPC 风控、数据看板），套餐功能需自行订阅
+
+#### 测试账号
+
+初始化脚本（`pnpm db:seed`）会自动创建以下测试账号，密码均为 `Test@123456`：
+
+| 邮箱 | 套餐 | 说明 |
+|------|------|------|
+| `admin@opcbot.com` | - | 平台管理员（密码 `Admin@123456`） |
+| `free@opcbot.com` | Free | 基础体验账号 |
+| `creator@opcbot.com` | Creator | 独立创作者账号 |
+| `team@opcbot.com` | Team | 团队管理账号（含企业+团队闭环） |
+| `enterprise@opcbot.com` | Enterprise | 企业级账号（含企业+团队闭环） |
+
+### OPC 交易市场
+- **服务商城** — 展示全部已上架公共 OPC，支持分类筛选和搜索
+- **订阅机制** — Team 及以上套餐用户可订阅 OPC，将外部智能体接入团队工作流
+- **收益管理** — 创作者可查看 OPC 订阅收益汇总、明细列表和结算状态
+- **上架审核** — Creator 及以上套餐用户可申请将 OPC 上架到公开市场，平台管理员审核
+
 ### 账户管理
 - **注册/登录** — 邮箱+密码认证，Auth.js v5 管理会话
-- **访客模式** — 未注册用户可体验基础功能
 - **密码找回** — 基于令牌的密码重置流程（1 小时有效期，一次性使用）
+- **订阅管理** — 统一管理页面展示当前套餐、用量、账单入口和全部套餐方案
 
 ### 性能优化
 - **内存消息缓存** — 模块级 Map 缓存，SPA 导航切聊天零延迟，刷新后由 SWR 重新拉取
 - **SWR 数据获取** — Agent/Model/Document/SiteConfig 全部使用 SWR，共享跨页面缓存（60s 去重）
 - **Context 分层** — ActiveChatProvider 拆分为 state + actions 双 Context，减少不必要的重渲染
-- **hover 预加载** — 鼠标悬停历史记录项时预取消息
-- **虚拟滚动** — 30+ 条消息自动启用虚拟渲染，保持流畅
-- **懒加载编辑器** — CodeMirror/ProseMirror 通过 next/dynamic 按需加载，减轻首屏编译负担
-- **轻量 Shiki** — 使用 `shiki/bundle/web`（~40 语言）替代全量包（200+ 语言）
-- **历史列表乐观更新** — 发送消息立即显示在侧边栏，无需等待 AI 回复
-- **离线感知** — 网络断开时显示提示横幅
-
-### 其他
-- **暗色模式** — 跟随系统主题自动切换
-- **聊天可见性** — 支持私密/公开切换
-- **消息投票** — 对 AI 回复进行 👍/👎 评价
-- **代码高亮** — Shiki 语法高亮，支持多种语言
-- **数学公式** — KaTeX 渲染支持
-- **Mermaid 图表** — 支持流程图、时序图等
-- **Artifact 系统** — 支持代码、HTML、文本、表格(Sheet)、图片五种 Artifact 类型
 
 ## 技术栈
 
-| 分类 | 技术 |
+| 层级 | 技术 |
 |------|------|
-| 框架 | Next.js 16.2.0 + Turbopack |
-| 语言 | TypeScript 5.x |
-| UI | React 19 + shadcn/ui (Radix) + Tailwind CSS 4 |
-| AI | AI SDK 6.x (`@ai-sdk/react`) + `@ai-sdk/openai-compatible` |
-| 数据获取 | SWR 2.x（缓存去重）|
-| UI 状态 | React Context（双层 Provider 架构）|
-| 数据库 | PostgreSQL (Neon) + Drizzle ORM |
-| 认证 | Auth.js v5 (next-auth beta 25) |
-| 动画 | Motion 12.x |
-| 虚拟滚动 | @tanstack/react-virtual |
-| 编辑器 | CodeMirror 6 + ProseMirror（懒加载）|
-| 流式渲染 | streamdown（CJK + code + math + mermaid）|
-| 文件存储 | Vercel Blob |
-| 限流 | Redis |
-| 代码规范 | Biome + Ultracite |
-| 测试 | Playwright (E2E) |
-| 包管理 | pnpm 10.x |
-
-## 数据库设计
-
-基于 Drizzle ORM 管理，共 11 张表：
-
-| 表名 | 说明 |
-|------|------|
-| User | 用户（邮箱、密码、匿名标记）|
-| Chat | 对话（标题、可见性、agentId、agentName 冗余）|
-| Message_v2 | 消息（角色、JSON parts、附件）|
-| Vote_v2 | 投票（chatId + messageId 复合主键）|
-| Document | Artifact 文档（text/code/html/sheet/image）|
-| Suggestion | 文档修改建议 |
-| Stream | 可恢复流（resumable-stream）|
-| Agent | OPC Agent（提示词、预设问题、分类、排序）|
-| Category | Agent 分类（名称、颜色、排序、colorKey）|
-| SiteConfig | 站点配置（单例，全局默认值）|
-| PasswordResetToken | 密码重置令牌（1小时有效，一次性）|
-
-大部分外键设置 `ON DELETE CASCADE`，Chat.agentId 和 Agent.categoryId 设置 `ON DELETE SET NULL`（删除 Agent/分类时保留对话记录）。Chat 和 Message 表建有索引，User.email 设有唯一索引。
-
-## 项目结构
-
-```
-opcbot/
-├── app/
-│   ├── (auth)/              # 认证模块
-│   │   ├── login/           # 登录页
-│   │   ├── register/        # 注册页
-│   │   ├── forgot-password/ # 密码找回
-│   │   ├── reset-password/  # 密码重置
-│   │   └── api/auth/        # NextAuth + 访客 + 密码重置 API
-│   └── (chat)/              # 聊天模块
-│       ├── agents/          # OPC 管理页面
-│       │   ├── agent-manager.tsx   # 管理员 CRUD 面板
-│       │   ├── agent-cards.tsx     # 用户卡片选择
-│       │   ├── opc-shared.tsx      # 共享组件和 Hooks
-│       │   ├── category-manager-dialog.tsx
-│       │   ├── group-manager-dialog.tsx
-│       │   ├── site-config-dialog.tsx
-│       │   └── stats-dialog.tsx
-│       ├── api/             # API 路由
-│       │   ├── chat/        # 对话（创建、流式、schema）
-│       │   ├── history/     # 聊天历史列表
-│       │   ├── messages/    # 消息 CRUD
-│       │   ├── agents/      # Agent CRUD
-│       │   ├── categories/  # 分类 CRUD
-│       │   ├── site-config/ # 站点配置
-│       │   ├── models/      # 模型列表
-│       │   ├── vote/        # 投票
-│       │   ├── document/    # Artifact 文档
-│       │   ├── files/       # 文件上传
-│       │   ├── suggestions/ # 建议
-│       │   └── stats/       # 统计
-│       └── chat/            # 聊天页面
-├── components/
-│   ├── ai-elements/         # AI 基础 UI（消息、代码块、推理、模型选择器）
-│   ├── chat/                # 聊天功能组件（40+ 组件）
-│   └── ui/                  # shadcn/ui 基础组件
-├── hooks/                   # 自定义 Hooks
-│   ├── use-active-chat      # 核心：消息状态、缓存同步、Agent 上下文（state/actions 分离）
-│   ├── use-message-cache    # 内存消息缓存（模块级 Map）
-│   ├── use-messages         # 滚动管理（自动滚底、位置追踪）
-│   ├── use-artifact         # Artifact 状态管理
-│   ├── use-auto-resume      # 断流自动恢复
-│   ├── use-chat-visibility # 聊天可见性
-│   └── ...
-├── lib/
-│   ├── ai/                  # AI 配置（厂商/模型/能力）、提示词、工具定义
-│   ├── db/                  # Drizzle schema、查询函数、迁移、种子数据
-│   ├── editor/              # ProseMirror 编辑器配置
-│   ├── artifacts/           # Artifact 服务端逻辑
-│   ├── agent-groups.ts      # Agent 分组配色系统
-│   ├── constants.ts         # 环境变量、默认值
-│   ├── errors.ts            # 错误定义
-│   ├── ratelimit.ts         # Redis 限流
-│   └── types.ts             # 共享类型
-├── artifacts/               # Artifact 类型实现（code/text/html/sheet/image）
-├── tests/                   # Playwright E2E 测试
-└── proxy.ts                 # Next.js 中间件（认证、路由保护）
-```
+| 框架 | Next.js 16 (App Router, Turbopack) |
+| AI | Vercel AI SDK 5.x |
+| 数据库 | PostgreSQL + Drizzle ORM |
+| 认证 | Auth.js v5 (NextAuth) |
+| UI | shadcn/ui + Tailwind CSS 4 |
+| 支付 | Stripe / Mock 模式 |
+| 存储 | 阿里云 OSS |
+| 部署 | Vercel / Docker |
 
 ## 快速开始
 
 ### 环境要求
 
 - Node.js 20+
-- pnpm 10.x
-- PostgreSQL 数据库（推荐 [Neon](https://neon.tech)）
-- Redis（可选，用于限流）
+- PostgreSQL 14+
+- pnpm（推荐）或 npm
 
-### 安装与运行
+### 安装
 
 ```bash
-# 克隆项目
-git clone <repo-url>
-cd opcbot
-
-# 安装依赖
+git clone https://github.com/shangfr/OPC.git
+cd OPC
 pnpm install
-
-# 配置环境变量
-cp .env.example .env.local
-# 编辑 .env.local 填入实际值
-
-# 初始化数据库（生成迁移 + 执行）
-pnpm db:migrate
-
-# （可选）导入预置 Agent 数据
-pnpm tsx lib/db/seed-agents.ts
-
-# 启动开发服务器
-pnpm dev
 ```
 
-访问 [http://localhost:3000](http://localhost:3000)
+### 配置
 
-### 环境变量
+复制 `.env.example` 为 `.env.local`，填写以下配置：
 
-| 变量 | 说明 | 必填 |
-|------|------|------|
-| `AUTH_SECRET` | 认证密钥（`openssl rand -base64 32` 生成） | ✅ |
-| `POSTGRES_URL` | PostgreSQL 连接字符串 | ✅ |
-| `ZHIPU_API_KEY` | 智谱 AI API 密钥 | 使用 GLM 模型时必填 |
-| `DEEPSEEK_API_KEY` | DeepSeek API 密钥 | 使用 DeepSeek 模型时必填 |
-| `AI_GATEWAY_API_KEY` | Vercel AI Gateway 密钥（非 Vercel 部署需要） | 视情况 |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob 存储令牌 | 上传文件时需要 |
-| `REDIS_URL` | Redis 连接字符串（用于限流） | 可选 |
+```env
+# 数据库
+POSTGRES_URL=postgresql://user:password@localhost:5432/opcbot
+POSTGRES_URL_NON_POOLING=postgresql://user:password@localhost:5432/opcbot
 
-> **提示**：模型厂商的 API Key 和 Base URL 均可通过环境变量覆盖，也可在 `lib/ai/config.ts` 中直接修改。新增模型只需在 config.ts 的 `providers` 和 `models` 中添加配置。
+# AI 模型
+AI_GATEWAY_API_KEY=your_api_key
+AI_GATEWAY_BASE_URL=https://your-gateway.com/v1
 
-### 常用脚本
+# 认证
+AUTH_SECRET=your_random_secret
+
+# 阿里云 OSS（可选，未配置时使用本地存储）
+OSS_ACCESS_KEY_ID=your_key
+OSS_ACCESS_KEY_SECRET=your_secret
+OSS_REGION=oss-cn-hangzhou
+OSS_BUCKET=your_bucket
+
+# Stripe（可选，未配置时使用 Mock 模式）
+STRIPE_SECRET_KEY=your_stripe_key
+```
+
+### 初始化
+
+```bash
+pnpm db:generate  # 生成 Drizzle 迁移文件
+pnpm db:migrate   # 执行数据库迁移
+pnpm db:seed      # 初始化种子数据（分类、Agent、测试账号）
+```
+
+### 运行
 
 ```bash
 pnpm dev          # 开发服务器（Turbopack）

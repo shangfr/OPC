@@ -105,12 +105,18 @@ export default function Page() {
         {authMode === "phone" ? (
           <div className="flex flex-col gap-4">
             <PhoneAuthForm mode="login" />
-            <div className="flex items-center justify-center text-[13px]">
+            <div className="flex items-center justify-between text-[13px]">
               <Link
                 className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
                 href="/register"
               >
                 没有账号？去注册
+              </Link>
+              <Link
+                className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                href="/forgot-password"
+              >
+                忘记密码？
               </Link>
             </div>
           </div>

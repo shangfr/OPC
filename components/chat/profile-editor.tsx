@@ -3,10 +3,7 @@
 import {
   Camera,
   Check,
-  Crown,
-  CreditCard,
   Loader2,
-  LogOut,
   Moon,
   Sun,
   Trash2,
@@ -22,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { signOutAction } from "./sign-out-action";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 interface ProfileUserData {
@@ -34,6 +30,7 @@ interface ProfileUserData {
   role?: string | null;
   accountType?: string | null;
   teamRole?: string | null;
+  planName?: string | null;
 }
 
 export function ProfileEditor({ user }: { user: ProfileUserData }) {
@@ -48,19 +45,10 @@ export function ProfileEditor({ user }: { user: ProfileUserData }) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const isAdmin = user.role === "admin";
-  const isPersonal = user.accountType === "personal";
-  const isEnterprise = user.accountType === "enterprise";
-  const teamRole = user.teamRole;
-  const isEnterpriseAdmin =
-    isEnterprise && (teamRole === "owner" || teamRole === "admin");
 
   const roleBadge = isAdmin
-    ? { text: "平台管理员", className: "bg-red-500/10 text-red-600 dark:text-red-400" }
-    : isEnterpriseAdmin
-      ? { text: "企业管理员", className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" }
-      : isEnterprise
-        ? { text: "企业成员", className: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" }
-        : { text: "个人账号", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" };
+    ? { text: "平台管理员", className: "bg-primary/10 text-primary" }
+    : { text: `${user.planName ?? "free"} 套餐`, className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" };
 
   const nameChanged = name.trim() !== originalName.trim() && name.trim().length > 0;
 
@@ -134,13 +122,15 @@ export function ProfileEditor({ user }: { user: ProfileUserData }) {
 
           <div className="mb-6 flex items-center gap-6">
             <div className="relative">
-              <div className="size-20 overflow-hidden rounded-full ring-2 ring-border">
+              {/* 1. 给直接包裹 Image 的 div 添加 relative，确保 fill 定位准确 */}
+              <div className="relative size-20 overflow-hidden rounded-full ring-2 ring-border">
                 {avatarUrl ? (
                   <Image
                     src={avatarUrl}
                     alt="头像"
                     fill
-                    className="size-full object-cover"
+                    // 2. 移除 size-full，fill 模式下只需要 object-cover 即可填充
+                    className="object-cover" 
                     unoptimized
                   />
                 ) : (
@@ -223,22 +213,16 @@ export function ProfileEditor({ user }: { user: ProfileUserData }) {
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">账号角色</span>
+              <span className="text-sm text-muted-foreground">当前套餐</span>
               <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", roleBadge.className)}>
                 {roleBadge.text}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">账号类型</span>
-              <span className="text-sm font-medium">
-                {isEnterprise ? "企业账号" : "个人账号"}
               </span>
             </div>
           </div>
         </section>
 
         {/* ===== 快捷操作 ===== */}
-		<ThemeToggle />
+                <ThemeToggle />
       </div>
     </main>
   );

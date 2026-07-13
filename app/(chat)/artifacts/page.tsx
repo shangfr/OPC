@@ -291,6 +291,8 @@ export default function ArtifactsPage() {
   const debouncedSearch = useDebounce(search, 300);
   const [previewDoc, setPreviewDoc] = useState<UserDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // 删除确认弹窗：替代原生 confirm()，提供更好的视觉一致性
+  const [deleteTarget, setDeleteTarget] = useState<UserDocument | null>(null);
 
   const documents = data?.documents ?? [];
 
@@ -317,8 +319,6 @@ export default function ArtifactsPage() {
   }, [filteredDocs]);
 
   const handleDelete = async (doc: UserDocument) => {
-    if (!confirm("确定要删除这个制品吗？此操作无法撤销。")) return;
-
     setDeleting(true);
     try {
       const res = await fetch(`/api/documents/list?id=${doc.id}`, {
@@ -332,6 +332,7 @@ export default function ArtifactsPage() {
       toast.error("删除失败，请重试");
     } finally {
       setDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -458,9 +459,42 @@ export default function ArtifactsPage() {
         doc={previewDoc}
         open={!!previewDoc}
         onOpenChange={(open) => !open && setPreviewDoc(null)}
-        onDelete={handleDelete}
+        onDelete={(doc) => {
+          setPreviewDoc(null);
+          setDeleteTarget(doc);
+        }}
         isDeleting={deleting}
       />
+
+      {/* 删除确认弹窗：替代原生 confirm() */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>删除制品</DialogTitle>
+            <DialogDescription>
+              确定要删除「{deleteTarget?.title}」吗？此操作无法撤销。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <button
+              className="touch-target inline-flex items-center justify-center rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent"
+              onClick={() => setDeleteTarget(null)}
+              type="button"
+            >
+              取消
+            </button>
+            <button
+              className="touch-target inline-flex items-center justify-center gap-1.5 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:opacity-50"
+              disabled={deleting}
+              onClick={() => deleteTarget && handleDelete(deleteTarget)}
+              type="button"
+            >
+              {deleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+              确认删除
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

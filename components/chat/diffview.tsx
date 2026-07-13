@@ -31,7 +31,7 @@ const diffSchema = new Schema({
             break;
           case DiffType.Deleted:
             className =
-              "bg-red-500/15 line-through text-red-600 dark:text-red-400 rounded-sm px-0.5 -mx-0.5 opacity-70";
+              "bg-destructive/15 line-through text-destructive rounded-sm px-0.5 -mx-0.5 opacity-70";
             break;
           default:
             className = "";

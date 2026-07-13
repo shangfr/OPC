@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { guestRegex } from "./lib/constants";
+import { hasPlanTier } from "./lib/payments/config";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -22,89 +23,63 @@ export async function proxy(request: NextRequest) {
   const isGuest = guestRegex.test(token?.email ?? "");
 
   const userType = token?.type as string | undefined;
-  const accountType = token?.accountType as string | undefined;
-  const teamRole = token?.teamRole as string | undefined;
   const isLoggedIn = !!token;
   const isRegular = isLoggedIn && userType === "regular";
 
   // 角色判断
   const isPlatformAdmin = token?.role === "admin";
-  const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
-  const canAccessAdmin = isPlatformAdmin || isEnterpriseAdmin;
+  // 套餐驱动型权限：从 token 读取用户套餐
+  const userPlan = (token?.planName as string | undefined) ?? "free";
 
-  // 3. 未登录用户处理
-  if (!token) {
-    const PUBLIC_ROUTES = ["/login", "/register", "/register-enterprise", "/forgot-password", "/reset-password", "/pricing"];
-    if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-      return NextResponse.next();  // 放行公开路由
-    }
-    // 非公开路由且未登录 → 强制跳转登录页（取消游客模式后必须登录）
+  // 3. 未登录拦截
+  const PUBLIC_ROUTES = ["/login", "/register", "/register-enterprise", "/forgot-password", "/reset-password", "/pricing"];
+  const isPublicRoute = PUBLIC_ROUTES.some((p) => pathname.startsWith(p));
+
+  if (!isLoggedIn && !isPublicRoute) {
     return NextResponse.redirect(new URL(`${base}/login?redirectUrl=${encodeURIComponent(pathname)}`, request.url));
   }
 
-  // 4. 游客模式已下线：历史游客 Token 视为无效，强制重新登录
-  if (isGuest) {
-    const PUBLIC_ROUTES = ["/login", "/register", "/forgot-password", "/reset-password", "/pricing"];
-    if (PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-      return NextResponse.next();
-    }
+  // 4. 已登录但 guest 拦截非公开路由
+  if (isGuest && !isPublicRoute) {
     return NextResponse.redirect(new URL(`${base}/login?redirectUrl=${encodeURIComponent(pathname)}`, request.url));
   }
 
-  // 5. 正式用户访问登录/注册页 → 跳转首页
-  //    注意：/register-enterprise 是「升级企业账号」入口，
-  //    个人账号（personal）已登录后仍需访问，不应被重定向。
-  const PUBLIC_AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
-  if (isRegular && PUBLIC_AUTH_ROUTES.includes(pathname)) {
+  // 5. 登录/注册页：已登录则跳转首页
+  if (isPublicRoute && isRegular && !isGuest) {
     return NextResponse.redirect(new URL(`${base}/`, request.url));
   }
 
-  // 5.1 /register-enterprise：仅允许未登录用户和个人账号访问
-  //     企业账号和平台管理员访问时重定向到首页
+  // 6. /register-enterprise：仅允许未登录用户和 free/creator 套餐用户访问
   if (pathname === "/register-enterprise" && isLoggedIn) {
-    if (accountType === "enterprise" || isPlatformAdmin) {
+    if (hasPlanTier(userPlan, "team") || isPlatformAdmin) {
       return NextResponse.redirect(new URL(`${base}/`, request.url));
     }
   }
 
-  // 6. 个人设置页：仅正式用户
-  if (pathname.startsWith("/settings") && !isRegular) {
-    return NextResponse.redirect(new URL(`${base}/login`, request.url));
-  }
-
-  // 7. 团队设置页：仅企业账号
-  if (pathname.startsWith("/team") && accountType !== "enterprise") {
+  // 7. /team 路由：需要 Team 套餐及以上
+  if (pathname.startsWith("/team") && !hasPlanTier(userPlan, "team") && !isPlatformAdmin) {
     return NextResponse.redirect(new URL(`${base}/`, request.url));
   }
 
-  // 8. 创作者中心：个人账号 + 企业团队管理员
-  if (pathname.startsWith("/creator")) {
-    if (accountType === "enterprise" && !isEnterpriseAdmin) {
-      return NextResponse.redirect(new URL(`${base}/`, request.url));
-    }
-    if (accountType !== "personal" && !isEnterpriseAdmin) {
-      return NextResponse.redirect(new URL(`${base}/`, request.url));
-    }
+  // 8. /creator 路由：需要 Creator 套餐及以上
+  if (pathname.startsWith("/creator") && !hasPlanTier(userPlan, "creator") && !isPlatformAdmin) {
+    return NextResponse.redirect(new URL(`${base}/`, request.url));
   }
 
-  // 8.5 交易市场：普通企业成员不可访问（仅个人用户 + 企业管理员）
-  //      普通企业成员（teamRole=member）重定向至首页
-  if (pathname.startsWith("/marketplace")) {
-    const isEnterpriseMember = accountType === "enterprise" && teamRole === "member";
-    if (isEnterpriseMember) {
-      return NextResponse.redirect(new URL(`${base}/`, request.url));
-    }
+  // 9. /marketplace 路由：需要 Team 套餐及以上（OPC 订阅功能）
+  if (pathname.startsWith("/marketplace") && !hasPlanTier(userPlan, "team") && !isPlatformAdmin) {
+    return NextResponse.redirect(new URL(`${base}/`, request.url));
   }
 
-  // 9. /admin 路由权限分层
-  //    /admin（管理后台首页）→ 仅平台管理员
-  //    /admin/applications → 仅平台管理员
-  //    /admin/orders → 仅平台管理员
-  //    /admin/stats → 仅平台管理员
-  //    /admin/opcs → 平台管理员 + 企业团队管理员
-  //    /admin/users → 平台管理员 + 企业团队管理员
-  //    /admin/tickets → 仅平台管理员（供需管理后台）
-  //    /admin/knowledge → 仅平台管理员（知识库管理后台）
+  // 10. /admin 路由权限分层
+  //     /admin（管理后台首页）→ 仅平台管理员
+  //     /admin/applications → 仅平台管理员
+  //     /admin/orders → 仅平台管理员
+  //     /admin/stats → 仅平台管理员
+  //     /admin/opcs → 平台管理员 + Team 套餐及以上用户
+  //     /admin/users → 平台管理员 + Team 套餐及以上用户
+  //     /admin/tickets → 仅平台管理员（供需管理后台）
+  //     /admin/knowledge → 仅平台管理员（知识库管理后台）
   if (pathname.startsWith("/admin")) {
     const PLATFORM_ADMIN_ONLY = [
       "/admin/applications",
@@ -113,7 +88,7 @@ export async function proxy(request: NextRequest) {
       "/admin/tickets",
       "/admin/knowledge",
     ];
-    const TEAM_ADMIN_ALLOWED = [
+    const TEAM_PLAN_ALLOWED = [
       "/admin/opcs",
       "/admin/users",
     ];
@@ -128,8 +103,8 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(`${base}/`, request.url));
     }
 
-    // 团队管理路由
-    if (TEAM_ADMIN_ALLOWED.some((p) => pathname.startsWith(p)) && !canAccessAdmin) {
+    // Team 套餐可访问路由
+    if (TEAM_PLAN_ALLOWED.some((p) => pathname.startsWith(p)) && !isPlatformAdmin && !hasPlanTier(userPlan, "team")) {
       return NextResponse.redirect(new URL(`${base}/`, request.url));
     }
   }
