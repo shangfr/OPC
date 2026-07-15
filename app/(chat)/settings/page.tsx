@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
-import { Check, AlertTriangle, Sparkles, Building2 } from "lucide-react";
-import { auth } from "@/app/(auth)/auth";
+import { Check, AlertTriangle, Sparkles, Building2, ArrowUp, ArrowDown } from "lucide-react";
+import { auth } from "@//app/(auth)/auth";
 import type { Session } from "next-auth";
-import { getCurrentTeam } from "@/lib/auth/team-context";
-import { getTeamUsage } from "@/lib/quotas/usage";
-import { isStripeEnabled } from "@/lib/payments/stripe";
-import { checkoutAction } from "@/lib/payments/actions";
-import { PLANS, hasPlanTier } from "@/lib/payments/config";
+import { getCurrentTeam } from "@//lib/auth/team-context";
+import { getTeamUsage } from "@//lib/quotas/usage";
+import { isStripeEnabled } from "@//lib/payments/stripe";
+import { checkoutAction } from "@//lib/payments/actions";
+import { PLANS, hasPlanTier, PLAN_TIER } from "@//lib/payments/config";
 import { ManageBillingButton } from "./manage-billing-button";
 import { SubmitButton } from "../pricing/submit-button";
 
@@ -15,6 +15,8 @@ import { SubmitButton } from "../pricing/submit-button";
  *
  * 4 档套餐：Free / Creator / Team / Enterprise
  * 用户直接升级套餐获得对应功能权限，无需区分账号类型。
+ *
+ * 数据源统一从 PLANS 配置读取，消除页面内重复定义。
  */
 export default async function SettingsPage() {
   const session = await auth();
@@ -39,47 +41,25 @@ async function renderSettings(
 
   // 用户套餐：优先从 session 读取，兜底 free
   const currentPlanName = session.user.planName ?? "free";
+  const currentPlanTier = PLAN_TIER[currentPlanName] ?? 0;
   const isAdmin = session.user.role === "admin";
 
   // 用量预警
   const isUsageWarning = usagePercent >= 80 && usagePercent < 100;
   const isUsageExceeded = usagePercent >= 100;
 
-  // 4 档套餐方案
-  const LOCAL_PLANS = [
-    {
-      id: "free",
-      name: "Free",
-      description: "适合个人体验",
-      price: 0,
-      features: ["每月 100 条消息", "创建 1 个 OPC", "基础 OPC 库访问"],
-    },
-    {
-      id: "creator",
-      name: "Creator",
-      description: "适合独立创作者",
-      price: 29,
-      features: ["每月 2000 条消息", "创建 10 个 OPC", "收益分成 70%", "全部 OPC 库访问"],
-    },
-    {
-      id: "team",
-      name: "Team",
-      description: "适合小型团队",
-      price: 99,
-      features: ["每月 10000 条消息", "创建 20 个 OPC", "团队管理（10 人）", "订阅 OPC 服务", "收益分成 80%"],
-    },
-    {
-      id: "enterprise",
-      name: "Enterprise",
-      description: "适合大型企业",
-      price: 299,
-      features: ["无限消息", "创建无限 OPC", "团队管理（无限）", "订阅 OPC 服务", "收益分成 80%", "优先技术支持"],
-    },
-  ];
+  // 进度条颜色：根据使用率动态变色
+  const progressColor =
+    isUsageExceeded
+      ? "bg-red-500"
+      : isUsageWarning
+        ? "bg-amber-500"
+        : "bg-primary";
 
-  const plans = LOCAL_PLANS.map((p) => ({
-    ...p,
-    priceId: `plan_${p.id}`,
+  // 从 PLANS 配置动态生成套餐列表（消除 LOCAL_PLANS 重复）
+  const plans = Object.values(PLANS).map((plan) => ({
+    ...plan,
+    priceId: `plan_${plan.name}`,
   }));
 
   return (
@@ -151,8 +131,8 @@ async function renderSettings(
         <section className="rounded-lg border border-border bg-card p-4 sm:p-6">
           <h2 className="text-base font-medium text-foreground sm:text-lg">当前套餐</h2>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-bold capitalize text-foreground">
-              {currentPlanName}
+            <span className="text-3xl font-bold text-foreground">
+              {PLANS[currentPlanName]?.label ?? "Free"}
             </span>
             {usage?.subscriptionStatus && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
@@ -178,7 +158,7 @@ async function renderSettings(
             {usage?.maxMessages ? (
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-primary transition-all"
+                  className={`h-full rounded-full transition-all ${progressColor}`}
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>
@@ -208,34 +188,44 @@ async function renderSettings(
 
           <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 md:grid-cols-4">
             {plans.map((plan) => {
-              const isCurrent = plan.id === currentPlanName;
+              const isCurrent = plan.name === currentPlanName;
+              const planTier = PLAN_TIER[plan.name] ?? 0;
+              const isUpgrade = planTier > currentPlanTier;
+              const isDowngrade = planTier < currentPlanTier;
+
               return (
                 <div
-                  key={plan.id}
+                  key={plan.name}
                   className={`relative rounded-xl border p-4 sm:p-6 ${
-                    plan.id === "team"
+                    plan.name === "team"
                       ? "border-primary bg-primary/5"
                       : "border-border bg-background"
                   }`}
                 >
-                  {plan.id === "team" && (
+                  {plan.name === "team" && (
                     <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                       推荐
                     </span>
                   )}
                   <div>
                     <h3 className="text-base font-semibold text-foreground">
-                      {plan.name}
+                      {plan.label}
                     </h3>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {plan.description}
                     </p>
                   </div>
                   <div className="mt-4">
-                    <span className="text-3xl font-bold text-foreground">
-                      ¥{plan.price}
-                    </span>
-                    <span className="text-xs text-muted-foreground">/月</span>
+                    {plan.price === 0 ? (
+                      <span className="text-3xl font-bold text-foreground">免费</span>
+                    ) : (
+                      <>
+                        <span className="text-3xl font-bold text-foreground">
+                          ¥{plan.price}
+                        </span>
+                        <span className="text-xs text-muted-foreground">/月</span>
+                      </>
+                    )}
                   </div>
                   <ul className="mt-4 space-y-2">
                     {plan.features.map((feature) => (
@@ -258,10 +248,18 @@ async function renderSettings(
                       <span className="block w-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-center text-xs font-medium text-amber-600 dark:text-amber-400">
                         管理员身份
                       </span>
+                    ) : isDowngrade && isStripeEnabled ? (
+                      // Stripe 模式：降级需通过 Customer Portal 操作
+                      <span className="block w-full rounded-lg border border-dashed border-border bg-muted/30 px-4 py-2 text-center text-xs font-medium text-muted-foreground">
+                        降级请前往账单管理
+                      </span>
                     ) : (
                       <form action={checkoutAction}>
                         <input type="hidden" name="priceId" value={plan.priceId} />
-                        <SubmitButton />
+                        <SubmitButton
+                          label={isUpgrade ? "升级套餐" : "切换套餐"}
+                          variant={isUpgrade ? "default" : "outline"}
+                        />
                       </form>
                     )}
                   </div>
@@ -277,14 +275,20 @@ async function renderSettings(
           )}
         </section>
 
-        {/* 配额说明 */}
+        {/* 配额说明（从 PLANS 动态生成） */}
         <section className="rounded-lg border border-border bg-card p-6">
           <h2 className="text-lg font-medium text-foreground">套餐配额说明</h2>
           <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <li>· Free：每月 100 条消息，创建 1 个 OPC，无团队功能</li>
-            <li>· Creator：每月 2000 条消息，创建 10 个 OPC，收益分成 70%</li>
-            <li>· Team：每月 10000 条消息，创建 20 个 OPC，团队 10 人，可订阅 OPC，收益 80%</li>
-            <li>· Enterprise：无限消息，无限 OPC，无限成员，优先支持</li>
+            {plans.map((plan) => (
+              <li key={plan.name}>
+                · {plan.label}：
+                {plan.maxMessages === null ? "无限消息" : `每月 ${plan.maxMessages} 条消息`}
+                ，创建 {plan.maxOpcCreate === null ? "无限" : plan.maxOpcCreate} 个 OPC
+                {plan.maxMembers && plan.maxMembers > 1 ? `，团队 ${plan.maxMembers} 人` : ""}
+                {plan.canSubscribeOpc ? "，可订阅 OPC" : ""}
+                {plan.canRevenueShare ? `，收益 ${plan.revenuePercent}%` : ""}
+              </li>
+            ))}
           </ul>
           <p className="mt-4 text-xs text-muted-foreground">
             配额按订阅周期重置。升级套餐后立即生效并重置已用消息数。

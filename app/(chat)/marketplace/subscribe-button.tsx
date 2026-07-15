@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { subscribeOpcAction, cancelSubscriptionAction } from "@/lib/opc-market/subscribe-action";
 import { toast } from "sonner";
@@ -13,13 +13,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /**
  * 商城订阅按钮：调用 subscribeOpcAction 发起订阅。
  * - Stripe 已配置：跳转 Stripe Checkout 支付
  * - Mock 模式：直接激活订阅，提示成功
  *
- * 已订阅时显示「取消订阅」按钮，调用 cancelSubscriptionAction。
+ * 已订阅时显示「已订阅」状态 + 「取消订阅」按钮（destructive variant）。
  */
 export function SubscribeButton({
   agentId,
@@ -41,20 +46,20 @@ export function SubscribeButton({
       formData.set("agentId", agentId);
       formData.set("period", period);
       const result = await subscribeOpcAction(formData);
-
-      if (result.success) {
-        if (result.data?.checkoutUrl) {
-          window.location.href = result.data.checkoutUrl;
-        } else {
-          // Mock 模式，直接激活
-          toast.success("订阅成功");
-          router.refresh();
-        }
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.data?.checkoutUrl) {
+        // Stripe 模式：跳转支付页
+        window.location.href = result.data.checkoutUrl;
       } else {
-        toast.error(result.error || "订阅失败");
+        // Mock 模式：直接激活成功
+        toast.success("订阅成功");
+        router.refresh();
       }
     } catch {
-      toast.error("操作失败，请稍后重试");
+      toast.error("订阅失败，请稍后重试");
     } finally {
       setPending(false);
     }
@@ -65,33 +70,45 @@ export function SubscribeButton({
     setPending(true);
     try {
       const result = await cancelSubscriptionAction(subscriptionId);
-      if (result.success) {
-        toast.success("已取消订阅");
-        router.refresh();
-      } else {
-        toast.error(result.error || "取消订阅失败");
+      if (!result.success) {
+        toast.error(result.error);
+        return;
       }
+      toast.success("已取消订阅");
+      router.refresh();
     } catch {
-      toast.error("操作失败，请稍后重试");
+      toast.error("取消订阅失败，请稍后重试");
     } finally {
       setPending(false);
     }
   }
 
+  // 已订阅状态：显示已订阅标签 + 取消订阅按钮
   if (isSubscribed) {
     return (
-      <Button
-        onClick={handleCancel}
-        disabled={pending}
-        variant="outline"
-        className="flex-1"
-      >
-        {pending ? <Loader2 className="size-4 animate-spin" /> : null}
-        取消订阅
-      </Button>
+      <div className="flex w-full items-center gap-2">
+        <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2 text-xs font-medium text-emerald-600">
+          <Check className="size-3.5" />
+          已订阅
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleCancel}
+              disabled={pending}
+              variant="destructive"
+              size="sm"
+            >
+              {pending ? <Loader2 className="size-4 animate-spin" /> : "取消"}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>取消订阅此 OPC</TooltipContent>
+        </Tooltip>
+      </div>
     );
   }
 
+  // 未订阅状态：周期选择 + 订阅按钮
   return (
     <div className="flex w-full items-center gap-2">
       <Select

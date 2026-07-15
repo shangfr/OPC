@@ -54,6 +54,8 @@ import {
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
+import { Switch } from "../ui/switch";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import {
@@ -561,22 +563,31 @@ function PureMultimodalInput({
           {status === "submitted" || status === "streaming" ? (
             <StopButton chatId={chatId} setMessages={setMessages} stop={stop} />
           ) : (
-            <PromptInputSubmit
-              aria-label={input.trim() ? "发送消息" : "请输入消息后再发送"}
-              className={cn(
-                // 响应式触摸目标：移动端 44px 符合 HIG，桌面端保持 32px 紧凑
-                "h-11 w-11 rounded-xl transition-all duration-200 md:h-8 md:w-8",
-                input.trim()
-                  ? "bg-foreground text-background hover:opacity-85 active:scale-95"
-                  : "bg-muted text-muted-foreground/25 cursor-not-allowed",
-              )}
-              data-testid="send-button"
-              disabled={!input.trim() || uploadQueue.length > 0}
-              status={status}
-              variant="secondary"
-            >
-              <ArrowUpIcon className="size-4" />
-            </PromptInputSubmit>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={-1} className="inline-flex">
+                  <PromptInputSubmit
+                    aria-label={input.trim() ? "发送消息" : "请输入消息后再发送"}
+                    className={cn(
+                      // 响应式触摸目标：移动端 44px 符合 HIG，桌面端保持 32px 紧凑
+                      "h-11 w-11 rounded-xl transition-all duration-200 md:h-8 md:w-8",
+                      input.trim()
+                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 active:scale-95"
+                        : "bg-muted text-muted-foreground/30 cursor-not-allowed",
+                    )}
+                    data-testid="send-button"
+                    disabled={!input.trim() || uploadQueue.length > 0}
+                    status={status}
+                    variant="secondary"
+                  >
+                    <ArrowUpIcon className="size-4" />
+                  </PromptInputSubmit>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {input.trim() ? "发送消息 (Enter)" : "请输入消息后再发送"}
+              </TooltipContent>
+            </Tooltip>
           )}
         </PromptInputFooter>
       </PromptInput>
@@ -879,28 +890,19 @@ function ThinkingToggle({
   }
 
   return (
-    <button
-      aria-label={
-        enabled ? "思考模式已开启，点击关闭" : "思考模式已关闭，点击开启"
-      }
-      aria-pressed={enabled}
-      className={cn(
-        "inline-flex h-8 cursor-pointer items-center gap-1 rounded-lg px-2 text-[12px] font-medium transition-colors",
-        enabled
-          ? "bg-cyan-500 text-white hover:bg-cyan-500/90"
-          : "bg-muted text-muted-foreground hover:bg-muted/80"
-      )}
-      data-testid="thinking-toggle"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onChange?.(!enabled);
-      }}
-      type="button"
-    >
-      <BrainIcon className="size-3.5" />
-      思考
-    </button>
+    <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium transition-colors hover:bg-muted/80">
+      <BrainIcon className="size-3.5 text-muted-foreground" />
+      <span className="text-muted-foreground">思考</span>
+      <Switch
+        aria-label="思考模式"
+        checked={enabled}
+        className="scale-90"
+        data-testid="thinking-toggle"
+        onCheckedChange={(checked) => {
+          onChange?.(checked);
+        }}
+      />
+    </label>
   );
 }
 
@@ -914,11 +916,13 @@ function PureStopButton({
   setMessages: UseChatHelpers<ChatMessage>["setMessages"];
 }) {
   return (
-    <Button
-      aria-label="停止生成"
-      className="h-8 w-8 rounded-xl bg-foreground p-1 text-background transition-all duration-200 hover:opacity-85 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/25"
-      data-testid="stop-button"
-      onClick={(event) => {
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label="停止生成"
+          className="h-8 w-8 rounded-xl bg-primary p-1 text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/30"
+          data-testid="stop-button"
+          onClick={(event) => {
         event.preventDefault();
         stop();
         // Add a "stopped" indicator to the last assistant message and persist to DB
@@ -950,6 +954,9 @@ function PureStopButton({
     >
       <StopIcon size={14} />
     </Button>
+      </TooltipTrigger>
+      <TooltipContent>停止生成</TooltipContent>
+    </Tooltip>
   );
 }
 

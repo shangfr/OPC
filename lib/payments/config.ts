@@ -14,6 +14,7 @@ export const isStripeEnabled = Boolean(process.env.STRIPE_SECRET_KEY);
 export type PlanQuota = {
   name: string;
   label: string;
+  description: string;
   price: number;
   maxMessages: number | null;
   maxMembers: number | null;
@@ -22,12 +23,14 @@ export type PlanQuota = {
   canCreateTeam: boolean;
   canRevenueShare: boolean;
   revenuePercent: number;
+  features: string[];
 };
 
 export const PLANS: Record<string, PlanQuota> = {
   free: {
     name: "free",
     label: "Free",
+    description: "适合个人体验",
     price: 0,
     maxMessages: 100,
     maxMembers: 1,
@@ -36,10 +39,12 @@ export const PLANS: Record<string, PlanQuota> = {
     canCreateTeam: false,
     canRevenueShare: false,
     revenuePercent: 0,
+    features: ["每月 100 条消息", "创建 1 个 OPC", "基础 OPC 库访问"],
   },
   creator: {
     name: "creator",
     label: "Creator",
+    description: "适合独立创作者",
     price: 29,
     maxMessages: 2000,
     maxMembers: 1,
@@ -48,10 +53,12 @@ export const PLANS: Record<string, PlanQuota> = {
     canCreateTeam: false,
     canRevenueShare: true,
     revenuePercent: 70,
+    features: ["每月 2000 条消息", "创建 10 个 OPC", "收益分成 70%", "全部 OPC 库访问"],
   },
   team: {
     name: "team",
     label: "Team",
+    description: "适合小型团队",
     price: 99,
     maxMessages: 10000,
     maxMembers: 10,
@@ -60,10 +67,12 @@ export const PLANS: Record<string, PlanQuota> = {
     canCreateTeam: true,
     canRevenueShare: true,
     revenuePercent: 80,
+    features: ["每月 10000 条消息", "创建 20 个 OPC", "团队管理（10 人）", "订阅 OPC 服务", "收益分成 80%"],
   },
   enterprise: {
     name: "enterprise",
     label: "Enterprise",
+    description: "适合大型企业",
     price: 299,
     maxMessages: null,
     maxMembers: null,
@@ -72,6 +81,7 @@ export const PLANS: Record<string, PlanQuota> = {
     canCreateTeam: true,
     canRevenueShare: true,
     revenuePercent: 80,
+    features: ["无限消息", "创建无限 OPC", "团队管理（无限）", "订阅 OPC 服务", "收益分成 80%", "优先技术支持"],
   },
 };
 

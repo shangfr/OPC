@@ -9,6 +9,7 @@ import { useSWRConfig } from "swr";
 import { useArtifact } from "@/hooks/use-artifact";
 import type { Document } from "@/lib/db/schema";
 import { cn, getDocumentTimestampByIndex } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { LoaderIcon } from "./icons";
 
 type VersionFooterProps = {
@@ -85,8 +86,8 @@ export const VersionFooter = ({
       </div>
 
       <div className="flex flex-row gap-2">
-        <button
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-foreground px-3 py-1.5 text-sm font-medium text-background transition-all duration-150 hover:opacity-90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+        <Button
+          variant="destructive"
           disabled={isMutating}
           onClick={async () => {
             setIsMutating(true);
@@ -133,17 +134,16 @@ export const VersionFooter = ({
               <LoaderIcon size={14} />
             </div>
           )}
-        </button>
-        <button
-          className="inline-flex items-center justify-center rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-all duration-150 hover:bg-muted active:scale-[0.98]"
+        </Button>
+        <Button
+          variant="outline"
           onClick={() => {
             setMode("edit");
             handleVersionChange("latest");
           }}
-          type="button"
         >
           最新
-        </button>
+        </Button>
       </div>
     </motion.div>
   );

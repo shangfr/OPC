@@ -149,7 +149,7 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                 {/* 新建对话 — 主操作 CTA（参考 ChatGPT / Claude 侧边栏顶部主按钮） */}
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    className="h-10 w-full gap-2.5 rounded-lg bg-primary text-[15px] font-semibold text-primary-foreground shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-md disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0"
+                    className="h-10 w-full gap-2.5 rounded-lg border border-primary/20 bg-primary/[0.06] text-[14px] font-medium text-primary transition-all duration-150 hover:bg-primary/[0.1] hover:border-primary/30 disabled:opacity-100 disabled:bg-muted/60 disabled:border-border/60 disabled:text-muted-foreground/60 group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-primary/20 group-data-[collapsible=icon]:bg-primary/[0.06] group-data-[collapsible=icon]:text-primary"
                     disabled={isEmptyChat}
                     onClick={async () => {
                       setOpenMobile(false);
@@ -168,7 +168,7 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                         toast.error("创建对话失败，请重试");
                       }
                     }} 
-                    tooltip="新建对话"
+                    tooltip={isEmptyChat ? "当前已是新对话" : "新建对话"}
                   >
                     <PenSquareIcon className="size-5" />
                     <span>新建对话</span>

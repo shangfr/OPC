@@ -25,6 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 import type { Chat } from "@/lib/db/schema";
 import { fetcher } from "@/lib/utils";
 import { ChatItem } from "./sidebar-history-item";
@@ -362,30 +363,33 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
             历史记录
           </SidebarGroupLabel>
           {allChats.length > 0 && !isSelecting && (
-            <button
-              className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+            <Button
+              variant="ghost"
+              size="xs"
+              className="h-5 px-2 text-[10px]"
               onClick={() => setIsSelecting(true)}
-              type="button"
             >
               批量管理
-            </button>
+            </Button>
           )}
           {isSelecting && (
-            <div className="flex items-center gap-2">
-              <button
-                className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-5 px-2 text-[10px]"
                 onClick={handleSelectAll}
-                type="button"
               >
                 {selectedIds.size === allChats.length ? "取消全选" : "全选"}
-              </button>
-              <button
-                className="text-[10px] text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-5 px-2 text-[10px]"
                 onClick={handleExitSelecting}
-                type="button"
               >
                 完成
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -569,13 +573,13 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
           {isSelecting && selectedIds.size > 0 && (
             <div className="sticky bottom-0 bg-sidebar px-2 py-2 border-t border-sidebar-border">
-              <button
-                className="w-full rounded-md bg-destructive px-3 py-1.5 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 transition-colors"
+              <Button
+                variant="destructive"
+                className="w-full"
                 onClick={() => setShowBatchDeleteDialog(true)}
-                type="button"
               >
                 删除选中 ({selectedIds.size})
-              </button>
+              </Button>
             </div>
           )}
         </SidebarGroupContent>

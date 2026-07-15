@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Eye, Search, Sparkles } from "lucide-react";
 import { auth } from "@/app/(auth)/auth";
 import { getCategories, getMarketplaceAgents, getSubscribedOpcs } from "@/lib/db/queries";
-import { hasPlanTier } from "@/lib/payments/config";
+import { hasPlanTier, getPlanQuota } from "@/lib/payments/config";
 import { SubscribeButton } from "./subscribe-button";
 
 /**
@@ -45,8 +45,6 @@ export default async function MarketplacePage({
     getCategories(),
   ]);
 
-  // 仅 Team 及以上套餐可订阅
-  const canSubscribeFinal = canSubscribe;
   // 已订阅的 agentId 集合
   const subscribedAgentIds = new Set(subscribedOpcs.map((s) => s.agent.id));
 
@@ -55,22 +53,22 @@ export default async function MarketplacePage({
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-foreground sm:text-2xl">OPC 服务商城</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          浏览全部已上架的公共 OPC 智能体。企业账号可订阅雇佣，将 OPC 接入团队工作流。
+          浏览全部已上架的公共 OPC 智能体。Team 及以上套餐可订阅雇佣，将 OPC 接入团队工作流。
         </p>
       </div>
 
       {/* 角色权限提示横幅：按套餐显示差异化操作权限说明 */}
       {canSubscribe ? (
-        <div className="mb-6 flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/[0.04] p-4">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-            <ShoppingCart className="size-4 text-blue-600 dark:text-blue-400" />
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/[0.04] p-4">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <ShoppingCart className="size-4 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-foreground">
-              企业管理员权限
+              订阅权限已开启
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              您可以为企业团队订阅 OPC 服务，订阅后将自动接入团队工作流。当前已订阅 {subscribedOpcs.length} 个 OPC。
+              您可以订阅 OPC 服务，订阅后将自动接入团队工作流。当前已订阅 {subscribedOpcs.length} 个 OPC。
             </p>
           </div>
         </div>
@@ -84,10 +82,15 @@ export default async function MarketplacePage({
               浏览模式
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {hasPlanTier(userPlan, "team")
-                ? "个人账号仅可浏览市场行情。如需订阅 OPC 服务，请升级至 Team 套餐。"
-                : "当前套餐不支持订阅 OPC 服务。请升级至 Team 套餐解锁订阅功能。"}
+              当前套餐（{getPlanQuota(userPlan).label}）不支持订阅 OPC 服务。请升级至 Team 套餐解锁订阅功能。
             </p>
+            <Link
+              href="/settings"
+              className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              <Sparkles className="size-3" />
+              升级套餐
+            </Link>
           </div>
         </div>
       )}
@@ -130,13 +133,16 @@ export default async function MarketplacePage({
         {params.categoryId && (
           <input type="hidden" name="categoryId" value={params.categoryId} />
         )}
-        <input
-          type="text"
-          name="search"
-          placeholder="搜索 OPC 名称或描述..."
-          defaultValue={params.search ?? ""}
-          className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
-        />
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            name="search"
+            placeholder="搜索 OPC 名称或描述..."
+            defaultValue={params.search ?? ""}
+            className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+          />
+        </div>
         <button
           type="submit"
           className="touch-target rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -160,14 +166,14 @@ export default async function MarketplacePage({
             return (
               <div
                 key={agent.id}
-                className="rounded-xl border border-border bg-card p-5"
+                className="group relative flex flex-col rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-sm"
               >
                 <div className="mb-2 flex items-start justify-between">
                   <h3 className="text-base font-semibold text-foreground">
                     {agent.name}
                   </h3>
                   {isSubscribed && (
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
+                    <span className="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600">
                       已订阅
                     </span>
                   )}
@@ -190,7 +196,7 @@ export default async function MarketplacePage({
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-auto flex gap-2">
                   {canSubscribe ? (
                     isSubscribed ? (
                       <SubscribeButton
@@ -205,9 +211,12 @@ export default async function MarketplacePage({
                       <SubscribeButton agentId={agent.id} />
                     )
                   ) : (
-                    <span className="flex-1 rounded-lg border border-border px-4 py-2 text-center text-xs text-muted-foreground">
-                      仅企业账号可订阅
-                    </span>
+                    <Link
+                      href="/settings"
+                      className="flex-1 rounded-lg border border-primary/20 bg-primary/[0.06] px-4 py-2 text-center text-xs font-medium text-primary transition-colors hover:bg-primary/[0.1]"
+                    >
+                      升级后可订阅
+                    </Link>
                   )}
                 </div>
               </div>
