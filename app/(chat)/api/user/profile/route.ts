@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/(auth)/auth";
+import { auth, unstable_update } from "@/app/(auth)/auth";
 import { updateUserProfile } from "@/lib/db/queries";
 
 export async function PUT(request: Request) {
@@ -39,16 +39,11 @@ export async function PUT(request: Request) {
       name: name?.trim(),
     });
 
-    const response = NextResponse.json({ success: true });
-    response.cookies.set("refresh_session", "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60,
-      secure: process.env.NODE_ENV === "production",
-    });
+    // 通过 unstable_update 将新用户名直接写入 JWT token 并持久化到
+    // session cookie，确保刷新页面后 session.user.name 立即生效。
+    await unstable_update({ name: name?.trim() });
 
-    return response;
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[profile update] error:", error);
     return NextResponse.json(

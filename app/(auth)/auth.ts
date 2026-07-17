@@ -72,6 +72,7 @@ export const {
   auth,
   signIn,
   signOut,
+  unstable_update,
 } = NextAuth({
   ...authConfig,
   providers: [
@@ -155,6 +156,22 @@ export const {
         token.accountType = mu.accountType ?? "personal";
         token.enterpriseId = mu.enterpriseId ?? null;
         token.planName = (mu as { planName?: string | null }).planName ?? "free";
+      }
+
+      // 会话更新：当调用 unstable_update({ picture, name }) 时，
+      // 将更新后的字段写入 token，并持久化到 session cookie。
+      // 解决纯 Server Component 模式下 refresh_session cookie 无法持久化 token 的问题。
+      if (trigger === "update" && session) {
+        const updateData = session as {
+          picture?: string | null;
+          name?: string | null;
+        };
+        if (updateData.picture !== undefined) {
+          token.picture = updateData.picture;
+        }
+        if (updateData.name !== undefined) {
+          token.name = updateData.name;
+        }
       }
 
       // SaaS：首次登录若 token 中无 teamId，懒加载用户加入的第一个团队
@@ -277,6 +294,12 @@ export const {
         session.user.type = token.type;
         session.user.role = token.role;
         session.user.phone = token.phone;
+
+        // 显式映射 token.picture → session.user.image
+        // 确保头像更新后 session 中 image 字段与 token 保持一致
+        session.user.image = token.picture ?? null;
+        // 显式映射 token.name → session.user.name
+        session.user.name = token.name ?? null;
 
         // SaaS：把当前团队 ID 透传到 session，供 Server Component / API 读取
         session.user.teamId = token.teamId ?? null;

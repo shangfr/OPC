@@ -1,6 +1,6 @@
 import { upload as ossUpload } from "@/lib/storage/oss";
 import { NextResponse } from "next/server";
-import { auth } from "@/app/(auth)/auth";
+import { auth, unstable_update } from "@/app/(auth)/auth";
 import { updateUserProfile } from "@/lib/db/queries";
 
 const ALLOWED_TYPES = [
@@ -54,16 +54,13 @@ export async function POST(request: Request) {
       image: blob.url,
     });
 
-    const response = NextResponse.json({ url: blob.url });
-    response.cookies.set("refresh_session", "1", {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60,
-      secure: process.env.NODE_ENV === "production",
-    });
+    // 通过 NextAuth 的 unstable_update 将新头像 URL 直接写入
+    // JWT token 并持久化到 session cookie。
+    // 这样后续所有页面刷新（Server Component 读取 auth()）都能
+    // 拿到最新的 session.user.image，无需依赖 refresh_session cookie。
+    await unstable_update({ picture: blob.url });
 
-    return response;
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
     console.error("[avatar upload] error:", error);
     return NextResponse.json(

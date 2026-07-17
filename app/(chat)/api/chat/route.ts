@@ -406,7 +406,13 @@ export async function POST(request: Request) {
           }
         );
 
-        dataStream.merge(result.toUIMessageStream({ sendReasoning: isReasoningModel && thinkingEnabled }));
+        // 推理模型（如 DeepSeek）会先输出 reasoning_content（思考过程），
+        // 再输出 content（正文）。若 sendReasoning 为 false，reasoning-delta
+        // 会被 toUIMessageStream 过滤掉，但 reasoning-start / reasoning-end
+        // 仍然转发，导致思考阶段前端无任何文本输出 → 表现为"先出一句后卡顿，
+        // 再一次性输出一大段"。
+        // 修复：对推理模型始终发送 reasoning，保证整条流持续有数据到达前端。
+        dataStream.merge(result.toUIMessageStream({ sendReasoning: isReasoningModel }));
 
         if (titlePromise) {
           try {
