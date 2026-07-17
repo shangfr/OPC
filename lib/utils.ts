@@ -106,3 +106,31 @@ export function hasPermission(
 
   return userLevel >= requiredLevel;
 }
+
+// ── 安全的 sessionStorage/localStorage 工具函数 ──
+// 隐私模式或 storage 被禁用时，直接调用 sessionStorage 会抛异常
+// 这些函数静默处理错误，返回 null/undefined 而非崩溃
+
+export function safeSessionStorageGet(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function safeSessionStorageSet(key: string, value: string): void {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    // 静默忽略（隐私模式或 storage 已满）
+  }
+}
+
+export function safeSessionStorageRemove(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // 静默忽略
+  }
+}

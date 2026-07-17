@@ -12,7 +12,7 @@ type EditDocumentProps = {
 export const editDocument = ({ session, dataStream }: EditDocumentProps) =>
   tool({
     description:
-      "Make a targeted edit to an existing artifact by finding and replacing an exact string. Preferred over updateDocument for small changes. The old_string must match exactly.",
+      "局部修改已有文档：查找精确字符串并替换。old_string须含3-5行上下文确保唯一。适合改样式、修bug、改错别字。不要用于全量重写。",
     inputSchema: z.object({
       id: z.string().describe("The ID of the artifact to edit"),
       old_string: z

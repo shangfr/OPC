@@ -32,7 +32,7 @@ import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
-import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { fetcher, fetchWithErrorHandlers, generateUUID, safeSessionStorageGet, safeSessionStorageRemove } from "@/lib/utils";
 
 type ActiveChatContextValue = {
   chatId: string;
@@ -417,7 +417,7 @@ useEffect(() => {
   }
 
   // 1. 检查 sessionStorage
-  const storedSummaryTask = sessionStorage.getItem(`pending-summarize-task-${chatId}`);
+  const storedSummaryTask = safeSessionStorageGet(`pending-summarize-task-${chatId}`);
 
   if (storedSummaryTask) {
     // 2. 标记这个 chatId 已经处理过了
@@ -425,7 +425,7 @@ useEffect(() => {
 
     // ... (原有的逻辑保持不变)
     summarizeTaskRef.current = storedSummaryTask;
-    sessionStorage.removeItem(`pending-summarize-task-${chatId}`);
+    safeSessionStorageRemove(`pending-summarize-task-${chatId}`);
     window.history.replaceState(
       {},
       "",

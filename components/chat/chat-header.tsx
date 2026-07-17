@@ -13,7 +13,7 @@ import {
   sanitizeFilename,
 } from "@/lib/chat-utils";
 import type { ChatMessage } from "@/lib/types";
-import { cn, fetcher } from "@/lib/utils";
+import { cn, fetcher, safeSessionStorageSet } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
@@ -73,7 +73,7 @@ function PureChatHeader({
       });
       if (!res.ok) throw new Error("Failed to create chat");
       const { chatId: newChatId } = await res.json();
-      sessionStorage.setItem(`pending-chat-${newChatId}`, agent.id);
+      safeSessionStorageSet(`pending-chat-${newChatId}`, agent.id);
       setOpen(false);
       router.push(`/chat/${newChatId}`);
     } catch {

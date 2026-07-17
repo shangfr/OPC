@@ -5,8 +5,9 @@ import { memo } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
+import { generateUUID } from "@/lib/utils";
 import type { UIArtifact } from "./artifact";
-import { PreviewMessage, ThinkingMessage } from "./message";
+import { PreviewMessage } from "./message";
 
 type ArtifactMessagesProps = {
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
@@ -76,7 +77,28 @@ function PureArtifactMessages({
               (part) => "state" in part && part.state === "approval-responded"
             )
           ) && (
-            <ThinkingMessage key="thinking" selectedModelId={selectedModelId} />
+            // 用 PreviewMessage 占位（内部显示 Skeleton），保持 DOM 结构一致，避免切换闪烁
+            <PreviewMessage
+              addToolApprovalResponse={addToolApprovalResponse}
+              chatId={chatId}
+              isLastAssistant={false}
+              isLoading={true}
+              isReadonly={isReadonly}
+              key="thinking-placeholder"
+              message={
+                {
+                  id: generateUUID(),
+                  role: "assistant",
+                  parts: [],
+                  metadata: { createdAt: new Date().toISOString() },
+                } as ChatMessage
+              }
+              regenerate={regenerate}
+              requiresScrollPadding={false}
+              selectedModelId={selectedModelId}
+              setMessages={setMessages}
+              vote={undefined}
+            />
           )}
       </AnimatePresence>
 

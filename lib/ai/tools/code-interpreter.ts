@@ -12,7 +12,7 @@ import { z } from "zod";
  */
 export const codeInterpreter = tool({
   description:
-    "Execute JavaScript code in a sandboxed environment. Use this for mathematical calculations, data processing, string manipulation, or any logic that requires code execution. The code runs in an isolated Node.js VM sandbox with a 5-second timeout. Available globals: Math, JSON, Date, console (output captured). No file system, no network, no require.",
+    "执行JavaScript代码做数学计算/数据处理。沙箱环境，5秒超时，可用Math/JSON/Date/console。无文件/网络/require。",
   inputSchema: z.object({
     code: z.string().describe("JavaScript code to execute. Use console.log() to output results. Available: Math, JSON, Date, console."),
   }),

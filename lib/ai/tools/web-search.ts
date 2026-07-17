@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const webSearch = tool({
   description:
-    "Search the web for real-time information. Use this when the user asks about current events, latest news, real-time data, or anything that requires up-to-date information beyond your training data. Returns a summary of search results with titles, URLs, and snippets.",
+    "搜索网页获取实时信息。用户问最新/新闻/当前事件时使用。返回标题、URL、摘要。",
   inputSchema: z.object({
     query: z.string().describe("The search query, in the user's language"),
     maxResults: z.number().int().min(1).max(5).default(3).describe("Maximum number of results to return"),

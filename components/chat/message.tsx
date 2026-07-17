@@ -1,7 +1,7 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import Image from "next/image";
-import { useActiveChat } from "@/hooks/use-active-chat";
+import { memo } from "react";
 import { chatModels } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -24,6 +24,21 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 
+type PreviewMessageProps = {
+  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
+  chatId: string;
+  message: ChatMessage;
+  vote: Vote | undefined;
+  isLoading: boolean;
+  setMessages: UseChatHelpers<ChatMessage>["setMessages"];
+  regenerate: UseChatHelpers<ChatMessage>["regenerate"];
+  isReadonly: boolean;
+  requiresScrollPadding: boolean;
+  onEdit?: (message: ChatMessage) => void;
+  selectedModelId: string;
+  isLastAssistant?: boolean;
+};
+
 const PurePreviewMessage = ({
   addToolApprovalResponse,
   chatId,
@@ -37,20 +52,7 @@ const PurePreviewMessage = ({
   onEdit,
   selectedModelId,
   isLastAssistant,
-}: {
-  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
-  chatId: string;
-  message: ChatMessage;
-  vote: Vote | undefined;
-  isLoading: boolean;
-  setMessages: UseChatHelpers<ChatMessage>["setMessages"];
-  regenerate: UseChatHelpers<ChatMessage>["regenerate"];
-  isReadonly: boolean;
-  requiresScrollPadding: boolean;
-  onEdit?: (message: ChatMessage) => void;
-  selectedModelId: string;
-  isLastAssistant?: boolean;
-}) => {
+}: PreviewMessageProps) => {
   const currentModel = chatModels.find((m) => m.id === selectedModelId);
   const attachmentsFromMessage = message.parts.filter(
     (part) => part.type === "file"
@@ -332,7 +334,44 @@ const PurePreviewMessage = ({
     />
   );
 
-  const content = (
+  // 流式输出时，判断是否还没有任何可见内容（text / reasoning / tool）
+  // 此时显示 Skeleton 占位，但保持外层 DOM 结构与真实消息一致，避免切换闪烁
+  const hasVisibleContent = message.parts?.some((part) => {
+    if (part.type === "text") {
+      return (part as { text?: string }).text?.trim();
+    }
+    if (part.type === "reasoning") {
+      return (part as { text?: string }).text?.trim();
+    }
+    // 动态工具（webSearch / codeInterpreter / generateImage 等）类型为 "dynamic-tool"
+    // 以及所有静态工具类型
+    if (
+      part.type === "dynamic-tool" ||
+      part.type === "tool-getWeather" ||
+      part.type === "tool-createDocument" ||
+      part.type === "tool-updateDocument" ||
+      part.type === "tool-requestSuggestions"
+    ) {
+      return true;
+    }
+    return false;
+  });
+
+  const showSkeleton = isAssistant && isLoading && !hasVisibleContent;
+
+  const skeletonContent = (
+    <div className="flex w-full max-w-md flex-col gap-2 py-1">
+      <span className="sr-only">正在生成回复中</span>
+      <Skeleton className="h-3.5 w-16" />
+      <Skeleton className="h-3.5 w-full" />
+      <Skeleton className="h-3.5 w-4/5" />
+      <Skeleton className="h-3.5 w-3/5" />
+    </div>
+  );
+
+  const content = showSkeleton ? (
+    skeletonContent
+  ) : (
     <>
       {attachments}
       {parts}
@@ -401,50 +440,17 @@ const PurePreviewMessage = ({
   );
 };
 
-export const PreviewMessage = PurePreviewMessage;
-
-export const ThinkingMessage = ({
-  selectedModelId,
-}: {
-  selectedModelId: string;
-}) => {
-  const currentModel = chatModels.find((m) => m.id === selectedModelId);
-  const { thinkingEnabled } = useActiveChat();
+// memo 比较：只在关键 props 变化时重渲染
+// useChat 更新 messages 时，只有最后一条消息引用会变，历史消息可跳过重渲染
+const areEqual = (prev: PreviewMessageProps, next: PreviewMessageProps) => {
   return (
-    <div
-      aria-busy="true"
-      aria-live="polite"
-      className="group/message w-full"
-      data-role="assistant"
-      data-testid="message-assistant-loading"
-    >
-      <div className="flex items-start gap-3">
-        <div className="hidden md:flex h-[calc(13px*1.65)] shrink-0 items-center">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground ring-1 ring-border/50">
-            {currentModel ? (
-              <ModelSelectorLogo
-                className="size-[13px]"
-                provider={currentModel.provider}
-              />
-            ) : (
-              <ModelSelectorLogo
-                className="size-[13px]"
-                provider={chatModels[0]?.provider ?? "openai"}
-              />
-            )}
-          </div>
-        </div>
-
-        <div className="flex w-full max-w-md flex-col gap-2 py-1">
-          <span className="sr-only">
-            {thinkingEnabled ? "正在思考中" : "正在生成回复中"}
-          </span>
-          <Skeleton className="h-3.5 w-16" />
-          <Skeleton className="h-3.5 w-full" />
-          <Skeleton className="h-3.5 w-4/5" />
-          <Skeleton className="h-3.5 w-3/5" />
-        </div>
-      </div>
-    </div>
+    prev.message === next.message &&
+    prev.vote === next.vote &&
+    prev.isLoading === next.isLoading &&
+    prev.isReadonly === next.isReadonly &&
+    prev.isLastAssistant === next.isLastAssistant &&
+    prev.selectedModelId === next.selectedModelId
   );
 };
+
+export const PreviewMessage = memo(PurePreviewMessage, areEqual);

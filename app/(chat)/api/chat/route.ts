@@ -125,10 +125,29 @@ export async function POST(request: Request) {
 
     const userPlan = session.user.planName ?? "free";
     const isAdmin = session.user.role === "admin";
-    const messageCount = await getMessageCountByUserId({
-      id: session.user.id,
-      differenceInHours: 1,
+
+    // 并行执行：小时限流查询 + 团队配额检查
+    // 这两个操作互不依赖，串行会浪费 5-10ms
+    // 注意：历史消息拉取不能在这里并行，因为 summarizeTask 分支不需要它
+    const isToolApprovalFlow = Boolean(messages);
+    let messagesFromDb: DBMessage[] = [];
+    let titlePromise: Promise<string> | null = null;
+
+    // 配额检查可能抛 ChatbotError，单独包装
+    const quotaCheckPromise = checkMessageQuota(
+      session.user.teamId ?? null,
+    ).catch((error) => {
+      if (error instanceof ChatbotError) return error;
+      throw error;
     });
+
+    const [messageCount, quotaError] = await Promise.all([
+      getMessageCountByUserId({
+        id: session.user.id,
+        differenceInHours: 1,
+      }),
+      quotaCheckPromise,
+    ]);
 
     // 套餐驱动型限流：按套餐设置小时级消息上限
     const maxPerHour = getMaxMessagesPerHour(userPlan, isAdmin);
@@ -136,15 +155,9 @@ export async function POST(request: Request) {
       return new ChatbotError("rate_limit:chat").toResponse();
     }
 
-    // SaaS 多租户：团队本月消息配额检查
-    // 超限时返回 rate_limit:quota 错误，前端引导去 /pricing 升级
-    try {
-      await checkMessageQuota(session.user.teamId ?? null);
-    } catch (error) {
-      if (error instanceof ChatbotError) {
-        return error.toResponse();
-      }
-      throw error;
+    // 团队配额超限
+    if (quotaError instanceof ChatbotError) {
+      return quotaError.toResponse();
     }
 
     // ==========================================
@@ -167,10 +180,7 @@ export async function POST(request: Request) {
     // 汇总分支结束，以下是原有正常聊天逻辑
     // ==========================================
 
-    const isToolApprovalFlow = Boolean(messages);
-    let messagesFromDb: DBMessage[] = [];
-    let titlePromise: Promise<string> | null = null;
-
+    // 历史消息拉取或新建会话（summarizeTask 分支已 return，这里只处理普通聊天）
     if (chat) {
       if (chat.userId !== session.user.id) {
         return new ChatbotError("forbidden:chat").toResponse();
@@ -184,7 +194,6 @@ export async function POST(request: Request) {
         visibility: selectedVisibilityType,
         agentId: agentId,
         agentName: agentRecord?.name ?? null,
-        // SaaS 多租户：归属当前团队
         teamId: session.user.teamId ?? null,
       });
       titlePromise = generateTitleFromUserMessage({ message });
@@ -229,48 +238,112 @@ export async function POST(request: Request) {
     const supportsTools = capabilities?.tools === true;
     let systemMessage = systemPrompt({ requestHints, supportsTools });
 
-    let knowledgeContext = "";
-    if (agentRecord?.isActive && agentRecord?.knowledgeId) {
+    // ── 并行执行：知识库检索 + 站点配置 + 消息转换 ──
+    // 这三个操作互不依赖，原串行执行会浪费 5-15ms
+    // 知识库检索仍保留 1.5s 超时，避免阻塞首字
+
+    // 提取用户查询文本（知识库检索 + 工具预判共用）
+    const lastUserMsg = uiMessages[uiMessages.length - 1];
+    const userQueryText = lastUserMsg?.parts
+      ?.filter((p: { type: string }) => p.type === "text")
+      .map((p: { type: string; text?: string }) => (p as { text: string }).text)
+      .join(" ") ?? "";
+
+    // 知识库检索（带超时）
+    const knowledgePromise: Promise<string> = (async () => {
+      if (!(agentRecord?.isActive && agentRecord?.knowledgeId && userQueryText.trim())) {
+        return "";
+      }
       try {
-        const lastUserMsg = uiMessages[uiMessages.length - 1];
-        const queryText = lastUserMsg?.parts
-          ?.filter((p: { type: string }) => p.type === "text")
-          .map((p: { type: string; text?: string }) => (p as { text: string }).text)
-          .join(" ") ?? "";
-        if (queryText.trim()) {
-          const retrieveResult = await retrieveKnowledge({
-            query: queryText.slice(0, 1000),
-            knowledge_ids: [agentRecord.knowledgeId],
-            top_k: 5,
-            recall_method: "mixed",
-          });
-          if (!isProductionEnvironment) {
-            console.log("[chat] 知识库检索 query:", queryText.slice(0, 100));
-          }
-          if (retrieveResult.code === 200 && retrieveResult.data && retrieveResult.data.length > 0) {
-            const chunks = retrieveResult.data.map((r) => r.text).join("\n\n");
-            knowledgeContext = `\n\n## 知识库参考内容\n以下是从知识库中检索到的相关信息，请优先基于这些内容回答用户问题。\n\n${chunks}`;
-          }
+        const retrievePromise = retrieveKnowledge({
+          query: userQueryText.slice(0, 1000),
+          knowledge_ids: [agentRecord.knowledgeId],
+          top_k: 5,
+          recall_method: "mixed",
+        });
+        const timeoutPromise = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 1500)
+        );
+        const retrieveResult = await Promise.race([retrievePromise, timeoutPromise]);
+        if (!isProductionEnvironment) {
+          console.log("[chat] 知识库检索 query:", userQueryText.slice(0, 100));
+        }
+        if (
+          retrieveResult &&
+          retrieveResult.code === 200 &&
+          retrieveResult.data &&
+          retrieveResult.data.length > 0
+        ) {
+          const chunks = retrieveResult.data.map((r) => r.text).join("\n\n");
+          return `\n\n## 知识库参考内容\n以下是从知识库中检索到的相关信息，请优先基于这些内容回答用户问题。\n\n${chunks}`;
+        } else if (!retrieveResult) {
+          console.warn("[chat] 知识库检索超时(1.5s)，跳过知识库上下文");
         }
       } catch (e) {
         console.warn("[chat] 知识库检索失败:", e instanceof Error ? e.message : e);
       }
-    }
+      return "";
+    })();
 
+    // 站点配置（仅无 agent 时需要）
+    const siteConfigPromise = (!agentId ? getSiteConfig() : Promise.resolve(null)).catch(() => null);
+
+    // 消息转换
+    const modelMessagesPromise = convertToModelMessages(uiMessages);
+
+    // 并行等待三个操作
+    const [knowledgeContext, siteConfig, modelMessagesRaw] = await Promise.all([
+      knowledgePromise,
+      siteConfigPromise,
+      modelMessagesPromise,
+    ]);
+
+    // 拼接 system message
     if (agentRecord?.isActive) {
       systemMessage = `${agentRecord.systemPrompt}${knowledgeContext}\n\n${systemMessage}`;
-    } else if (!agentId) {
-      const config = await getSiteConfig();
-      if (config?.defaultSystemPrompt) {
-        const infrastructure = infrastructurePrompt({ requestHints, supportsTools });
-        systemMessage = `${config.defaultSystemPrompt}\n\n${infrastructure}`;
-      }
+    } else if (!agentId && siteConfig?.defaultSystemPrompt) {
+      const infrastructure = infrastructurePrompt({ requestHints, supportsTools });
+      systemMessage = `${siteConfig.defaultSystemPrompt}\n\n${infrastructure}`;
     }
 
-    let modelMessages = await convertToModelMessages(uiMessages);
+    let modelMessages = modelMessagesRaw;
     if (modelMessages.length > MAX_CONTEXT_MESSAGES) {
       modelMessages = modelMessages.slice(-MAX_CONTEXT_MESSAGES);
     }
+
+    // ── 工具按需加载：根据用户消息内容预判需要哪些工具 ──
+    // 减少不必要的工具定义传入 LLM，降低 prompt token，加快首字速度
+    // 文档类工具（createDocument/editDocument/updateDocument/requestSuggestions）始终保留，
+    // 因为用户随时可能要求生成/编辑文档，预判漏掉会损失功能。
+    const activeToolsList: Array<
+      "getWeather" | "createDocument" | "editDocument" | "updateDocument" |
+      "requestSuggestions" | "webSearch" | "codeInterpreter" | "generateImage"
+    > = [
+      "createDocument",
+      "editDocument",
+      "updateDocument",
+      "requestSuggestions",
+    ];
+
+    // 天气工具：消息提到天气/温度/降雨等关键词
+    if (/天气|温度|下雨|下雪|气温|weather|forecast/i.test(userQueryText)) {
+      activeToolsList.push("getWeather");
+    }
+    // 网页搜索：消息提到最新/今天/新闻/实时/2024/2025等时效性关键词
+    if (/最新|今天|今日|新闻|实时|现在|目前|2024|2025|latest|today|news|current/i.test(userQueryText)) {
+      activeToolsList.push("webSearch");
+    }
+    // 代码执行：消息提到运行/执行代码、计算、数据分析
+    if (/运行代码|执行代码|计算|数据分析|run code|execute|calculate|data analysis/i.test(userQueryText)) {
+      activeToolsList.push("codeInterpreter");
+    }
+    // 图片生成：消息提到画图/生成图片/绘制
+    if (/画图|画一个|生成图|绘制|作图|generate image|draw|paint/i.test(userQueryText)) {
+      activeToolsList.push("generateImage");
+    }
+
+    // 推理模型不支持工具时，清空 activeTools
+    const finalActiveTools = isReasoningModel && !supportsTools ? [] : activeToolsList;
 
     if (message?.role === "user") {
       saveMessages({
@@ -292,29 +365,39 @@ export async function POST(request: Request) {
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
+        // 按需构建工具对象：只包含 finalActiveTools 中的工具
+        // 避免把 8 个工具定义全部传给 LLM，减少 prompt token，加快首字速度
+        // 用 as const + 索引签名构建，保持各工具自身类型
+        const tools = {
+          ...(finalActiveTools.includes("getWeather") ? { getWeather } : {}),
+          ...(finalActiveTools.includes("createDocument")
+            ? { createDocument: createDocument({ session, dataStream, modelId: chatModel, chatId: id }) }
+            : {}),
+          ...(finalActiveTools.includes("editDocument")
+            ? { editDocument: editDocument({ dataStream, session }) }
+            : {}),
+          ...(finalActiveTools.includes("updateDocument")
+            ? { updateDocument: updateDocument({ session, dataStream, modelId: chatModel }) }
+            : {}),
+          ...(finalActiveTools.includes("requestSuggestions")
+            ? { requestSuggestions: requestSuggestions({ session, dataStream, modelId: chatModel }) }
+            : {}),
+          ...(finalActiveTools.includes("webSearch") ? { webSearch } : {}),
+          ...(finalActiveTools.includes("codeInterpreter") ? { codeInterpreter } : {}),
+          ...(finalActiveTools.includes("generateImage") ? { generateImage } : {}),
+        };
+
         const result = await withRetry(
           () => streamText({
             model: getLanguageModel(chatModel),
             system: systemMessage,
             messages: modelMessages,
             stopWhen: stepCountIs(5),
-            experimental_activeTools: isReasoningModel && !supportsTools ? [] : [
-              "getWeather", "createDocument", "editDocument", "updateDocument", "requestSuggestions",
-              "webSearch", "codeInterpreter", "generateImage",
-            ],
+            experimental_activeTools: finalActiveTools,
             providerOptions: {
               ...(modelConfig?.reasoningEffort && { openai: { reasoningEffort: modelConfig.reasoningEffort } }),
             },
-            tools: {
-              getWeather,
-              createDocument: createDocument({ session, dataStream, modelId: chatModel, chatId: id}),
-              editDocument: editDocument({ dataStream, session}),
-              updateDocument: updateDocument({ session, dataStream, modelId: chatModel}),
-              requestSuggestions: requestSuggestions({ session, dataStream, modelId: chatModel}),
-              webSearch,
-              codeInterpreter,
-              generateImage,
-            },
+            tools,
             experimental_telemetry: { isEnabled: isProductionEnvironment, functionId: "stream-text" },
           }),
           3,

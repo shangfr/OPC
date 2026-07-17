@@ -12,7 +12,7 @@ import {
   getAvatarChar,
 } from "@/lib/agent-groups";
 import type { Agent, Category } from "@/lib/db/schema";
-import { cn, fetcher } from "@/lib/utils";
+import { cn, fetcher, safeSessionStorageSet } from "@/lib/utils";
 
 type CategoryRecord = Category & { sortOrder: number; colorKey: string };
 
@@ -178,7 +178,7 @@ export function WelcomeDashboard({
       }
       const { chatId, agentId } = await res.json();
       if (agentId) {
-        sessionStorage.setItem(`pending-chat-${chatId}`, agentId);
+        safeSessionStorageSet(`pending-chat-${chatId}`, agentId);
       }
       router.push(`/chat/${chatId}`);
     } catch {
@@ -199,7 +199,7 @@ export function WelcomeDashboard({
         }
         const { chatId } = await res.json();
         // Store agentId temporarily for page initialization
-        sessionStorage.setItem(`pending-chat-${chatId}`, agent.id);
+        safeSessionStorageSet(`pending-chat-${chatId}`, agent.id);
         router.push(`/chat/${chatId}`);
       } catch {
         toast.error("创建对话失败，请重试");
@@ -245,7 +245,7 @@ export function WelcomeDashboard({
         }
         const { chatId, agentId } = await res.json();
         if (agentId) {
-          sessionStorage.setItem(`pending-chat-${chatId}`, agentId);
+          safeSessionStorageSet(`pending-chat-${chatId}`, agentId);
         }
         router.push(`/chat/${chatId}?query=${encodeURIComponent(prompt)}`);
       } catch {

@@ -20,7 +20,7 @@ export const requestSuggestions = ({
 }: RequestSuggestionsProps) =>
   tool({
     description:
-      "Request writing suggestions for an existing document artifact. Only use this when the user explicitly asks to improve or get suggestions for a document they have already created. Never use for general questions.",
+      "对已有文档提出写作建议。仅当用户明确要求改进/建议时使用，不要用于普通问答。",
     inputSchema: z.object({
       documentId: z
         .string()

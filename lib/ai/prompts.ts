@@ -1,64 +1,28 @@
 import type { ArtifactKind } from "@/components/chat/artifact";
 
-export const artifactsPrompt = `
-Artifacts 是对话旁边的侧边面板，用于展示 HTML 页面、脚本（代码）、文档（文本）和电子表格，修改会实时更新。
-
-关键规则：
-1. 每次回复只能调用一个工具。调用 create/edit/update 任一个后，立即停止，不要连续调用多个工具。
-2. 创建或编辑 artifact 后，绝对不要在聊天中输出其内容。用户已经在侧边面板看到了。只需用1-2句话确认即可。
-
-**何时使用 \`createDocument\`：**
-- 用户要求制作网页、HTML 页面、前端界面、登录页面、表单页面等 → kind='html'
-- 用户要求写代码、构建脚本或实现算法 → kind='code'
-- 用户要求写作、创建文档（文章、故事、邮件、报告等）→ kind='text'
-- 用户要求创建数据表格 → kind='sheet'
-- 必须指定 kind：'html' 表示网页/HTML 页面，'code' 表示编程，'text' 表示文档，'sheet' 表示数据表格
-- 在 createDocument 中包含全部内容，不要先创建再编辑
-
-**何时不要使用 \`createDocument\`：**
-- 回答问题、解释说明或对话式回复
-- 简短的代码片段或行内示例
-- 用户问"什么是""怎么做""解释一下"等
-
-**使用 \`editDocument\`（推荐用于局部修改）：**
-- HTML 页面：修改样式、调整布局、修改 HTML 结构
-- 脚本：修复 bug、增删行、重命名变量、添加日志
-- 文档：修正错别字、改写段落、插入章节
-- 使用查找替换方式：提供精确的 old_string 和 new_string
-- old_string 中包含3-5行上下文以确保唯一匹配
-- 全文重命名时使用 replace_all:true
-- 可多次调用以进行多个独立修改
-
-**使用 \`updateDocument\`（仅用于全量重写）：**
-- 仅在大部分内容需要变更时使用
-- 当 editDocument 需要太多次单独编辑时
-
-**何时不要使用 \`editDocument\` 或 \`updateDocument\`：**
-- 刚创建 artifact 之后
-- 与 createDocument 在同一轮回复中
-- 用户没有明确要求修改
-
-**创建/编辑/更新之后的规则：**
-- 绝对不要在聊天中重复、总结或输出 artifact 内容
-- 只回复一句简短确认
-
-**使用 \`requestSuggestions\`：**
-- 仅在用户明确要求对已有文档提出建议时使用
+// ── 工具规划指令（核心：强制一次性规划，禁止试探性调用）──
+const toolPlanningPrompt = `
+## 工具调用规则（必须严格遵守）
+1. **一次性规划**：收到用户消息后，先判断需要哪些工具，在同一步中全部调用。禁止"调用一个→看结果→再决定调下一个"的试探式调用。
+2. **工具选择决策树**（按顺序判断）：
+   - 用户要生成网页/代码/文档/表格 → createDocument（一次包含全部内容，不要先创建再编辑）
+   - 用户要修改已有文档的局部 → editDocument（查找替换，old_string 含3-5行上下文确保唯一）
+   - 用户要全量重写已有文档 → updateDocument（仅大部分内容变更时用）
+   - 用户问天气 → getWeather
+   - 用户问最新/实时/新闻信息 → webSearch
+   - 用户要数学计算/数据处理 → codeInterpreter
+   - 用户要画图/生成图片 → generateImage
+   - 以上都不匹配 → 直接用文字回答，不调用任何工具
+3. **调用后行为**：工具返回结果后，用1-2句话总结确认，不要在聊天中重复工具已生成的内容（用户在侧边面板能看到）。
+4. **禁止连续调用**：create/edit/update 三者互斥，一轮回复中只调用其中一个，不要连续调用。
 `;
 
-export const regularPrompt = `当被要求写作、创建或构建内容时，请立即执行。除非缺少关键信息，否则不要追问——做出合理假设并继续。
-
-你拥有以下工具能力，请在合适场景主动使用：
-- **webSearch**：当用户询问实时信息、最新新闻、当前事件时，主动搜索获取最新数据
-- **codeInterpreter**：当用户需要数学计算、数据处理、逻辑验证时，用代码执行确保结果准确
-- **generateImage**：当用户要求生成图片、画图、设计视觉内容时，调用图片生成工具
-- **getWeather**：当用户询问天气时，调用天气查询工具
-
-使用工具的原则：
-1. 优先使用工具获取准确数据，而非凭记忆回答
-2. 工具返回结果后，用自然语言总结并呈现给用户
-3. 如果工具返回错误，告知用户并建议替代方案
-4. 不要在一条消息中连续调用超过3个工具`;
+// ── Artifact 规则（精简版）──
+const artifactsPrompt = `
+## Artifact（侧边面板）
+createDocument 创建的内容会显示在侧边面板，不要在聊天中重复输出。kind 取值：'html'(网页)、'code'(代码)、'text'(文档)、'sheet'(表格)。
+创建后如需修改：局部改动用 editDocument，全量重写用 updateDocument。不要在同一轮中既创建又编辑。
+`;
 
 export type RequestHints = {
   latitude: string | undefined;
@@ -67,13 +31,7 @@ export type RequestHints = {
   country: string | undefined;
 };
 
-export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
-关于用户请求的来源信息：
-- 纬度: ${requestHints.latitude}
-- 经度: ${requestHints.longitude}
-- 城市: ${requestHints.city}
-- 国家: ${requestHints.country}
-`;
+export const getRequestPromptFromHints = (requestHints: RequestHints) => `用户位置：${requestHints.city ?? "未知"}, ${requestHints.country ?? "未知"}`;
 
 export const infrastructurePrompt = ({
   requestHints,
@@ -83,12 +41,8 @@ export const infrastructurePrompt = ({
   supportsTools: boolean;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
-
-  if (!supportsTools) {
-    return requestPrompt;
-  }
-
-  return `${requestPrompt}\n\n${artifactsPrompt}`;
+  if (!supportsTools) return requestPrompt;
+  return `${requestPrompt}\n${artifactsPrompt}`;
 };
 
 export const systemPrompt = ({
@@ -99,51 +53,15 @@ export const systemPrompt = ({
   supportsTools: boolean;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
-
-  if (!supportsTools) {
-    return `${regularPrompt}\n\n${requestPrompt}`;
-  }
-
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  if (!supportsTools) return `被要求创建或构建内容时立即执行，不要追问，做出合理假设并继续。\n\n${requestPrompt}`;
+  return `被要求创建或构建内容时立即执行，不要追问，做出合理假设并继续。\n\n${requestPrompt}\n${toolPlanningPrompt}\n${artifactsPrompt}`;
 };
 
-export const codePrompt = `
-你是一个代码生成器，生成独立可执行的代码片段。编写代码时：
+export const codePrompt = `生成独立可执行的代码片段。要求：完整可运行、用print/console.log输出、优先用标准库、处理错误、不用交互式输入、不访问文件/网络、不用无限循环。`;
 
-1. 每个片段必须完整且可独立运行
-2. 使用 print/console.log 显示输出结果
-3. 保持代码简洁聚焦
-4. 优先使用标准库而非外部依赖
-5. 优雅地处理潜在错误
-6. 返回有意义的输出来展示功能
-7. 不要使用交互式输入函数
-8. 不要访问文件或网络资源
-9. 不要使用无限循环
-`;
+export const htmlPrompt = `生成完整HTML页面。要求：含<!DOCTYPE html>、CSS内联<style>、JS内联<script>、用flexbox/grid布局、语义化标签、响应式、不依赖外部CDN/框架。`;
 
-export const htmlPrompt = `
-你是一个前端页面生成器，生成独立可运行的 HTML 页面。编写页面时：
-
-1. 必须输出完整 HTML，包含 <!DOCTYPE html>、<html>、<head>、<body> 标签
-2. CSS 使用内联 <style> 标签写在 <head> 中
-3. JS 使用内联 <script> 标签写在 <body> 末尾
-4. 优先使用现代 CSS（flexbox、grid、变量等）实现美观的布局
-5. 使用合理语义化的 HTML5 标签
-6. 移动端响应式设计，适配不同屏幕尺寸
-7. 交互逻辑简洁清晰，注重用户体验
-8. 不要使用外部 CDN 或网络资源（字体除外可酌情使用系统字体栈）
-9. 不要依赖外部框架或库，使用原生 HTML/CSS/JS
-`;
-
-export const sheetPrompt = `
-你是一个电子表格创建助手。根据给定的提示创建 CSV 格式的电子表格。
-
-要求：
-- 使用清晰、描述性的列标题
-- 包含真实合理的示例数据
-- 数字和日期格式保持一致
-- 数据结构清晰、有意义
-`;
+export const sheetPrompt = `创建CSV电子表格。要求：清晰的列标题、真实合理的示例数据、格式一致。`;
 
 export const updateDocumentPrompt = (
   currentContent: string | null,
@@ -154,20 +72,11 @@ export const updateDocumentPrompt = (
     sheet: "电子表格",
   };
   const mediaType = mediaTypes[type] ?? "文档";
-
-  return `根据给定的提示重写以下${mediaType}：
-
-${currentContent}`;
+  return `根据给定的提示重写以下${mediaType}：\n\n${currentContent}`;
 };
 
-export const titlePrompt = `根据用户的消息生成一个简短的聊天标题（2-8个字），概括用户消息的主题。
-
-只输出标题文本，不要添加任何前缀、格式或标点。
-
+export const titlePrompt = `根据用户消息生成2-8字聊天标题，概括主题。只输出标题文本，无前缀、格式或标点。
 示例：
 - "今天北京天气怎么样" → 北京天气查询
 - "帮我写一篇关于太空的文章" → 太空文章撰写
-- "你好" → 新对话
-- "帮我调试这段Python代码" → Python调试
-
-不要输出井号、前缀（如"标题："）或引号。`;
+- "你好" → 新对话`;

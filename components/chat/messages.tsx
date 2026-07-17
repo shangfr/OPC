@@ -5,10 +5,11 @@ import { cardVariants } from "@/components/ui/card";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { useMessages } from "@/hooks/use-messages";
 import type { ChatMessage } from "@/lib/types";
+import { generateUUID } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useDataStream } from "./data-stream-provider";
 import { Greeting } from "./greeting";
-import { PreviewMessage, ThinkingMessage } from "./message";
+import { PreviewMessage } from "./message";
 
 type MessagesProps = {
   isArtifactVisible: boolean;
@@ -109,11 +110,14 @@ function PureMessages({
                   const index = virtualRow.index;
                   if (index < messages.length) {
                     const message = messages[index];
+                    const isLastAndStreaming =
+                      status === "streaming" && messages.length - 1 === index;
                     return (
                       <div
                         data-index={index}
                         key={message.id}
-                        ref={virtualizer.measureElement}
+                        // 流式输出时禁用 measureElement，避免每个 token 触发 ResizeObserver 重算
+                        ref={isLastAndStreaming ? undefined : virtualizer.measureElement}
                         style={{
                           position: "absolute",
                           top: 0,
@@ -126,10 +130,7 @@ function PureMessages({
                           addToolApprovalResponse={addToolApprovalResponse}
                           chatId={chatId}
                           isLastAssistant={index === lastAssistantIndex}
-                          isLoading={
-                            status === "streaming" &&
-                            messages.length - 1 === index
-                          }
+                          isLoading={isLastAndStreaming}
                           isReadonly={isReadonly}
                           message={message}
                           onEdit={onEditMessage}
@@ -155,6 +156,14 @@ function PureMessages({
                     status === "submitted" &&
                     messages.at(-1)?.role !== "assistant"
                   ) {
+                    // submitted 阶段：渲染一个空的 assistant PreviewMessage（内部会显示 Skeleton）
+                    // 保持与真实消息相同的 DOM 结构，避免切换闪烁
+                    const placeholderMessage: ChatMessage = {
+                      id: generateUUID(),
+                      role: "assistant",
+                      parts: [],
+                      metadata: { createdAt: new Date().toISOString() },
+                    } as ChatMessage;
                     return (
                       <div
                         data-index={index}
@@ -168,7 +177,19 @@ function PureMessages({
                           transform: `translateY(${virtualRow.start}px)`,
                         }}
                       >
-                        <ThinkingMessage selectedModelId={selectedModelId} />
+                        <PreviewMessage
+                          addToolApprovalResponse={addToolApprovalResponse}
+                          chatId={chatId}
+                          isLastAssistant={false}
+                          isLoading={true}
+                          isReadonly={isReadonly}
+                          message={placeholderMessage}
+                          regenerate={regenerate}
+                          requiresScrollPadding={false}
+                          selectedModelId={selectedModelId}
+                          setMessages={setMessages}
+                          vote={undefined}
+                        />
                       </div>
                     );
                   }
@@ -225,7 +246,27 @@ function PureMessages({
 
               {status === "submitted" &&
                 messages.at(-1)?.role !== "assistant" && (
-                  <ThinkingMessage selectedModelId={selectedModelId} />
+                  <PreviewMessage
+                    addToolApprovalResponse={addToolApprovalResponse}
+                    chatId={chatId}
+                    isLastAssistant={false}
+                    isLoading={true}
+                    isReadonly={isReadonly}
+                    key="thinking-placeholder"
+                    message={
+                      {
+                        id: generateUUID(),
+                        role: "assistant",
+                        parts: [],
+                        metadata: { createdAt: new Date().toISOString() },
+                      } as ChatMessage
+                    }
+                    regenerate={regenerate}
+                    requiresScrollPadding={false}
+                    selectedModelId={selectedModelId}
+                    setMessages={setMessages}
+                    vote={undefined}
+                  />
                 )}
 
               <div

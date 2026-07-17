@@ -23,7 +23,7 @@ export const createDocument = ({
 }: CreateDocumentProps) =>
   tool({
     description:
-      "Create an artifact. You MUST specify kind: use 'html' for web pages/HTML content (creates a previewable web page), 'code' for programming/algorithm scripts, 'text' for essays/writing (creates a document), 'sheet' for spreadsheets/data.",
+      "创建文档/网页/代码/表格并显示在侧边面板。kind: 'html'=网页, 'code'=代码, 'text'=文档, 'sheet'=表格。一次包含全部内容，不要先创建再编辑。",
     inputSchema: z.object({
       title: z.string().describe("The title of the artifact"),
       kind: z

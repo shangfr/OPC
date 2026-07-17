@@ -46,6 +46,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useActiveChat } from "@/hooks/use-active-chat";
+import { safeSessionStorageSet } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -85,7 +86,8 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
     setShowDeleteAllDialog(false);
     router.replace("/");
     mutate(unstable_serialize(getChatHistoryPaginationKey), [], { revalidate: false, });
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, { method: "DELETE", });
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, { method: "DELETE", })
+      .catch((err) => console.error("删除全部对话失败:", err));
     toast.success("全部对话已删除");
   };
 
@@ -162,7 +164,7 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                         if (!res.ok) { throw new Error("Failed to create chat"); }
                         const { chatId } = await res.json();
                         // Store agentId temporarily for page initialization
-                        if (agentId) { sessionStorage.setItem( `pending-chat-${chatId}`, agentId ); }
+                        if (agentId) { safeSessionStorageSet( `pending-chat-${chatId}`, agentId ); }
                         router.push(`/chat/${chatId}`);
                       } catch {
                         toast.error("创建对话失败，请重试");

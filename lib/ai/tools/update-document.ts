@@ -18,7 +18,7 @@ export const updateDocument = ({
 }: UpdateDocumentProps) =>
   tool({
     description:
-      "Full rewrite of an existing artifact. Only use for major changes where most content needs replacing. Prefer editDocument for targeted changes.",
+      "全量重写已有文档。仅当大部分内容需变更时使用，局部修改请用editDocument。",
     inputSchema: z.object({
       id: z.string().describe("The ID of the artifact to rewrite"),
       description: z

@@ -27,7 +27,9 @@ export function MessageReasoning({
   return (
     <Reasoning
       data-testid="message-reasoning"
-      defaultOpen={hasBeenStreaming}
+      // 默认折叠思考过程，避免与正文之间产生视觉断层
+      // 流式时也保持折叠，让正文 text 连续输出，体验更流畅
+      defaultOpen={false}
       isStreaming={isLoading}
     >
       <ReasoningTrigger />

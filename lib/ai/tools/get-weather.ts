@@ -31,7 +31,7 @@ async function geocodeCity(
 
 export const getWeather = tool({
   description:
-    "Get the current weather at a location. You can provide either coordinates or a city name.",
+    "查询指定地点的当前天气。可传坐标或城市名。用户问天气/温度/降雨时使用。",
   inputSchema: z.object({
     latitude: z.number().optional(),
     longitude: z.number().optional(),

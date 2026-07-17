@@ -43,8 +43,12 @@ export function useAutoResume({
     const dataPart = dataStream[0];
 
     if (dataPart.type === "data-appendMessage") {
-      const message = JSON.parse(dataPart.data);
-      setMessages([...initialMessages, message]);
+      try {
+        const message = JSON.parse(dataPart.data);
+        setMessages([...initialMessages, message]);
+      } catch (e) {
+        console.error("[useAutoResume] Failed to parse appendMessage data:", e);
+      }
     }
   }, [dataStream, initialMessages, setMessages]);
 }

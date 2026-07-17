@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const generateImage = tool({
   description:
-    "Generate an image from a text description using AI. Use this when the user asks to create, draw, generate, or design an image, illustration, logo, or visual content. Returns the image URL.",
+    "根据文字描述生成图片。用户要求画图/生成图片/设计视觉内容时使用。返回图片URL。",
   inputSchema: z.object({
     prompt: z.string().min(1).describe("Detailed description of the image to generate, in the user's language"),
     size: z.enum(["1024x1024", "768x1344", "1344x768"]).default("1024x1024").describe("Image size: square, portrait, or landscape"),
