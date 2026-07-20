@@ -12,7 +12,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/auth")) {
-    return NextResponse.next();
+    return withSecurityHeaders(NextResponse.next());
   }
 
   // 2. 获取 Token
@@ -109,10 +109,23 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return withSecurityHeaders(NextResponse.next());
+}
+
+/**
+ * 为响应注入安全 headers
+ */
+function withSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=(self)");
+  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: wss:; media-src 'self' blob: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  return response;
 }
 
 export const config = {
-  // 排除静态资源、API、Auth.js 自身路由
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // 排除静态资源（API 路由已纳入 middleware 处理）
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

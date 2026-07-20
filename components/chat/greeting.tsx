@@ -49,6 +49,8 @@ export const Greeting = ({
           height={64}
           src="/logo.jpg"
           width={64}
+          sizes="64px"
+          priority
         />
       </motion.div>
 

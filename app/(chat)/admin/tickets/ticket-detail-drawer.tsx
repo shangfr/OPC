@@ -692,9 +692,17 @@ function MatchCard({ match }: { match: MatchResult }) {
         </div>
       )}
       {t.phone && (
-        <a href={`tel:${t.phone}`} className="mt-2.5 inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20">
-          <Phone className="size-3" /> {t.assignee || "联系对方"}
-        </a>
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <a href={`tel:${t.phone}`} className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20">
+            <Phone className="size-3" /> {t.assignee || "联系对方"}
+          </a>
+          <a
+            href={`sms:${t.phone}?body=${encodeURIComponent(`您好，关于您的工单（${t.title || ""}），我想与您沟通一下。`)}`}
+            className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+          >
+            <MessageSquare className="size-3" /> 短信
+          </a>
+        </div>
       )}
     </div>
   );

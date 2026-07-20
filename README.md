@@ -70,6 +70,76 @@
 - **SWR 数据获取** — Agent/Model/Document/SiteConfig 全部使用 SWR，共享跨页面缓存（60s 去重）
 - **Context 分层** — ActiveChatProvider 拆分为 state + actions 双 Context，减少不必要的重渲染
 
+### 多模态交互（浏览器原生能力）
+
+平台深度集成浏览器原生 API，提供语音、通知、电话、短信等多模态交互能力，所有功能均基于 Next.js 16 + AI SDK 6 推荐技术方案实现。
+
+#### 语音输入（Web Speech API）
+- **入口**：输入框工具栏麦克风按钮 🎤
+- **原理**：`SpeechRecognition` / `webkitSpeechRecognition` 实时识别
+- **特性**：实时转写、中间结果预览、自动追加到输入框、错误友好提示
+- **兼容性**：Chrome / Edge 完整支持，Safari 部分支持，Firefox 不支持
+- **文件**：`hooks/use-speech-recognition.ts` + `components/chat/voice-input-button.tsx`
+
+#### 录音转写（MediaRecorder + 智谱 ASR）
+- **入口**：输入框工具栏录音按钮 🎙️
+- **原理**：`MediaRecorder` 录制音频 → 上传至 `/api/audio/transcribe` → 调用智谱 ASR API 转写
+- **特性**：最长 60 秒录音、录音时长角标、右键取消、转写中 loading 状态、自动追加文本
+- **优势**：相比 Web Speech API，兼容性更好（Safari/Firefox 可用），识别准确率更高
+- **配置**：复用 `ZHIPU_API_KEY`，无需额外配置
+- **文件**：`hooks/use-audio-recorder.ts` + `components/chat/audio-recorder-button.tsx` + `lib/ai/asr-service.ts` + `app/(chat)/api/audio/transcribe/route.ts`
+
+#### 语音播报（SpeechSynthesis API）
+- **入口**：每条 AI 回复消息操作栏的喇叭按钮 🔊
+- **原理**：`speechSynthesis` TTS 朗读
+- **特性**：点击朗读/再次点击停止、朗读中按钮高亮、自动选择中文语音、组件卸载自动停止
+- **兼容性**：所有主流浏览器支持
+- **文件**：`hooks/use-speech-synthesis.ts` + `components/chat/text-to-speech-button.tsx`
+
+#### 浏览器通知（Notification API）
+- **入口**：输入框工具栏铃铛按钮 🔔
+- **原理**：`Notification` API + `useLocalStorage` 持久化偏好
+- **特性**：DropdownMenu 开关、权限自动请求、回复完成自动通知（检测 `streaming → ready` 状态转换）、5 秒自动关闭、同消息不重复通知
+- **兼容性**：所有主流浏览器支持（需用户授权）
+- **文件**：`hooks/use-browser-notification.ts` + `hooks/use-chat-notification.ts` + `components/chat/notification-toggle.tsx`
+
+#### 电话与短信（tel: / sms: 协议）
+- **入口**：Agent 卡片、工单详情页的电话/短信按钮
+- **原理**：`tel:` / `sms:` URI Scheme 调起系统拨号器/短信 App
+- **特性**：移动端原生体验、短信预填内容、桌面端需配置协议处理程序
+- **文件**：`app/(chat)/admin/opc-shared.tsx` + `app/(chat)/admin/tickets/ticket-detail-drawer.tsx`
+
+### AI 工具能力（Agent Tools）
+
+Agent 配备 9 个 AI Tool，采用按需加载策略（根据用户消息关键词动态激活，减少 prompt token）：
+
+| 工具 | 功能 | 实现方式 |
+|------|------|----------|
+| `createDocument` | 创建文档/网页/代码/表格 | Artifact 侧边面板，4 种 kind |
+| `editDocument` | 局部修改文档 | 查找替换 |
+| `updateDocument` | 全量重写文档 | LLM 重生成 |
+| `requestSuggestions` | 文档写作建议 | 结构化输出 |
+| `getWeather` | 天气查询 | Open-Meteo API |
+| `webSearch` | 网页搜索 | DuckDuckGo API |
+| `codeInterpreter` | 代码执行 | Node.js vm 沙箱 |
+| `generateImage` | 文生图 | 智谱 CogView-4 |
+| `sendSms` | 发送短信 | 阿里云 SMS / 智谱 SMS |
+
+#### 短信发送（sendSms Tool）
+- **能力**：Agent 可主动向用户发送通知/提醒短信
+- **通道**：阿里云 SMS（通用短信，需企业资质 + 模板审核）/ 智谱 SMS（验证码专用）
+- **开发模式**：未配置 `SMS_PROVIDER` 时打印到控制台，不产生费用
+- **生产配置**：
+  ```env
+  SMS_PROVIDER=aliyun
+  ALIYUN_SMS_ACCESS_KEY_ID=your_key
+  ALIYUN_SMS_ACCESS_KEY_SECRET=your_secret
+  ALIYUN_SMS_SIGN_NAME=OPC平台
+  ALIYUN_SMS_TEMPLATE_CODE=SMS_123456789
+  ```
+- **实现**：纯 REST API + RPC V1.0 签名（HMAC-SHA1），无需安装阿里云 SDK，与 `lib/storage/oss.ts` 风格一致
+- **文件**：`lib/ai/tools/send-sms.ts` + `lib/ai/sms-service.ts`
+
 ## 技术栈
 
 | 层级 | 技术 |
@@ -123,6 +193,16 @@ OSS_BUCKET=your_bucket
 
 # Stripe（可选，未配置时使用 Mock 模式）
 STRIPE_SECRET_KEY=your_stripe_key
+
+# 智谱 AI（必填，用于 GLM 模型 + 图片生成 + ASR 语音识别）
+ZHIPU_API_KEY=your_zhipu_api_key
+
+# 短信服务（可选，未配置时使用开发模式打印到控制台）
+# SMS_PROVIDER=aliyun
+# ALIYUN_SMS_ACCESS_KEY_ID=your_aliyun_key
+# ALIYUN_SMS_ACCESS_KEY_SECRET=your_aliyun_secret
+# ALIYUN_SMS_SIGN_NAME=OPC平台
+# ALIYUN_SMS_TEMPLATE_CODE=SMS_123456789
 ```
 
 ### 初始化

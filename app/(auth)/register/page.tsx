@@ -8,6 +8,9 @@ import { PhoneAuthForm } from "@/components/chat/phone-auth-form";
 import { SubmitButton } from "@/components/chat/submit-button";
 import { toast } from "@/components/chat/toast";
 import { cn } from "@/lib/utils";
+
+// 静态生成：注册页为纯客户端交互，无需动态渲染
+export const dynamic = "force-static";
 import { type RegisterActionState, register } from "../actions";
 
 export default function Page() {

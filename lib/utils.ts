@@ -68,6 +68,31 @@ export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '');
 }
 
+/**
+ * 带超时的 fetch 封装
+ */
+export async function fetchWithTimeout(
+  input: string | URL | Request,
+  init: RequestInit = {},
+  timeoutMs = 10_000,
+): Promise<Response> {
+  if (init.signal) {
+    return fetch(input, init);
+  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`请求超时（${timeoutMs}ms）: ${input.toString().slice(0, 100)}`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export function convertToUIMessages(messages: DBMessage[]): ChatMessage[] {
   return messages.map((message) => ({
     id: message.id,

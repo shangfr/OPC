@@ -22,6 +22,7 @@ import {
   ThumbDownIcon,
   ThumbUpIcon,
 } from "./icons";
+import { TextToSpeechButton } from "./text-to-speech-button";
 
 export function PureMessageActions({
   chatId,
@@ -110,6 +111,11 @@ export function PureMessageActions({
       >
         <CopyIcon />
       </Action>
+
+      <TextToSpeechButton
+        text={textFromParts || ""}
+        messageId={message.id}
+      />
 
       {isLastAssistant && onRegenerate && (
         <Action

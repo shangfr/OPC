@@ -3,6 +3,7 @@ import { ArrowDownIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { cardVariants } from "@/components/ui/card";
 import { useActiveChat } from "@/hooks/use-active-chat";
+import { useChatNotification } from "@/hooks/use-chat-notification";
 import { useMessages } from "@/hooks/use-messages";
 import type { ChatMessage } from "@/lib/types";
 import { generateUUID } from "@/lib/utils";
@@ -54,6 +55,15 @@ function PureMessages({
     }
     return -1;
   })();
+
+  // 浏览器通知：Agent 回复完成时自动桌面通知
+  const lastAssistantMessage =
+    lastAssistantIndex >= 0 ? messages[lastAssistantIndex] : undefined;
+  useChatNotification({
+    status,
+    lastAssistantMessage,
+    agentName: undefined, // 由父组件传入或从 chat 元数据读取，此处留空
+  });
 
   // P2: Virtual scrolling for long conversations
   const virtualizer = useVirtualizer({

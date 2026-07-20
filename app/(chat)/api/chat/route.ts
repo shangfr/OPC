@@ -29,6 +29,7 @@ import { updateDocument } from "@/lib/ai/tools/update-document";
 import { webSearch } from "@/lib/ai/tools/web-search";
 import { codeInterpreter } from "@/lib/ai/tools/code-interpreter";
 import { generateImage } from "@/lib/ai/tools/generate-image";
+import { sendSms } from "@/lib/ai/tools/send-sms";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -46,10 +47,13 @@ import {
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
+import { captureException } from "@/lib/sentry";
 import {
   checkMessageQuota,
   incrementMessageUsage,
 } from "@/lib/quotas/usage";
+import { checkIpRateLimit, getClientIp } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
@@ -76,9 +80,9 @@ function getStreamContext() {
   } catch (error) {
     // 非生产环境（如本地开发或非 Vercel 部署）下 resumable-stream 可能不可用，静默降级
     if (isProductionEnvironment) {
-      console.warn(
-        "[chat] getStreamContext 初始化失败:",
-        error instanceof Error ? error.message : error,
+      logger.warn(
+        { module: "chat", err: error instanceof Error ? error.message : error },
+        "getStreamContext 初始化失败",
       );
     }
     return null;
@@ -108,6 +112,11 @@ export async function POST(request: Request) {
       isNewChat,
       summarizeTask, // 🚨 解构汇总标识
     } = requestBody;
+
+    // ── IP 限流：未登录用户防恶意刷量（已登录用户由下方小时配额限制）──
+    // 必须在 auth() 之前执行，避免未登录请求消耗数据库连接
+    const clientIp = getClientIp(request);
+    await checkIpRateLimit(clientIp);
 
     const [session, chat, agentRecord] = await Promise.all([
       auth(),
@@ -277,10 +286,13 @@ export async function POST(request: Request) {
           const chunks = retrieveResult.data.map((r) => r.text).join("\n\n");
           return `\n\n## 知识库参考内容\n以下是从知识库中检索到的相关信息，请优先基于这些内容回答用户问题。\n\n${chunks}`;
         } else if (!retrieveResult) {
-          console.warn("[chat] 知识库检索超时(1.5s)，跳过知识库上下文");
+          logger.warn({ module: "chat" }, "知识库检索超时(1.5s)，跳过知识库上下文");
         }
       } catch (e) {
-        console.warn("[chat] 知识库检索失败:", e instanceof Error ? e.message : e);
+        logger.warn(
+          { module: "chat", err: e instanceof Error ? e.message : e },
+          "知识库检索失败",
+        );
       }
       return "";
     })();
@@ -317,7 +329,8 @@ export async function POST(request: Request) {
     // 因为用户随时可能要求生成/编辑文档，预判漏掉会损失功能。
     const activeToolsList: Array<
       "getWeather" | "createDocument" | "editDocument" | "updateDocument" |
-      "requestSuggestions" | "webSearch" | "codeInterpreter" | "generateImage"
+      "requestSuggestions" | "webSearch" | "codeInterpreter" | "generateImage" |
+      "sendSms"
     > = [
       "createDocument",
       "editDocument",
@@ -341,24 +354,37 @@ export async function POST(request: Request) {
     if (/画图|画一个|生成图|绘制|作图|generate image|draw|paint/i.test(userQueryText)) {
       activeToolsList.push("generateImage");
     }
+    // 短信发送：消息提到发短信/通知/提醒某人/短信告知
+    if (/发短信|短信通知|短信提醒|发个短信|短信告知|send sms|send message|text message/i.test(userQueryText)) {
+      activeToolsList.push("sendSms");
+    }
 
     // 推理模型不支持工具时，清空 activeTools
     const finalActiveTools = isReasoningModel && !supportsTools ? [] : activeToolsList;
 
     if (message?.role === "user") {
-      saveMessages({
-        messages: [
-          {
-            chatId: id,
-            id: message.id,
-            role: "user",
-            parts: message.parts,
-            attachments: [],
-            createdAt: new Date(),
-          },
-        ],
-      }).catch((error) => {
-        console.error("[chat] 用户消息保存失败:", error instanceof Error ? error.message : error);
+      // 使用 after() 在响应返回后异步保存用户消息
+      // 避免阻塞流式响应的首字输出
+      after(async () => {
+        try {
+          await saveMessages({
+            messages: [
+              {
+                chatId: id,
+                id: message.id,
+                role: "user",
+                parts: message.parts,
+                attachments: [],
+                createdAt: new Date(),
+              },
+            ],
+          });
+        } catch (error) {
+          logger.error(
+            { module: "chat", err: error instanceof Error ? error.message : error },
+            "用户消息保存失败",
+          );
+        }
       });
     }
 
@@ -385,6 +411,7 @@ export async function POST(request: Request) {
           ...(finalActiveTools.includes("webSearch") ? { webSearch } : {}),
           ...(finalActiveTools.includes("codeInterpreter") ? { codeInterpreter } : {}),
           ...(finalActiveTools.includes("generateImage") ? { generateImage } : {}),
+          ...(finalActiveTools.includes("sendSms") ? { sendSms } : {}),
         };
 
         const result = await withRetry(
@@ -402,7 +429,10 @@ export async function POST(request: Request) {
           }),
           3,
           (attempt, error, delayMs) => {
-            console.warn(`[chat] streamText retry ${attempt}:`, error instanceof Error ? error.message : error);
+            logger.warn(
+              { module: "chat", attempt, err: error instanceof Error ? error.message : error },
+              "streamText retry",
+            );
           }
         );
 
@@ -420,7 +450,10 @@ export async function POST(request: Request) {
             dataStream.write({ type: "data-chat-title", data: title });
             updateChatTitleById({ chatId: id, title });
           } catch (error) {
-            console.warn("[chat] 标题生成失败:", error instanceof Error ? error.message : error);
+            logger.warn(
+              { module: "chat", err: error instanceof Error ? error.message : error },
+              "标题生成失败",
+            );
           }
         }
       },
@@ -470,7 +503,7 @@ export async function POST(request: Request) {
           if (msg.includes("timeout") || msg.includes("ETIMEDOUT")) {
             return "请求超时，请检查网络后重试。";
           }
-          console.error("[chat] streamText error:", msg);
+          logger.error({ module: "chat", err: msg }, "streamText error");
         }
         return "AI 服务暂时不可用，请稍后重试。如果问题持续，请联系管理员。";
       },
@@ -488,7 +521,10 @@ export async function POST(request: Request) {
             await streamContext.createNewResumableStream(streamId, () => sseStream);
           }
         } catch (error) {
-          console.warn("[chat] 可恢复流持久化失败:", error instanceof Error ? error.message : error);
+          logger.warn(
+            { module: "chat", err: error instanceof Error ? error.message : error },
+            "可恢复流持久化失败",
+          );
         }
       },
     });
@@ -510,7 +546,12 @@ export async function POST(request: Request) {
         );
       }
     }
-    console.error("Unhandled error in chat API:", error, { requestId });
+    logger.error(
+      { module: "chat", requestId, err: error instanceof Error ? error.message : error },
+      "Unhandled error in chat API",
+    );
+    // 上报到 Sentry（未配置 DSN 时自动降级为 console.error）
+    captureException(error, { module: "chat", requestId });
     return new ChatbotError("offline:chat").toResponse();
   }
 }

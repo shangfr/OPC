@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
       }
     : {}),
   output: "standalone",
+  reactCompiler: true,
   // 将含原生绑定的 Node.js 包标记为外部包，避免被 bundler 打包
   // （webpack 模式下 @grpc/grpc-js 等原生模块无法被打包）
   serverExternalPackages: [

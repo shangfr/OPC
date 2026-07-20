@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 import { auth, unstable_update } from "@/app/(auth)/auth";
 import { updateUserProfile } from "@/lib/db/queries";
 
@@ -41,7 +42,11 @@ export async function PUT(request: Request) {
 
     // 通过 unstable_update 将新用户名直接写入 JWT token 并持久化到
     // session cookie，确保刷新页面后 session.user.name 立即生效。
-    await unstable_update({ name: name?.trim() });
+    //
+    // 类型说明：unstable_update 的参数类型是 Partial<Session>，
+    // 但 jwt callback 中通过 trigger === "update" 读取 session.name 字段。
+    // 这里用类型断言传递 name 字段（见 auth.ts jwt callback 的 updateData 处理）。
+    await unstable_update({ name: name?.trim() } as Partial<Session>);
 
     return NextResponse.json({ success: true });
   } catch (error) {

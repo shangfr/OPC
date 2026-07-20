@@ -1,4 +1,5 @@
 import "server-only";
+import { unstable_cache, revalidateTag } from "next/cache";
 import {
   and,
   asc,
@@ -1075,14 +1076,18 @@ export async function deleteCategory({ id }: { id: string }) {
 // SiteConfig CRUD
 // ============================================================
 
-export async function getSiteConfig() {
-  try {
-    const [result] = await db.select().from(siteConfig).limit(1);
-    return result ?? null;
-  } catch (_error) {
-    throw new ChatbotError("bad_request:database", "Failed to get site config");
-  }
-}
+export const getSiteConfig = unstable_cache(
+  async () => {
+    try {
+      const [result] = await db.select().from(siteConfig).limit(1);
+      return result ?? null;
+    } catch (_error) {
+      throw new ChatbotError("bad_request:database", "Failed to get site config");
+    }
+  },
+  ["site-config"],
+  { revalidate: 300, tags: ["site-config"] },
+);
 
 export async function upsertSiteConfig({
   defaultSystemPrompt, defaultStarterQuestions, siteName, siteDescription,
@@ -1104,6 +1109,7 @@ export async function upsertSiteConfig({
         })
         .where(eq(siteConfig.id, existing[0].id))
         .returning();
+      revalidateTag("site-config", "max");
       return result;
     }
     const [result] = await db
@@ -1114,6 +1120,7 @@ export async function upsertSiteConfig({
         siteName: siteName ?? null, siteDescription: siteDescription ?? null,
       })
       .returning();
+    revalidateTag("site-config", "max");
     return result;
   } catch (_error) {
     throw new ChatbotError("bad_request:database", "Failed to upsert site config");

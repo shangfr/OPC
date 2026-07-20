@@ -1,5 +1,6 @@
 import { upload as ossUpload } from "@/lib/storage/oss";
 import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 import { auth, unstable_update } from "@/app/(auth)/auth";
 import { updateUserProfile } from "@/lib/db/queries";
 
@@ -58,7 +59,11 @@ export async function POST(request: Request) {
     // JWT token 并持久化到 session cookie。
     // 这样后续所有页面刷新（Server Component 读取 auth()）都能
     // 拿到最新的 session.user.image，无需依赖 refresh_session cookie。
-    await unstable_update({ picture: blob.url });
+    //
+    // 类型说明：unstable_update 的参数类型是 Partial<Session>，
+    // 但 jwt callback 中通过 trigger === "update" 读取 session.picture 字段。
+    // 这里用类型断言传递 picture 字段（见 auth.ts jwt callback 的 updateData 处理）。
+    await unstable_update({ picture: blob.url } as Partial<Session>);
 
     return NextResponse.json({ url: blob.url });
   } catch (error) {

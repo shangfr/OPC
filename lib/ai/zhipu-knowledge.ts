@@ -1,4 +1,5 @@
 // ============================================================
+import { fetchWithTimeout } from "@/lib/utils";
 // 智谱知识库 API 客户端
 // 文档: https://docs.bigmodel.cn/api-reference/知识库-api/
 // ============================================================
@@ -161,7 +162,7 @@ export async function listKnowledgeBases(
   size = 50
 ): Promise<ApiResponse<KnowledgeListData>> {
   const url = `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge?page=${page}&size=${size}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: "GET",
     headers: headers(),
   });
@@ -171,7 +172,7 @@ export async function listKnowledgeBases(
 export async function createKnowledgeBase(
   params: CreateKnowledgeRequest
 ): Promise<ApiResponse<{ id: string }>> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge`,
     {
       method: "POST",
@@ -192,7 +193,7 @@ export async function createKnowledgeBase(
 export async function getKnowledgeBaseDetail(
   id: string
 ): Promise<ApiResponse<KnowledgeBase>> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge/${id}`,
     {
       method: "GET",
@@ -206,7 +207,7 @@ export async function editKnowledgeBase(
   id: string,
   params: EditKnowledgeRequest
 ): Promise<ApiResponse> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge/${id}`,
     {
       method: "PUT",
@@ -220,7 +221,7 @@ export async function editKnowledgeBase(
 export async function deleteKnowledgeBase(
   id: string
 ): Promise<ApiResponse> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge/${id}`,
     {
       method: "DELETE",
@@ -262,7 +263,7 @@ export async function uploadDocument(
     formData.append("word_num_limit", options.word_num_limit);
   }
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/document/upload_document/${knowledgeId}`,
     {
       method: "POST",
@@ -282,7 +283,7 @@ export async function uploadUrlDocument(
     sentence_size?: number;
   }>
 ): Promise<ApiResponse<UploadUrlResult>> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/document/upload_url`,
     {
       method: "POST",
@@ -302,7 +303,7 @@ export async function listDocuments(
   size = 50
 ): Promise<ApiResponse<DocumentListData>> {
   const url = `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/document?knowledge_id=${knowledgeId}&page=${page}&size=${size}`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: "GET",
     headers: headers(),
   });
@@ -312,7 +313,7 @@ export async function listDocuments(
 export async function deleteDocument(
   documentId: string
 ): Promise<ApiResponse> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/document/${documentId}`,
     {
       method: "DELETE",
@@ -327,7 +328,7 @@ export async function deleteDocument(
 export async function retrieve(
   params: RetrieveRequest
 ): Promise<ApiResponse<RetrieveResult[]>> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge/retrieve`,
     {
       method: "POST",
@@ -353,7 +354,7 @@ export async function retrieve(
 // ── 使用量 ──
 
 export async function getKnowledgeUsage(): Promise<ApiResponse<KnowledgeUsage>> {
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `${ZHIPU_KNOWLEDGE_BASE}/llm-application/open/knowledge/capacity`,
     {
       method: "GET",

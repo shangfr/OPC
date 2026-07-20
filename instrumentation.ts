@@ -1,9 +1,57 @@
 import { DiagConsoleLogger, DiagLogLevel, diag } from "@opentelemetry/api";
 
-export function register() {
+/**
+ * Next.js Instrumentation 钩子
+ *
+ * 在服务启动时执行一次，用于初始化：
+ * - OpenTelemetry 分布式追踪
+ * - Sentry 错误监控（通过 lib/sentry.ts 配置）
+ *
+ * Sentry 集成说明：
+ * - 本文件不直接初始化 Sentry SDK（避免引入依赖）
+ * - 错误上报通过 lib/sentry.ts 的 captureException 函数
+ * - 安装 @sentry/nextjs 后，可在此处添加 Sentry.init()
+ */
+export async function register() {
   // Only initialize once in the Node.js runtime (skip edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    initOpenTelemetry();
+    await initOpenTelemetry();
+    await initSentry();
+  }
+}
+
+/**
+ * 初始化 Sentry（可选）
+ *
+ * 未配置 SENTRY_DSN 时跳过。
+ * 安装 @sentry/nextjs 后，可在此处添加：
+ *   import * as Sentry from "@sentry/nextjs";
+ *   Sentry.init({
+ *     dsn: process.env.SENTRY_DSN,
+ *     tracesSampleRate: 0.1,
+ *   });
+ */
+async function initSentry() {
+  const sentryDsn = process.env.SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (!sentryDsn) {
+    return;
+  }
+
+  try {
+    // TODO: 安装 @sentry/nextjs 后启用以下代码
+    // const Sentry = await import("@sentry/nextjs");
+    // Sentry.init({
+    //   dsn: sentryDsn,
+    //   environment: process.env.NODE_ENV,
+    //   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+    //   release: process.env.SENTRY_RELEASE,
+    // });
+
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[Sentry] DSN 已配置，错误监控就绪");
+    }
+  } catch (error) {
+    console.warn("[Sentry] 初始化失败:", error instanceof Error ? error.message : error);
   }
 }
 

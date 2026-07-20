@@ -14,7 +14,11 @@ export const codeInterpreter = tool({
   description:
     "执行JavaScript代码做数学计算/数据处理。沙箱环境，5秒超时，可用Math/JSON/Date/console。无文件/网络/require。",
   inputSchema: z.object({
-    code: z.string().describe("JavaScript code to execute. Use console.log() to output results. Available: Math, JSON, Date, console."),
+    code: z
+      .string()
+      .describe(
+        "JavaScript code to execute. Use console.log() to output results. Available: Math, JSON, Date, console."
+      ),
   }),
   execute: async ({ code }) => {
     try {
@@ -24,13 +28,19 @@ export const codeInterpreter = tool({
       const sandbox = {
         console: {
           log: (...args: unknown[]) => {
-            logs.push(args.map((a) => (typeof a === "object" ? JSON.stringify(a, null, 2) : String(a))).join(" "));
+            logs.push(
+              args
+                .map((a) =>
+                  typeof a === "object" ? JSON.stringify(a, null, 2) : String(a)
+                )
+                .join(" ")
+            );
           },
           error: (...args: unknown[]) => {
-            logs.push("[ERROR] " + args.map((a) => String(a)).join(" "));
+            logs.push(`[ERROR] ${args.map((a) => String(a)).join(" ")}`);
           },
           warn: (...args: unknown[]) => {
-            logs.push("[WARN] " + args.map((a) => String(a)).join(" "));
+            logs.push(`[WARN] ${args.map((a) => String(a)).join(" ")}`);
           },
         },
         Math,
@@ -55,7 +65,8 @@ export const codeInterpreter = tool({
       } catch (execError) {
         return {
           success: false,
-          error: execError instanceof Error ? execError.message : String(execError),
+          error:
+            execError instanceof Error ? execError.message : String(execError),
           stdout: logs.join("\n"),
         };
       }

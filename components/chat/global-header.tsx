@@ -24,6 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
 import { useHeaderActions } from "./header-actions-context";
 import { toast } from "sonner";
@@ -81,8 +82,9 @@ export function GlobalHeader() {
     return null;
   }
 
-  const { title: pageTitle, icon: PageIcon } = getPageMeta(pathname);
+  // 移动端首页有自己的顶部品牌区，通过 CSS 隐藏 GlobalHeader
   const isHome = pathname === "/";
+  const { title: pageTitle, icon: PageIcon } = getPageMeta(pathname);
 
   const handleQuickNewChat = async () => {
     try {
@@ -100,7 +102,7 @@ export function GlobalHeader() {
   };
 
   return (
-    <header className="page-header sidebar-inset-header">
+    <header className={cn("page-header sidebar-inset-header", isHome && "md:block hidden")}>
       <div className="flex items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-1 h-4" />

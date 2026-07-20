@@ -407,6 +407,17 @@ export function AgentCard({
                 电话
               </a>
             )}
+            {agent.phone && (
+              <a
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
+                href={`sms:${agent.phone}?body=${encodeURIComponent(`您好，我是OPC平台用户，想咨询一下关于${agent.name}的事宜。`)}`}
+                onClick={(e) => e.stopPropagation()}
+                type="button"
+              >
+                <MessageSquare className="size-3" />
+                短信
+              </a>
+            )}
             <div className="flex items-center gap-1">
               <button
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
@@ -447,6 +458,16 @@ export function AgentCard({
                 >
                   <Phone className="size-3" />
                   电话
+                </a>
+              )}
+              {agent.phone && (
+                <a
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
+                  href={`sms:${agent.phone}?body=${encodeURIComponent(`您好，我是OPC平台用户，想咨询一下关于${agent.name}的事宜。`)}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MessageSquare className="size-3" />
+                  短信
                 </a>
               )}
               <button

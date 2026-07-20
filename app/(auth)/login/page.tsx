@@ -11,6 +11,9 @@ import { toast } from "@/components/chat/toast";
 import { cn } from "@/lib/utils";
 import { type LoginActionState, login } from "../actions";
 
+// 静态生成：登录页为纯客户端交互，无需动态渲染
+export const dynamic = "force-static";
+
 export default function Page() {
   const router = useRouter();
   const [email, setEmail] = useState("");

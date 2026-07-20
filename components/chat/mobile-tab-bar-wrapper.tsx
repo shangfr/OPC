@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 import TabBar from "@/components/mobile/tab-bar";
 import { getMobileTabs } from "@/lib/mobile-tabs";
 
-// 不显示底部导航栏的路径（聊天页面有自己的输入栏）
-const HIDDEN_PATHS = ["/chat"];
+// 不显示底部导航栏的路径（聊天页面有自己的输入栏，移动端首页有自己的底部输入栏）
+const HIDDEN_PATHS = ["/chat", "/"];
 
 /**
  * 移动端底部导航栏包装器

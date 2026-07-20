@@ -3,6 +3,7 @@ import { customProvider } from "ai";
 import { isTestEnvironment } from "../constants";
 import { providers } from "./config";
 import { type ChatModel, chatModels, DEFAULT_CHAT_MODEL } from "./models";
+import { chatModel as mockChatModel, titleModel as mockTitleModel } from "./models.mock";
 
 // ============================================================
 // 多厂商 Provider 管理
@@ -54,15 +55,12 @@ function buildLanguageModels(models: ChatModel[]) {
 }
 
 export const myProvider = isTestEnvironment
-  ? (() => {
-      const { chatModel, titleModel } = require("./models.mock");
-      return customProvider({
-        languageModels: {
-          "chat-model": chatModel,
-          "title-model": titleModel,
-        },
-      });
-    })()
+  ? customProvider({
+      languageModels: {
+        "chat-model": mockChatModel as never,
+        "title-model": mockTitleModel as never,
+      },
+    })
   : customProvider({
       languageModels: buildLanguageModels(chatModels),
     });

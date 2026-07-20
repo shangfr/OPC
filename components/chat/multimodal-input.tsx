@@ -21,6 +21,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useTransition,
 } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
@@ -57,6 +58,8 @@ import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { PaperclipIcon, StopIcon } from "./icons";
+import { AudioRecorderButton } from "./audio-recorder-button";
+import { NotificationToggle } from "./notification-toggle";
 import { PreviewAttachment } from "./preview-attachment";
 import {
   type SlashCommand,
@@ -65,6 +68,7 @@ import {
 } from "./slash-commands";
 import { SuggestedActions } from "./suggested-actions";
 import type { VisibilityType } from "./visibility-selector";
+import { VoiceInputButton } from "./voice-input-button";
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;
@@ -121,6 +125,7 @@ function PureMultimodalInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
   const hasAutoFocused = useRef(false);
+  const [isSending, startSendTransition] = useTransition();
   useEffect(() => {
     if (!hasAutoFocused.current && width > 768) {
       const timer = setTimeout(() => {
@@ -231,20 +236,22 @@ function PureMultimodalInput({
       `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/chat/${chatId}`
     );
 
-    sendMessage({
-      role: "user",
-      parts: [
-        ...attachments.map((attachment) => ({
-          type: "file" as const,
-          url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
-        })),
-        {
-          type: "text",
-          text: input,
-        },
-      ],
+    startSendTransition(() => {
+      sendMessage({
+        role: "user",
+        parts: [
+          ...attachments.map((attachment) => ({
+            type: "file" as const,
+            url: attachment.url,
+            name: attachment.name,
+            mediaType: attachment.contentType,
+          })),
+          {
+            type: "text",
+            text: input,
+          },
+        ],
+      });
     });
 
     setAttachments([]);
@@ -549,6 +556,16 @@ function PureMultimodalInput({
               selectedModelId={selectedModelId}
               status={status}
             />
+            <VoiceInputButton
+              value={input}
+              onChange={setInput}
+              disabled={status !== "ready"}
+            />
+            <AudioRecorderButton
+              value={input}
+              onChange={setInput}
+              disabled={status !== "ready"}
+            />
             <ModelSelectorCompact
               onModelChange={onModelChange}
               selectedModelId={selectedModelId}
@@ -558,6 +575,7 @@ function PureMultimodalInput({
               onChange={onThinkingChange}
               selectedModelId={selectedModelId}
             />
+            <NotificationToggle />
           </PromptInputTools>
 
           {status === "submitted" || status === "streaming" ? (
