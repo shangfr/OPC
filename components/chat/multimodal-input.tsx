@@ -565,16 +565,16 @@ function PureMultimodalInput({
               onChange={setInput}
               disabled={status !== "ready"}
             />
-            <ModelSelectorCompact
-              onModelChange={onModelChange}
-              selectedModelId={selectedModelId}
-            />
+            <NotificationToggle />
             <ThinkingToggle
               enabled={thinkingEnabled}
               onChange={onThinkingChange}
               selectedModelId={selectedModelId}
             />
-            <NotificationToggle />
+            <ModelSelectorCompact
+              onModelChange={onModelChange}
+              selectedModelId={selectedModelId}
+            />
           </PromptInputTools>
 
           {status === "submitted" || status === "streaming" ? (

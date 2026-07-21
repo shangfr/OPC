@@ -143,13 +143,7 @@ function PureChatHeader({
           type="button"
         >
           <Download className="size-3.5" />
-          <span className="hidden sm:inline">
-            {isExporting ? "导出中..." : "导出"}
-          </span>
         </button>
-
-        {/* 键盘快捷键帮助 */}
-        <KeyboardShortcutsHelp />
 
         {/* OPC 切换按钮 */}
         <Popover onOpenChange={setOpen} open={open}>
@@ -161,7 +155,6 @@ function PureChatHeader({
               type="button"
             >
               <ArrowLeftRight className="size-3.5" />
-              <span className="hidden sm:inline">切换 OPC</span>
             </button>
           </PopoverTrigger>
           <PopoverContent
