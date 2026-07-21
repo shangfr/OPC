@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 // --- 类型定义 ---
 type ArtifactKind = "text" | "code" | "html" | "image" | "sheet";
@@ -340,6 +341,8 @@ export default function ArtifactsPage() {
     <div className="flex h-dvh flex-col bg-background">
       {/* 顶部栏 */}
       <header className="page-header shrink-0">
+        {/* 移动端侧边栏触发器 */}
+        <SidebarTrigger className="-ml-1 md:hidden" />
         <button
           className="back-button"
           onClick={() => router.back()}

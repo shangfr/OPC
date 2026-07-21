@@ -83,6 +83,8 @@ export interface UseSpeechRecognitionOptions {
   maxAlternatives?: number;
   /** 最终结果回调 */
   onResult?: (transcript: string) => void;
+  /** 中间结果回调（实时识别中的文本） */
+  onInterim?: (interim: string) => void;
   /** 错误回调 */
   onError?: (error: string) => void;
 }
@@ -113,6 +115,7 @@ export function useSpeechRecognition(
     interimResults = true,
     maxAlternatives = 1,
     onResult,
+    onInterim,
     onError,
   } = options;
 
@@ -123,12 +126,16 @@ export function useSpeechRecognition(
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   // 用 ref 保存最新回调，避免重建 recognition 实例
   const onResultRef = useRef(onResult);
+  const onInterimRef = useRef(onInterim);
   const onErrorRef = useRef(onError);
+  // 用 ref 保存 isListening，避免 start/stop 闭包捕获旧值
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     onResultRef.current = onResult;
+    onInterimRef.current = onInterim;
     onErrorRef.current = onError;
-  }, [onResult, onError]);
+  }, [onResult, onInterim, onError]);
 
   // 浏览器支持检测
   const supported =
@@ -149,6 +156,7 @@ export function useSpeechRecognition(
     recognition.maxAlternatives = maxAlternatives;
 
     recognition.onstart = () => {
+      isListeningRef.current = true;
       setIsListening(true);
       setError(null);
     };
@@ -176,6 +184,7 @@ export function useSpeechRecognition(
           const base = prev.replace(/\s+$/, "");
           return base + interimText;
         });
+        onInterimRef.current?.(interimText);
       }
     };
 
@@ -191,10 +200,12 @@ export function useSpeechRecognition(
       const msg = errorMap[event.error] || `语音识别错误: ${event.error}`;
       setError(msg);
       onErrorRef.current?.(event.error);
+      isListeningRef.current = false;
       setIsListening(false);
     };
 
     recognition.onend = () => {
+      isListeningRef.current = false;
       setIsListening(false);
     };
 
@@ -216,7 +227,10 @@ export function useSpeechRecognition(
   }, [supported, lang, continuous, interimResults, maxAlternatives]);
 
   const start = useCallback(() => {
-    if (!recognitionRef.current || isListening) return;
+    if (!recognitionRef.current || isListeningRef.current) return;
+    // 开始新一轮识别前清空 transcript，避免上一轮残留
+    setTranscript("");
+    setError(null);
     try {
       recognitionRef.current.start();
     } catch (err) {
@@ -225,17 +239,18 @@ export function useSpeechRecognition(
         setError(err instanceof Error ? err.message : "启动语音识别失败");
       }
     }
-  }, [isListening]);
+  }, []);
 
   const stop = useCallback(() => {
-    if (!recognitionRef.current || !isListening) return;
+    if (!recognitionRef.current || !isListeningRef.current) return;
     try {
       recognitionRef.current.stop();
     } catch {
       // ignore
     }
+    isListeningRef.current = false;
     setIsListening(false);
-  }, [isListening]);
+  }, []);
 
   const reset = useCallback(() => {
     setTranscript("");

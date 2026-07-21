@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 
@@ -32,6 +32,8 @@ import {
 import { getAvatarChar } from "@/lib/agent-groups";
 import type { Ticket } from "@/lib/db/schema";
 import { cn, fetcher } from "@/lib/utils";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
+import { Button } from "@/components/ui/button";
 
 import {
   PRIORITY_LABELS,
@@ -122,6 +124,42 @@ export function TicketCards() {
     setShowCreate(true);
   };
 
+  // 将「AI 智能发布」「手动发布」按钮注册到 GlobalHeader，仅在「我的发布」Tab 时显示
+  const { setActions } = useHeaderActions();
+  useEffect(() => {
+    if (activeTab === "mine") {
+      setActions(
+        <>
+          <Button
+            key="ai-publish"
+            className="gap-1.5 bg-gradient-to-r from-primary to-primary/80"
+            onClick={() => setShowAIEditor(true)}
+            size="sm"
+          >
+            <Sparkles className="size-4" />
+            <span className="hidden sm:inline">AI 智能发布</span>
+            <span className="sm:hidden">AI 发布</span>
+          </Button>
+          <Button
+            key="manual-publish"
+            className="gap-1.5"
+            onClick={openCreate}
+            size="sm"
+            variant="outline"
+          >
+            <Plus className="size-4" />
+            <span className="hidden sm:inline">手动发布</span>
+            <span className="sm:hidden">创建</span>
+          </Button>
+        </>
+      );
+    } else {
+      setActions(null);
+    }
+    return () => setActions(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const refreshAll = useCallback(() => {
     mutateMine();
     refresh();
@@ -175,16 +213,6 @@ export function TicketCards() {
   return (
     <TicketCategoryProvider value={ctxValue}>
       <div className="page-container">
-        {/* ═══ 页面标题 ═══ */}
-        <div className="mb-6 flex items-center gap-3">
-          <ClipboardList className="size-6 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">智客</h1>
-            <p className="text-sm text-muted-foreground">
-              AI 资源整合引擎 — 发布与浏览供需信息
-            </p>
-          </div>
-        </div>
 
         {/* ═══ Tab 切换栏 ═══ */}
         <div className="mb-6 flex gap-4 border-b border-border/40">
@@ -408,28 +436,6 @@ export function TicketCards() {
         {/* ═══ Tab: 我的发布 ═══ */}
         {activeTab === "mine" && (
           <section>
-            <div className="mb-4 flex items-center justify-end gap-2">
-              {/* 🆕 AI 智能发布按钮 */}
-              <button
-                className="touch-target inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-primary to-primary/80 px-2.5 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-all hover:shadow-md"
-                onClick={() => setShowAIEditor(true)}
-                type="button"
-              >
-                <Sparkles className="size-3.5" />
-                <span className="hidden sm:inline">AI 智能发布</span>
-                <span className="sm:hidden">AI 发布</span>
-              </button>
-              <button
-                className="touch-target inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
-                onClick={openCreate}
-                type="button"
-              >
-                <Plus className="size-3.5" />
-                <span className="hidden sm:inline">手动发布</span>
-                <span className="sm:hidden">创建</span>
-              </button>
-            </div>
-
             {/* 🆕 用户侧审核提醒：已启动但未发布的工单，提醒等待管理员审核 */}
             {(() => {
               const pendingReview = myTickets.filter(

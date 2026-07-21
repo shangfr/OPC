@@ -446,11 +446,15 @@ useEffect(() => {
       summarizeTaskRef.current = null;
     }, 1000);
   } else {
-    // ✅ 也要处理兼容旧逻辑
+    // ✅ 处理移动端首页快捷指令 / 输入框发送的 pending-prompt
+    const storedPrompt = safeSessionStorageGet(`pending-prompt-${chatId}`);
     const params = new URLSearchParams(window.location.search);
-    const query = params.get("query");
-    if (query) {
+    // 兼容 prompt（移动端首页）和 query（旧逻辑）两种参数
+    const prompt = storedPrompt || params.get("prompt") || params.get("query");
+    if (prompt) {
       processedChatIdRef.current = chatId;
+      // 清理 sessionStorage 和 URL 参数
+      safeSessionStorageRemove(`pending-prompt-${chatId}`);
       window.history.replaceState(
         {},
         "",
@@ -458,7 +462,7 @@ useEffect(() => {
       );
       sendMessage({
         role: "user" as const,
-        parts: [{ type: "text", text: query }],
+        parts: [{ type: "text", text: prompt }],
       });
     }
   }

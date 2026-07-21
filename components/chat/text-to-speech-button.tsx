@@ -10,7 +10,7 @@
  */
 
 import { Volume2Icon, VolumeXIcon, Loader2Icon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSpeechSynthesis } from "@/hooks/use-speech-synthesis";
 import { MessageAction } from "../ai-elements/message";
@@ -35,11 +35,18 @@ function PureTextToSpeechButton({
 
   // 当前按钮是否正在朗读这条消息（全局 speaking + 本消息激活标记）
   const [isActive, setIsActive] = useState(false);
+  // 用 ref 保存 isActive，避免 handleClick 闭包捕获旧值导致无法停止
+  const isActiveRef = useRef(false);
+
+  useEffect(() => {
+    isActiveRef.current = isActive;
+  }, [isActive]);
 
   // 当全局 speaking 变为 false 时，重置本消息激活状态
   useEffect(() => {
     if (!speaking) {
       setIsActive(false);
+      isActiveRef.current = false;
     }
   }, [speaking]);
 
@@ -48,9 +55,11 @@ function PureTextToSpeechButton({
   }
 
   const handleClick = () => {
-    if (isActive && speaking) {
+    // 只要本按钮处于激活状态就停止，不依赖 speaking（避免 onstart 事件延迟导致无法停止）
+    if (isActiveRef.current) {
       stop();
       setIsActive(false);
+      isActiveRef.current = false;
       return;
     }
 
@@ -60,12 +69,15 @@ function PureTextToSpeechButton({
     );
 
     try {
+      // 先取消可能正在进行的其他朗读
+      stop();
       speak(text, {
         lang,
         rate: 1,
         pitch: 1,
         ...(zhVoice ? {} : {}),
       });
+      isActiveRef.current = true;
       setIsActive(true);
     } catch {
       toast.error("语音播报启动失败");

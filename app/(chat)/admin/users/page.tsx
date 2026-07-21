@@ -35,31 +35,6 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="page-container pb-tabbar">
-      <div className="flex items-center gap-3">
-        <Users className="size-6 text-primary" />
-        <div>
-          <h1 className="page-title">用户管理</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {isPlatformAdmin
-              ? "管理用户账号、审核企业资质、封禁违规账号、调整用户类型与订阅套餐。"
-              : "管理团队成员账号、查看成员角色与状态。"}
-          </p>
-        </div>
-      </div>
-
-      {/* 统计徽标 */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
-          <span className="size-2 rounded-full bg-sky-500" />
-          <span className="text-sm font-medium">用户 {users.length}</span>
-        </div>
-        {isPlatformAdmin && pendingEnterprises.length > 0 && (
-          <div className="inline-flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-1.5">
-            <span className="size-2 rounded-full bg-amber-500" />
-            <span className="text-sm font-medium">待审核企业 {pendingEnterprises.length}</span>
-          </div>
-        )}
-      </div>
 
       {/* 角色标识横幅：区分平台管理员与企业团队管理员的管辖范围 */}
       <div
@@ -91,7 +66,19 @@ export default async function AdminUsersPage() {
           </p>
         </div>
       </div>
-
+      {/* 统计徽标 */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
+          <span className="size-2 rounded-full bg-sky-500" />
+          <span className="text-sm font-medium">用户 {users.length}</span>
+        </div>
+        {isPlatformAdmin && pendingEnterprises.length > 0 && (
+          <div className="inline-flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-1.5">
+            <span className="size-2 rounded-full bg-amber-500" />
+            <span className="text-sm font-medium">待审核企业 {pendingEnterprises.length}</span>
+          </div>
+        )}
+      </div>
       {users.length === 0 && pendingEnterprises.length === 0 ? (
         <div className="mt-8 flex flex-col items-center gap-3 py-16 text-center">
           <div className="flex size-12 items-center justify-center rounded-full bg-muted">

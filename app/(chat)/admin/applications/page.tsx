@@ -10,15 +10,6 @@ export default async function AdminApplicationsPage() {
 
   return (
     <div className="page-container pb-tabbar">
-      <div className="flex items-center gap-3">
-        <ClipboardCheck className="size-6 text-primary" />
-        <div>
-          <h1 className="page-title">上架审核</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            审核创作者/企业提交的 OPC 上架与下架申请。
-          </p>
-        </div>
-      </div>
 
       {/* 待审核数量徽标 */}
       <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">

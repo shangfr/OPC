@@ -19,7 +19,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
@@ -120,8 +119,8 @@ function PureChatHeader({
 
   return (
     <header className="page-header">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
+      {/* 移动端侧边栏触发器：桌面端由侧边栏自身控制 */}
+      <SidebarTrigger className="-ml-1 md:hidden" />
 
       {agentName && (
         <div className="flex min-w-0 items-center gap-2">

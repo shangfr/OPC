@@ -50,12 +50,6 @@ export default async function MarketplacePage({
 
   return (
     <main className="page-container mx-auto max-w-6xl pb-tabbar">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold text-foreground sm:text-2xl">OPC 服务商城</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          浏览全部已上架的公共 OPC 智能体。Team 及以上套餐可订阅雇佣，将 OPC 接入团队工作流。
-        </p>
-      </div>
 
       {/* 角色权限提示横幅：按套餐显示差异化操作权限说明 */}
       {canSubscribe ? (

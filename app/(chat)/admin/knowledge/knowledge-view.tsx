@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
 
 // ── Types ──
 
@@ -61,6 +62,25 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // 将「新建知识库」按钮注册到 GlobalHeader
+  const { setActions } = useHeaderActions();
+  useEffect(() => {
+    setActions(
+      <Button
+        key="create-kb"
+        className="gap-1.5"
+        onClick={() => setCreateOpen(true)}
+        size="sm"
+      >
+        <Plus className="size-4" />
+        <span className="hidden sm:inline">新建知识库</span>
+        <span className="sm:hidden">新建</span>
+      </Button>
+    );
+    return () => setActions(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Document management
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
@@ -324,22 +344,6 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
 
   return (
     <div className="page-container">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between sm:mb-10">
-        <div className="flex items-center gap-3">
-          <BookOpen className="size-6 text-primary" />
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight">知识库</h1>
-            <p className="text-sm text-muted-foreground">
-              管理知识库与文档，为 OPC 提供检索增强
-            </p>
-          </div>
-        </div>
-        <Button className="gap-2" onClick={() => setCreateOpen(true)}>
-          <Plus className="size-4" />
-          新建知识库
-        </Button>
-      </div>
 
       {/* Loading */}
       {loading ? (

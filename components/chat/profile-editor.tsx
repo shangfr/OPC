@@ -111,10 +111,6 @@ export function ProfileEditor({ user }: { user: ProfileUserData }) {
   return (
     <main className="page-container">
       <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-8 flex items-center gap-3">
-          <UserCircle className="size-7 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight">个人中心</h1>
-        </div>
 
         {/* ===== 头像 + 用户名 ===== */}
         <section className={cn("mb-6", cardVariants({ variant: "base", padding: "lg" }))}>

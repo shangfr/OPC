@@ -40,15 +40,27 @@ function PureVoiceInputButton({
     valueRef.current = value;
   }, [value]);
 
+  // 识别开始时的基础文本（已有内容），用于拼接中间/最终结果
+  const baseTextRef = useRef("");
+
   const { isListening, supported, error, start, stop, transcript } =
     useSpeechRecognition({
       lang,
       continuous: false,
       interimResults: true,
+      onInterim: (interim) => {
+        // 中间结果实时显示：base + interim
+        const base = baseTextRef.current;
+        const sep = base && !base.endsWith(" ") ? " " : "";
+        onChange(base + sep + interim);
+      },
       onResult: (finalText) => {
-        // 最终结果追加到输入框末尾
-        const base = valueRef.current.replace(/\s+$/, "");
-        onChange(base + finalText);
+        // 最终结果：以 base 为基准拼接，确保不重复
+        const base = baseTextRef.current;
+        const sep = base && !base.endsWith(" ") ? " " : "";
+        const newText = base + sep + finalText;
+        baseTextRef.current = newText;
+        onChange(newText);
       },
     });
 
@@ -86,6 +98,8 @@ function PureVoiceInputButton({
     if (isListening) {
       stop();
     } else {
+      // 记录开始识别时的基础文本，用于后续拼接
+      baseTextRef.current = valueRef.current;
       start();
       toast.success("开始语音输入，请说话...", { duration: 1500 });
     }

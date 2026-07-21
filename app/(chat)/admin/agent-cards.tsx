@@ -11,6 +11,8 @@ import { getAvatarChar } from "@/lib/agent-groups";
 import type { Agent } from "@/lib/db/schema";
 import { cn, fetcher } from "@/lib/utils";
 import { submitListingApplicationAction, withdrawListingApplicationAction, getMyApplicationsAction } from "@/lib/opc-market/actions";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
+import { Button } from "@/components/ui/button";
 
 import { AgentFormDialog } from "./agent-form-dialog";
 import { AgentCard, CategoryProvider, GroupHeader, useAgents } from "./opc-shared";
@@ -91,6 +93,29 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
     setEditingAgent(agent);
     setShowCreate(true);
   };
+
+  // 将「创建 OPC」按钮注册到 GlobalHeader，仅在「我的 OPC」Tab 且有创建权限时显示
+  const { setActions } = useHeaderActions();
+  useEffect(() => {
+    if (activeTab === "mine" && canListOpc) {
+      setActions(
+        <Button
+          key="create-opc"
+          className="gap-1.5"
+          onClick={openCreate}
+          size="sm"
+        >
+          <Plus className="size-4" />
+          <span className="hidden sm:inline">创建 OPC</span>
+          <span className="sm:hidden">创建</span>
+        </Button>
+      );
+    } else {
+      setActions(null);
+    }
+    return () => setActions(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, canListOpc]);
 
   const refreshAll = useCallback(() => {
     mutateMine();
@@ -208,14 +233,7 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
   return (
     <CategoryProvider value={ctxValue}>
       <div className="page-container">
-        {/* 页面标题 */}
-        <div className="mb-6">
-          <h1 className="page-title">OPC 智库</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            浏览平台 OPC 角色或创建专属 OPC
-          </p>
-        </div>
-
+        
         {/* 角色权限提示横幅：按上架申请权限显示差异化说明 */}
         <div
           className={`mb-6 flex items-start gap-3 rounded-lg border p-4 ${
@@ -428,18 +446,6 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
         {/* ═══ Tab: 我的 OPC ═══ */}
         {activeTab === "mine" && (
           <section>
-            <div className="mb-4 flex items-center justify-end">
-              <button
-                className="touch-target inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
-                onClick={openCreate}
-                type="button"
-              >
-                <Plus className="size-3.5" />
-                <span className="hidden sm:inline">创建 OPC</span>
-                <span className="sm:hidden">创建</span>
-              </button>
-            </div>
-
             {myAgents.length === 0 ? (
               <div className="empty-state py-16">
                 <Plus className="mb-3 size-8 text-muted-foreground/30" />

@@ -43,25 +43,6 @@ export default async function AdminOpcsPage() {
 
   return (
     <div className="page-container pb-tabbar">
-      <div className="flex items-center gap-3">
-        <Bot className="size-6 text-primary" />
-        <div>
-          <h1 className="page-title">OPC 管理</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {isPlatformAdmin
-              ? "管理平台公共 OPC，可强制下架违规 OPC，也可恢复已下架的 OPC。"
-              : "管理企业已订阅的 OPC 副本，可独立编辑不影响原始公共 OPC。"}
-          </p>
-        </div>
-      </div>
-
-      {/* OPC 数量徽标 */}
-      <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
-        <span className="size-2 rounded-full bg-sky-500" />
-        <span className="text-sm font-medium">
-          共 {opcs.length} 个 OPC
-        </span>
-      </div>
 
       {/* 角色标识横幅：区分平台管理员与企业团队管理员的操作范围 */}
       <div
@@ -94,6 +75,14 @@ export default async function AdminOpcsPage() {
         </div>
       </div>
 
+      {/* OPC 数量徽标 */}
+      <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
+        <span className="size-2 rounded-full bg-sky-500" />
+        <span className="text-sm font-medium">
+          共 {opcs.length} 个 OPC
+        </span>
+      </div>
+      
       {opcs.length === 0 ? (
         <div className="mt-8 flex flex-col items-center gap-3 py-16 text-center">
           <div className="flex size-12 items-center justify-center rounded-full bg-muted">

@@ -39,10 +39,6 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="page-container pb-tabbar">
-      <h1 className="page-title">订单流水</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        全平台 OPC 订阅订单记录。
-      </p>
 
       {/* 汇总卡片 */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">

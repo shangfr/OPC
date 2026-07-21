@@ -22,6 +22,7 @@ import { DocumentPreview } from "./document-preview";
 import { MessageActions } from "./message-actions";
 import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
+import { TypewriterText } from "./typewriter-text";
 import { Weather } from "./weather";
 
 type PreviewMessageProps = {
@@ -114,6 +115,23 @@ const PurePreviewMessage = ({
     }
 
     if (type === "text") {
+      // 最后一条 assistant 消息：使用匀速打字机渲染
+      // 流式输出时启用打字机队列；流式结束后继续消费剩余队列
+      // 历史消息和用户消息直接显示全文
+      const useTypewriterForThis = isAssistant && isLastAssistant;
+
+      if (useTypewriterForThis) {
+        return (
+          <TypewriterText
+            isStreaming={isLoading}
+            isUser={false}
+            key={key}
+            messageId={message.id}
+            text={part.text}
+          />
+        );
+      }
+
       return (
         <MessageContent
           className={cn("text-[16px] leading-[1.65] font-medium", {

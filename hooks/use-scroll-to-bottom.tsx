@@ -16,7 +16,8 @@ export function useScrollToBottom() {
       return true;
     }
     const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-    return scrollTop + clientHeight >= scrollHeight - 100;
+    // 收紧阈值：用户上滑后不应自动跟随
+    return scrollTop + clientHeight >= scrollHeight - 50;
   }, []);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
@@ -45,9 +46,10 @@ export function useScrollToBottom() {
       setIsAtBottom(atBottom);
       isAtBottomRef.current = atBottom;
 
+      // 用户主动滚动后，延长锁定时间，避免打字机输出时自动跟随
       scrollTimeout = setTimeout(() => {
         isUserScrollingRef.current = false;
-      }, 150);
+      }, 300);
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
@@ -69,6 +71,7 @@ export function useScrollToBottom() {
     const THROTTLE_MS = 80; // 80ms 节流间隔，肉眼无感知但大幅减少 reflow
 
     const scrollIfNeeded = () => {
+      // 仅当用户在底部且未主动滚动时才自动跟随
       if (!isAtBottomRef.current || isUserScrollingRef.current) {
         return;
       }

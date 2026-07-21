@@ -368,9 +368,9 @@ select:focus-visible,
     @apply px-4 py-6 md:px-6 md:py-8;
   }
 
-  /* 页面头部：固定高度，移动端紧凑；桌面端 inset 模式下随侧边栏折叠平滑过渡高度 */
+  /* 页面头部：始终固定在页面顶部，移动端紧凑；桌面端 inset 模式下随侧边栏折叠平滑过渡高度 */
   .page-header {
-    @apply sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background/80 px-4 backdrop-blur-sm transition-[width,height] ease-linear sm:gap-3 md:h-16 md:group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12;
+    @apply sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border/50 bg-background/95 px-4 backdrop-blur-md transition-[width,height] ease-linear sm:gap-3 md:h-16 md:group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-14;
   }
 
   /* 表格容器：移动端横向滚动 */
@@ -400,9 +400,9 @@ select:focus-visible,
     @apply overflow-y-auto;
   }
 
-  /* 触摸友好按钮：最小 44px 高度 */
+  /* 触摸友好按钮：移动端 44px（符合 HIG），桌面端 32px 紧凑尺寸 */
   .touch-target {
-    @apply min-h-[44px] min-w-[44px];
+    @apply min-h-[44px] min-w-[44px] md:min-h-8 md:min-w-8;
   }
 
   /*
@@ -445,9 +445,9 @@ select:focus-visible,
     @apply flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 py-16 text-center md:py-20;
   }
 
-  /* 移动端底部导航栏间距：防止 TabBar 遮挡页面内容 */
+  /* 底部导航栏已移除，保留类名以兼容旧用法，但不再额外占位 */
   .pb-tabbar {
-    @apply pb-12 md:pb-0;
+    @apply pb-0;
   }
 
   /*

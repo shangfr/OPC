@@ -1,11 +1,11 @@
 "use client";
-import { FolderTree, Home, Plus } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
+import { FolderTree, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Agent } from "@/lib/db/schema";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
 import { AgentFormDialog } from "./agent-form-dialog";
 import { GroupManagerDialog } from "./group-manager-dialog";
 import { AgentCard, CategoryProvider, GroupHeader, useAgents } from "./opc-shared";
@@ -13,7 +13,7 @@ import { SiteConfigDialog } from "./site-config-dialog";
 
 export function AgentManager() {
   const { agents, categories, loading, refresh, adminGroups, handleStartChat, ctxValue, setCategories } = useAgents();
-  
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Agent | null>(null);
@@ -28,6 +28,32 @@ export function AgentManager() {
     setEditingAgent(agent);
     setDialogOpen(true);
   };
+
+  // 将「管理分组」「站点配置」「新建 OPC」按钮注册到 GlobalHeader
+  const { setActions } = useHeaderActions();
+  useEffect(() => {
+    setActions(
+      <>
+        <Button
+          key="group-mgr"
+          onClick={() => setGroupDialogOpen(true)}
+          size="sm"
+          variant="ghost"
+        >
+          <FolderTree className="size-4" />
+          <span className="hidden sm:inline">管理分组</span>
+        </Button>
+        <SiteConfigDialog key="site-config" />
+        <Button key="create-opc" className="gap-1.5" onClick={openCreate} size="sm">
+          <Plus className="size-4" />
+          <span className="hidden sm:inline">新建 OPC</span>
+          <span className="sm:hidden">新建</span>
+        </Button>
+      </>
+    );
+    return () => setActions(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
@@ -61,38 +87,14 @@ export function AgentManager() {
     <CategoryProvider value={ctxValue}>
       <div className="page-container">
         {/* 页面标题 + 统计 */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="page-title">OPC 智库管理</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                管理平台 OPC 角色、分类和站点配置
-              </p>
-              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                <span>共 <span className="font-medium text-foreground">{totalAgents}</span> 个 OPC</span>
-                <span>·</span>
-                <span><span className="font-medium text-emerald-600">{activeAgents}</span> 启用</span>
-                <span>·</span>
-                <span><span className="font-medium text-muted-foreground">{totalAgents - activeAgents}</span> 停用</span>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button asChild className="gap-1.5" size="sm" variant="ghost">
-                <Link href="/">
-                  <Home className="size-3.5" />
-                  <span className="hidden sm:inline">返回主页</span>
-                </Link>
-              </Button>
-              <Button className="gap-1.5" onClick={() => setGroupDialogOpen(true)} size="sm" variant="ghost">
-                <FolderTree className="size-3.5" />
-                <span className="hidden sm:inline">管理分组</span>
-              </Button>
-              <SiteConfigDialog />
-              <Button className="gap-2" onClick={openCreate}>
-                <Plus className="size-4" />
-                <span className="hidden sm:inline">新建 OPC</span>
-                <span className="sm:hidden">新建</span>
-              </Button>
+        <div className="flex justify-end mb-6 sm:mb-8">
+          <div>
+            <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+              <span>共 <span className="font-medium text-foreground">{totalAgents}</span> 个 OPC</span>
+              <span>·</span>
+              <span><span className="font-medium text-emerald-600">{activeAgents}</span> 启用</span>
+              <span>·</span>
+              <span><span className="font-medium text-muted-foreground">{totalAgents - activeAgents}</span> 停用</span>
             </div>
           </div>
         </div>

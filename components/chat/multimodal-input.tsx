@@ -55,7 +55,6 @@ import {
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
-import { Switch } from "../ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { AudioRecorderButton } from "./audio-recorder-button";
@@ -908,19 +907,30 @@ function ThinkingToggle({
   }
 
   return (
-    <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium transition-colors hover:bg-muted/80">
-      <BrainIcon className="size-3.5 text-muted-foreground" />
-      <span className="text-muted-foreground">思考</span>
-      <Switch
-        aria-label="思考模式"
-        checked={enabled}
-        className="scale-90"
-        data-testid="thinking-toggle"
-        onCheckedChange={(checked) => {
-          onChange?.(checked);
-        }}
-      />
-    </label>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="思考模式"
+          aria-pressed={enabled}
+          data-testid="thinking-toggle"
+          onClick={() => {
+            onChange?.(!enabled);
+          }}
+          className={cn(
+            "size-8 rounded-lg text-muted-foreground hover:text-foreground",
+            enabled && "text-primary hover:text-primary",
+          )}
+        >
+          <BrainIcon className="size-[18px]" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {enabled ? "关闭思考模式" : "开启思考模式"}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

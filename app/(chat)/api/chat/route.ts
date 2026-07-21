@@ -422,7 +422,17 @@ export async function POST(request: Request) {
             stopWhen: stepCountIs(5),
             experimental_activeTools: finalActiveTools,
             providerOptions: {
-              ...(modelConfig?.reasoningEffort && { openai: { reasoningEffort: modelConfig.reasoningEffort } }),
+              // 思考模式开关：thinkingEnabled 控制是否启用推理/思考
+              // - 智谱 GLM thinking 模型：通过 thinking 参数控制
+              // - DeepSeek：通过 reasoning_effort 控制
+              // - OpenAI 兼容：通过 reasoningEffort 控制
+              ...(isReasoningModel && {
+                openai: {
+                  reasoningEffort: thinkingEnabled
+                    ? (modelConfig?.reasoningEffort ?? "medium")
+                    : "none",
+                },
+              }),
             },
             tools,
             experimental_telemetry: { isEnabled: isProductionEnvironment, functionId: "stream-text" },
@@ -441,8 +451,8 @@ export async function POST(request: Request) {
         // 会被 toUIMessageStream 过滤掉，但 reasoning-start / reasoning-end
         // 仍然转发，导致思考阶段前端无任何文本输出 → 表现为"先出一句后卡顿，
         // 再一次性输出一大段"。
-        // 修复：对推理模型始终发送 reasoning，保证整条流持续有数据到达前端。
-        dataStream.merge(result.toUIMessageStream({ sendReasoning: isReasoningModel }));
+        // 修复：仅在 thinkingEnabled 为 true 时发送 reasoning，关闭思考模式时不输出思考过程。
+        dataStream.merge(result.toUIMessageStream({ sendReasoning: isReasoningModel && thinkingEnabled }));
 
         if (titlePromise) {
           try {

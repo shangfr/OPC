@@ -64,11 +64,7 @@ async function renderSettings(
 
   return (
     <main className="page-container mx-auto max-w-5xl pb-tabbar">
-      <h1 className="text-xl font-semibold text-foreground sm:text-2xl">订阅管理</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        查看你的套餐、用量、账单，并选择适合的套餐方案。
-      </p>
-
+      
       {/* 套餐信息横幅 */}
       <div
         className={`mt-4 flex items-start gap-3 rounded-lg border p-4 ${

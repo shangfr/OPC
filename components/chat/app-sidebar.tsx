@@ -43,6 +43,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useActiveChat } from "@/hooks/use-active-chat";
@@ -121,6 +122,11 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <TooltipContent className="hidden md:block" side="right"> 展开侧边栏 </TooltipContent>
                 </Tooltip>
               </div>
+
+              {/* 展开/折叠按钮：放在侧边栏 header 内，移动端始终显示，桌面端展开时显示 */}
+              <SidebarTrigger
+                className="shrink-0 group-data-[collapsible=icon]:hidden md:flex"
+              />
             </SidebarMenuItem>
           </SidebarMenu>
 

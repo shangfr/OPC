@@ -8,7 +8,6 @@ import { ChatProvider } from "@/components/chat/chat-provider";
 import { ChatShellWrapper } from "@/components/chat/chat-shell-wrapper";
 import { DataStreamProvider } from "@/components/chat/data-stream-provider";
 import { HeaderActionsProvider } from "@/components/chat/header-actions-context";
-import { MobileTabBar } from "@/components/chat/mobile-tab-bar-wrapper";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { isAdmin } from "@/lib/utils";
 import { GlobalHeader } from "@/components/chat/global-header";
@@ -36,9 +35,6 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
   const [session, cookieStore] = await Promise.all([auth(), cookies()]);
   const isCollapsed = cookieStore.get("sidebar_state")?.value !== "true";
   const isAdminUser = isAdmin(session?.user ?? {});
-  const userRole = session?.user?.role === "admin" ? "admin" : "user";
-  const accountType = (session?.user?.accountType as "personal" | "enterprise") ?? "personal";
-  const userPlan = session?.user?.planName ?? "free";
 
   return (
     <SidebarProvider defaultOpen={!isCollapsed}>
@@ -59,7 +55,6 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
               <ChatShellWrapper />
             </Suspense>
             {children}
-            <MobileTabBar role={userRole} accountType={accountType} planName={userPlan} />
           </SidebarInset>
         </ChatProvider>
       </HeaderActionsProvider>

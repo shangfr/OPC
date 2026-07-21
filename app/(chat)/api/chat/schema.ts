@@ -55,7 +55,7 @@ export const postRequestBodySchema = z.object({
   selectedChatModel: z.string(),
   selectedVisibilityType: z.enum(["public", "private"]),
   agentId: z.string().uuid().optional(),
-  thinkingEnabled: z.boolean().default(true),
+  thinkingEnabled: z.boolean().default(false),
   isNewChat: z.boolean().optional(),
   summarizeTask: z.string().optional(), // 🚨 新增：汇总任务标识
 });

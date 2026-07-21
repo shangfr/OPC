@@ -127,16 +127,6 @@ export default function StatsPage() {
 
   return (
     <div className="page-container">
-      {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
-        <BarChart3 className="size-6 text-primary" />
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">数据看板</h1>
-          <p className="text-sm text-muted-foreground">
-            平台运营数据概览与趋势分析
-          </p>
-        </div>
-      </div>
 
       {loading ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
