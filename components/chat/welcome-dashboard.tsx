@@ -143,21 +143,29 @@ export function WelcomeDashboard({
         title: "帮我写一封邮件",
         prompt:
           "请帮我写一封正式的工作邮件，主题是申请下周两天年假，语气礼貌简洁。",
+        color: "text-sky-500",
+        bgColor: "bg-sky-500/10",
       },
       {
         icon: Lightbulb,
         title: "头脑风暴点子",
         prompt: "请帮我头脑风暴 5 个面向年轻人的线下活动创意，要求新颖且可落地。",
+        color: "text-amber-500",
+        bgColor: "bg-amber-500/10",
       },
       {
         icon: FileText,
         title: "总结一篇文章",
         prompt: "请把下面这段文字总结成 3 个要点：\n\n（在此粘贴需要总结的内容）",
+        color: "text-emerald-500",
+        bgColor: "bg-emerald-500/10",
       },
       {
         icon: Code2,
         title: "解释一段代码",
         prompt: "请用通俗易懂的语言解释下面这段代码的作用：\n\n（在此粘贴代码）",
+        color: "text-violet-500",
+        bgColor: "bg-violet-500/10",
       },
     ],
     []
@@ -251,8 +259,8 @@ export function WelcomeDashboard({
                   })
                 )}
               >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/5">
-                  <s.icon className="size-4 text-primary" />
+                <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", s.bgColor)}>
+                  <s.icon className={cn("size-4", s.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">{s.title}</p>

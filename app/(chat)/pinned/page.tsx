@@ -3,7 +3,6 @@
 import { formatDistance } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import {
-  ArrowLeft,
   Check,
   CheckCheck,
   Loader2,
@@ -14,7 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import useSWR, { useSWRConfig } from "swr";
 
@@ -29,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
 
 type PinnedChat = {
   id: string;
@@ -43,6 +42,7 @@ type PinnedChat = {
 export default function PinnedPage() {
   const router = useRouter();
   const { mutate } = useSWRConfig();
+  const { setActions } = useHeaderActions();
 
   const { data, isLoading } = useSWR<{ chats: PinnedChat[] }>(
     "/api/history?pinned=1&limit=100",
@@ -151,62 +151,46 @@ export default function PinnedPage() {
     }
   };
 
+  // 通过 HeaderActionsContext 注册上下文操作按钮到 GlobalHeader
+  useEffect(() => {
+    setActions(
+      selected.size > 0 ? (
+        <>
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            已选 {selected.size} 项
+          </span>
+          <span className="text-xs text-muted-foreground sm:hidden">
+            {selected.size}
+          </span>
+          <button
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            onClick={() => setShowAgentPicker(true)}
+            type="button"
+          >
+            <Sparkles className="size-3.5" />
+            <span className="hidden sm:inline">信息汇总</span>
+            <span className="sm:hidden">汇总</span>
+          </button>
+          <button
+            className="rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+            onClick={clearSelection}
+            type="button"
+          >
+            <span className="hidden sm:inline">取消选择</span>
+            <span className="sm:hidden">取消</span>
+          </button>
+        </>
+      ) : chats.length > 0 ? (
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+          {chats.length}
+        </span>
+      ) : null
+    );
+    return () => setActions(null);
+  }, [selected, chats.length, setActions]);
+
   return (
     <div className="flex h-dvh flex-col bg-background">
-      {/* 顶部栏 */}
-      <header className="page-header shrink-0">
-        {/* 移动端侧边栏触发器 */}
-        <SidebarTrigger className="-ml-1 md:hidden" />
-        <button
-          className="back-button"
-          onClick={() => router.back()}
-          type="button"
-        >
-          <ArrowLeft className="size-3.5" />
-          <span className="hidden sm:inline">返回</span>
-        </button>
-        <div className="flex min-w-0 items-center gap-2">
-          <Pin className="size-4 shrink-0 text-primary" />
-          <h1 className="truncate text-sm font-semibold text-foreground">
-            我的置顶
-          </h1>
-          {chats.length > 0 && (
-            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-              {chats.length}
-            </span>
-          )}
-        </div>
-        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-          {selected.size > 0 && (
-            <>
-              <span className="hidden text-xs text-muted-foreground sm:inline">
-                已选 {selected.size} 项
-              </span>
-              <span className="text-xs text-muted-foreground sm:hidden">
-                {selected.size}
-              </span>
-              <button
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                onClick={() => setShowAgentPicker(true)}
-                type="button"
-              >
-                <Sparkles className="size-3.5" />
-                <span className="hidden sm:inline">信息汇总</span>
-                <span className="sm:hidden">汇总</span>
-              </button>
-              <button
-                className="rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
-                onClick={clearSelection}
-                type="button"
-              >
-                <span className="hidden sm:inline">取消选择</span>
-                <span className="sm:hidden">取消</span>
-              </button>
-            </>
-          )}
-        </div>
-      </header>
-
       {/* 内容区 */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-6">

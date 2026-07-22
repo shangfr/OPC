@@ -4,7 +4,6 @@ import { formatDistance } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import {
   AlertCircle,
-  ArrowLeft,
   ClipboardCopy,
   Code2,
   FileText,
@@ -30,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
 
 // --- 类型定义 ---
 type ArtifactKind = "text" | "code" | "html" | "image" | "sheet";
@@ -283,6 +282,7 @@ function ArtifactPreviewDialog({
 export default function ArtifactsPage() {
   const router = useRouter();
   const { mutate } = useSWRConfig();
+  const { setActions } = useHeaderActions();
   const { data, isLoading, error } = useSWR<{ documents: UserDocument[] }>(
     "/api/documents/list",
     fetcher
@@ -337,29 +337,20 @@ export default function ArtifactsPage() {
     }
   };
 
+  // 通过 HeaderActionsContext 注册文档数量统计到 GlobalHeader
+  useEffect(() => {
+    setActions(
+      documents.length > 0 ? (
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {documents.length} 个
+        </span>
+      ) : null
+    );
+    return () => setActions(null);
+  }, [documents.length, setActions]);
+
   return (
     <div className="flex h-dvh flex-col bg-background">
-      {/* 顶部栏 */}
-      <header className="page-header shrink-0">
-        {/* 移动端侧边栏触发器 */}
-        <SidebarTrigger className="-ml-1 md:hidden" />
-        <button
-          className="back-button"
-          onClick={() => router.back()}
-          type="button"
-        >
-          <ArrowLeft className="size-3.5" />
-          <span className="hidden sm:inline">返回</span>
-        </button>
-        <div className="flex min-w-0 items-center gap-2">
-          <FileText className="size-4 shrink-0 text-muted-foreground" />
-          <h1 className="truncate text-sm font-semibold">我的制品</h1>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {documents.length} 个
-          </span>
-        </div>
-      </header>
-
       {/* 内容区 */}
       <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
         {isLoading ? (

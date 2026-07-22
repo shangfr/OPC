@@ -116,9 +116,9 @@ const PurePreviewMessage = ({
 
     if (type === "text") {
       // 最后一条 assistant 消息：使用匀速打字机渲染
-      // 流式输出时启用打字机队列；流式结束后继续消费剩余队列
-      // 历史消息和用户消息直接显示全文
-      const useTypewriterForThis = isAssistant && isLastAssistant;
+      // 仅在流式输出（isLoading）时启用打字机队列
+      // 历史消息（非流式）和用户消息直接显示全文，避免打字机效果
+      const useTypewriterForThis = isAssistant && isLastAssistant && isLoading;
 
       if (useTypewriterForThis) {
         return (
@@ -380,6 +380,15 @@ const PurePreviewMessage = ({
   const skeletonContent = (
     <div className="flex w-full max-w-md flex-col gap-2 py-1">
       <span className="sr-only">正在生成回复中</span>
+      {/* 思考指示器：三个跳动圆点 + 文字提示，参考智谱清言/豆包 */}
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <span className="size-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:-0.3s]" />
+          <span className="size-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:-0.15s]" />
+          <span className="size-1.5 animate-bounce rounded-full bg-primary/60" />
+        </div>
+        <span className="text-xs">正在思考...</span>
+      </div>
       <Skeleton className="h-3.5 w-16" />
       <Skeleton className="h-3.5 w-full" />
       <Skeleton className="h-3.5 w-4/5" />

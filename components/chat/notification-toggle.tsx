@@ -64,7 +64,7 @@ function PureNotificationToggle({
               type="button"
               variant="ghost"
             >
-              <BellOffIcon className="size-3.5" />
+              <BellOffIcon className="size-3.5 text-muted-foreground/30" />
             </Button>
           </span>
         </TooltipTrigger>
@@ -122,16 +122,16 @@ function PureNotificationToggle({
                 "h-8 w-8 rounded-lg border border-border/40 p-1 transition-colors",
                 isEnabled
                   ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-                  : "text-foreground hover:border-border hover:text-foreground"
+                  : "text-foreground hover:border-border hover:bg-accent hover:text-foreground"
               )}
               data-testid="notification-toggle"
               type="button"
               variant="ghost"
             >
               {isEnabled ? (
-                <BellRingIcon className="size-3.5" />
+                <BellRingIcon className="size-3.5 text-primary" />
               ) : (
-                <BellIcon className="size-3.5" />
+                <BellIcon className="size-3.5 text-amber-500" />
               )}
             </Button>
           </DropdownMenuTrigger>
@@ -148,19 +148,19 @@ function PureNotificationToggle({
         <DropdownMenuItem className="cursor-pointer" onClick={handleToggle}>
           {isEnabled ? (
             <>
-              <BellOffIcon className="size-4 mr-2" />
+              <BellOffIcon className="size-4 mr-2 text-muted-foreground" />
               <span>关闭通知</span>
             </>
           ) : (
             <>
-              <BellRingIcon className="size-4 mr-2" />
+              <BellRingIcon className="size-4 mr-2 text-primary" />
               <span>开启通知</span>
             </>
           )}
         </DropdownMenuItem>
         {isEnabled && (
           <DropdownMenuItem className="cursor-pointer" onClick={handleTest}>
-            <BellIcon className="size-4 mr-2" />
+            <BellIcon className="size-4 mr-2 text-amber-500" />
             <span>发送测试通知</span>
           </DropdownMenuItem>
         )}

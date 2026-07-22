@@ -16,10 +16,10 @@ const cardVariants = cva("text-card-foreground", {
     variant: {
       base: "rounded-xl border border-border/40 bg-card shadow-[var(--shadow-card)]",
       elevated:
-        "rounded-2xl border border-border/50 bg-card shadow-[var(--shadow-float)]",
+        "rounded-2xl border border-border/50 bg-gradient-to-br from-card to-muted/30 shadow-[var(--shadow-float)]",
       glass: "rounded-xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-[var(--shadow-float)]",
       interactive:
-        "group rounded-2xl border border-border/50 bg-card shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:border-border hover:shadow-[var(--shadow-float)]",
+        "group rounded-2xl border border-border/50 bg-gradient-to-br from-card to-muted/20 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:from-card hover:to-primary/5 hover:shadow-[var(--shadow-float)]",
     },
     padding: {
       none: "",

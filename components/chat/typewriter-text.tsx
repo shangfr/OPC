@@ -56,7 +56,7 @@ function PureTypewriterText({
     >
       <MessageResponse>{displayedText}</MessageResponse>
       {isTyping && !isUser && (
-        <span className="ml-0.5 inline-block h-[1.1em] w-[2px] animate-pulse bg-foreground/70 align-middle" />
+        <span className="ml-0.5 inline-block h-[1.1em] w-[2.5px] animate-pulse rounded-full bg-primary/80 align-middle shadow-[0_0_6px_var(--primary)]" />
       )}
     </MessageContent>
   );

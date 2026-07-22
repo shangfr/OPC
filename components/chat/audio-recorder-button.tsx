@@ -77,7 +77,7 @@ function PureAudioRecorderButton({
               type="button"
               variant="ghost"
             >
-              <AudioLinesIcon className="size-3.5" />
+              <AudioLinesIcon className="size-3.5 text-muted-foreground/30" />
             </Button>
           </span>
         </TooltipTrigger>
@@ -130,7 +130,7 @@ function PureAudioRecorderButton({
             "h-8 w-8 rounded-lg border border-border/40 p-1 transition-colors relative",
             isRecording
               ? "border-red-500/40 bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400"
-              : "text-foreground hover:border-border hover:text-foreground",
+              : "text-foreground hover:border-border hover:bg-accent hover:text-foreground",
             (disabled || isTranscribing) && "opacity-50 cursor-not-allowed"
           )}
           data-testid="audio-recorder-button"
@@ -141,11 +141,11 @@ function PureAudioRecorderButton({
           variant="ghost"
         >
           {isTranscribing ? (
-            <Loader2Icon className="size-3.5 animate-spin" />
+            <Loader2Icon className="size-3.5 animate-spin text-amber-500" />
           ) : isRecording ? (
-            <SquareIcon className="size-3.5 fill-current" />
+            <SquareIcon className="size-3.5 fill-current text-red-600 dark:text-red-400" />
           ) : (
-            <AudioLinesIcon className="size-3.5" />
+            <AudioLinesIcon className="size-3.5 text-indigo-500" />
           )}
 
           {/* 录音时长角标 */}

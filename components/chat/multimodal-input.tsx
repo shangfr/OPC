@@ -386,12 +386,13 @@ function PureMultimodalInput({
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
       {editingMessage && onCancelEdit && (
-        <div className="flex flex-col gap-1.5 text-[12px] text-muted-foreground">
+        <div className="flex flex-col gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/5 px-3 py-2 text-[12px] text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span>正在编辑消息</span>
+            <span className="inline-block size-1.5 animate-pulse rounded-full bg-violet-500" />
+            <span className="font-medium text-violet-600 dark:text-violet-400">正在编辑消息</span>
             <button
               aria-label="取消编辑"
-              className="rounded px-1.5 py-0.5 text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="ml-auto rounded px-1.5 py-0.5 text-muted-foreground/50 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onMouseDown={(e) => {
                 e.preventDefault();
                 onCancelEdit();
@@ -678,7 +679,7 @@ function PureAttachmentsButton({
       className={cn(
         "h-8 w-8 rounded-lg border border-border/40 p-1 transition-colors",
         hasVision
-          ? "text-foreground hover:border-border hover:text-foreground"
+          ? "text-foreground hover:border-border hover:bg-accent hover:text-foreground"
           : "text-muted-foreground/30 cursor-not-allowed"
       )}
       data-testid="attachments-button"
@@ -689,7 +690,7 @@ function PureAttachmentsButton({
       }}
       variant="ghost"
     >
-      <PaperclipIcon size={14} style={{ width: 14, height: 14 }} />
+      <PaperclipIcon size={14} className="size-3.5 text-sky-500" />
     </Button>
   );
 }
@@ -851,13 +852,13 @@ function PureModelSelectorCompact({
                       <ModelSelectorName>{model.name}</ModelSelectorName>
                       <div className="ml-auto flex items-center gap-2 text-foreground/70">
                         {capabilities?.[model.id]?.tools && (
-                          <WrenchIcon className="size-3.5" />
+                          <WrenchIcon className="size-3.5 text-amber-500" />
                         )}
                         {capabilities?.[model.id]?.vision && (
-                          <EyeIcon className="size-3.5" />
+                          <EyeIcon className="size-3.5 text-sky-500" />
                         )}
                         {capabilities?.[model.id]?.reasoning && (
-                          <BrainIcon className="size-3.5" />
+                          <BrainIcon className="size-3.5 text-violet-500" />
                         )}
                         {!curated && (
                           <LockIcon className="size-3 text-muted-foreground/50" />
@@ -920,11 +921,13 @@ function ThinkingToggle({
             onChange?.(!enabled);
           }}
           className={cn(
-            "size-8 rounded-lg text-muted-foreground hover:text-foreground",
-            enabled && "text-primary hover:text-primary",
+            "size-8 rounded-lg text-muted-foreground hover:text-foreground transition-colors",
+            enabled
+              ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary"
+              : "hover:bg-accent",
           )}
         >
-          <BrainIcon className="size-[18px]" />
+          <BrainIcon className={cn("size-[18px]", enabled ? "text-violet-500" : "text-primary")} />
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top">
@@ -948,7 +951,7 @@ function PureStopButton({
       <TooltipTrigger asChild>
         <Button
           aria-label="停止生成"
-          className="h-8 w-8 rounded-xl bg-primary p-1 text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/30"
+          className="relative h-8 w-8 rounded-xl bg-primary p-1 text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/30"
           data-testid="stop-button"
           onClick={(event) => {
         event.preventDefault();
@@ -980,7 +983,8 @@ function PureStopButton({
         });
       }}
     >
-      <StopIcon size={14} />
+      <span className="absolute inset-0 animate-ping rounded-xl bg-primary/40" aria-hidden="true" />
+      <StopIcon size={14} className="relative" />
     </Button>
       </TooltipTrigger>
       <TooltipContent>停止生成</TooltipContent>

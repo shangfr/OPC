@@ -84,7 +84,7 @@ function PureVoiceInputButton({
               variant="ghost"
               type="button"
             >
-              <MicOffIcon className="size-3.5" />
+              <MicOffIcon className="size-3.5 text-muted-foreground/30" />
             </Button>
           </span>
         </TooltipTrigger>
@@ -114,7 +114,7 @@ function PureVoiceInputButton({
             "h-8 w-8 rounded-lg border border-border/40 p-1 transition-colors",
             isListening
               ? "border-red-500/40 bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400"
-              : "text-foreground hover:border-border hover:text-foreground",
+              : "text-foreground hover:border-border hover:bg-accent hover:text-foreground",
             disabled && "opacity-50 cursor-not-allowed",
           )}
           data-testid="voice-input-button"
@@ -123,7 +123,7 @@ function PureVoiceInputButton({
           type="button"
           variant="ghost"
         >
-          <MicIcon className={cn("size-3.5", isListening && "animate-pulse")} />
+          <MicIcon className={cn("size-3.5", isListening ? "text-red-600 dark:text-red-400" : "text-emerald-500", isListening && "animate-pulse")} />
         </Button>
       </TooltipTrigger>
       <TooltipContent>

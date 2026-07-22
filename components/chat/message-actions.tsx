@@ -80,7 +80,7 @@ export function PureMessageActions({
           {onEdit && (
             <Action
               aria-label="编辑消息"
-              className="size-8 text-muted-foreground/50 hover:text-foreground"
+              className="size-8 text-muted-foreground/50 hover:text-violet-500"
               data-testid="message-edit-button"
               onClick={onEdit}
               tooltip="编辑"
@@ -90,7 +90,7 @@ export function PureMessageActions({
           )}
           <Action
             aria-label="复制消息"
-            className="size-8 text-muted-foreground/50 hover:text-foreground"
+            className="size-8 text-muted-foreground/50 hover:text-sky-500"
             onClick={handleCopy}
             tooltip="复制"
           >
@@ -105,7 +105,7 @@ export function PureMessageActions({
     <Actions className="-ml-0.5 opacity-100 transition-opacity duration-150 md:opacity-0 md:group-hover/message:opacity-100 md:group-focus-within/message:opacity-100 md:group-active/message:opacity-100">
       <Action
         aria-label="复制回复"
-        className="size-8 text-muted-foreground/50 hover:text-foreground"
+        className="size-8 text-muted-foreground/50 hover:text-sky-500"
         onClick={handleCopy}
         tooltip="复制"
       >
@@ -120,7 +120,7 @@ export function PureMessageActions({
       {isLastAssistant && onRegenerate && (
         <Action
           aria-label="重新生成回复"
-          className="size-8 text-muted-foreground/50 hover:text-foreground"
+          className="size-8 text-muted-foreground/50 hover:text-emerald-500"
           data-testid="message-regenerate-button"
           onClick={onRegenerate}
           tooltip="重新生成"
@@ -131,7 +131,7 @@ export function PureMessageActions({
 
       <Action
         aria-label="点赞"
-        className="size-8 text-muted-foreground/50 hover:text-foreground"
+        className="size-8 text-muted-foreground/50 hover:text-amber-500"
         data-testid="message-upvote"
         disabled={vote?.isUpvoted}
         onClick={() => {
@@ -185,7 +185,7 @@ export function PureMessageActions({
 
       <Action
         aria-label="取消点赞"
-        className="size-8 text-muted-foreground/50 hover:text-foreground"
+        className="size-8 text-muted-foreground/50 hover:text-rose-500"
         data-testid="message-downvote"
         disabled={vote && !vote.isUpvoted}
         onClick={() => {

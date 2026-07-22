@@ -24,7 +24,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import { safeSessionStorageSet } from "@/lib/utils";
+import { cn, safeSessionStorageSet } from "@/lib/utils";
 
 interface MobileHomeProps {
   modelName?: string;
@@ -81,28 +81,36 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
         icon: Mail,
         title: "写邮件",
         prompt: "请帮我写一封正式的工作邮件，主题是申请下周两天年假，语气礼貌简洁。",
+        color: "text-sky-500",
+        bg: "bg-sky-500/10",
       },
       {
         icon: Lightbulb,
         title: "头脑风暴",
         prompt: "请帮我头脑风暴 5 个面向年轻人的线下活动创意，要求新颖且可落地。",
+        color: "text-amber-500",
+        bg: "bg-amber-500/10",
       },
       {
         icon: FileText,
         title: "总结文章",
         prompt: "请把下面这段文字总结成 3 个要点：\n\n（在此粘贴需要总结的内容）",
+        color: "text-emerald-500",
+        bg: "bg-emerald-500/10",
       },
       {
         icon: Code2,
         title: "解释代码",
         prompt: "请用通俗易懂的语言解释下面这段代码的作用：\n\n（在此粘贴代码）",
+        color: "text-violet-500",
+        bg: "bg-violet-500/10",
       },
     ],
     []
   );
 
   return (
-    <div className="flex h-dvh flex-col bg-background md:hidden">
+    <div className="flex h-dvh w-full flex-col overflow-x-hidden bg-background md:hidden [touch-action:pan-y] overscroll-x-none">
       {/* ===== 顶部品牌区 ===== */}
       <header className="flex items-center gap-3 px-4 pt-4 pb-2">
         <button
@@ -122,7 +130,7 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
       </header>
 
       {/* ===== 内容区 ===== */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-4 [touch-action:pan-y] overscroll-y-contain">
         {/* Hero */}
         <div className="flex flex-col items-center pt-6 pb-8 text-center">
           <div className="mb-4 flex size-16 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-primary/10">
@@ -172,8 +180,8 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
                 onClick={() => createChat(s.prompt)}
                 className="flex items-center gap-3 rounded-xl border border-border/40 bg-card p-3 text-left transition-all hover:border-primary/30 hover:bg-accent"
               >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/5">
-                  <s.icon className="size-4 text-primary" />
+                <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", s.bg)}>
+                  <s.icon className={cn("size-4", s.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">{s.title}</p>
@@ -189,7 +197,7 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
       </div>
 
       {/* ===== 底部输入栏 ===== */}
-      <div className="border-t border-border/50 bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="w-full overflow-x-hidden border-t border-border/50 bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           <input
             className="flex-1 rounded-xl border border-border/50 bg-muted/30 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"

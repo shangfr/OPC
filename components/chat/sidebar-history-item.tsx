@@ -176,7 +176,7 @@ const PureChatItem = ({
             className="mr-0.5 rounded-md text-sidebar-foreground/50 ring-0 transition-colors duration-150 focus-visible:ring-0 hover:text-sidebar-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             showOnHover={!isActive}
           >
-            <MoreHorizontalIcon />
+            <MoreHorizontalIcon className="text-muted-foreground" />
             <span className="sr-only">更多</span>
           </SidebarMenuAction>
         </DropdownMenuTrigger>
@@ -184,7 +184,7 @@ const PureChatItem = ({
         <DropdownMenuContent align="end" side="bottom">
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="cursor-pointer">
-              <ShareIcon />
+              <ShareIcon className="text-sky-500" />
               <span>分享</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
@@ -196,11 +196,11 @@ const PureChatItem = ({
                   }}
                 >
                   <div className="flex flex-row items-center gap-2">
-                    <LockIcon size={12} />
+                    <LockIcon size={12} className="text-amber-500" />
                     <span>私密</span>
                   </div>
                   {visibilityType === "private" ? (
-                    <CheckCircleFillIcon />
+                    <CheckCircleFillIcon className="text-emerald-500" />
                   ) : null}
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -210,10 +210,10 @@ const PureChatItem = ({
                   }}
                 >
                   <div className="flex flex-row items-center gap-2">
-                    <GlobeIcon />
+                    <GlobeIcon className="text-emerald-500" />
                     <span>公开</span>
                   </div>
-                  {visibilityType === "public" ? <CheckCircleFillIcon /> : null}
+                  {visibilityType === "public" ? <CheckCircleFillIcon className="text-emerald-500" /> : null}
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
@@ -225,12 +225,12 @@ const PureChatItem = ({
           >
             {isPinned ? (
               <>
-                <PinOff size={14} />
+                <PinOff size={14} className="text-muted-foreground" />
                 <span>取消置顶</span>
               </>
             ) : (
               <>
-                <Pin size={14} />
+                <Pin size={14} className="text-amber-500" />
                 <span>置顶</span>
               </>
             )}
@@ -240,7 +240,7 @@ const PureChatItem = ({
             onSelect={() => onDelete(chat.id)}
             variant="destructive"
           >
-            <TrashIcon />
+            <TrashIcon className="text-destructive" />
             <span>删除</span>
           </DropdownMenuItem>
         </DropdownMenuContent>

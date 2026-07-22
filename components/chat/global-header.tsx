@@ -31,7 +31,7 @@ import { useHeaderActions } from "./header-actions-context";
 import { toast } from "sonner";
 
 // 这些页面有自己的 page-header（含上下文操作按钮），不渲染 GlobalHeader 避免重复
-const EXCLUDED_PATHS = ["/chat", "/pinned", "/artifacts"];
+const EXCLUDED_PATHS = ["/chat"];
 
 // 路由标题 + 图标 + 描述映射
 const ROUTE_TITLES: {
@@ -121,6 +121,22 @@ export function GlobalHeader() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* 右侧操作区：页面注册的上下文按钮 + 快捷键帮助 + 新建对话 */}
+      <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        {actions}
+        <KeyboardShortcutsHelp />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="touch-target gap-1.5 text-muted-foreground hover:text-foreground"
+          onClick={handleQuickNewChat}
+          aria-label="新建对话"
+        >
+          <PenSquare className="size-3.5 text-sky-500" />
+          <span className="hidden sm:inline">新建对话</span>
+        </Button>
       </div>
     </header>
   );
