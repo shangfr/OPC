@@ -74,9 +74,11 @@ export function useSpeechSynthesis(
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  const supported =
-    typeof window !== "undefined" && "speechSynthesis" in window;
-
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    setSupported(typeof window !== "undefined" && "speechSynthesis" in window);
+  }, []);
+  
   // 回调 ref
   const onStartRef = useRef(onStart);
   const onEndRef = useRef(onEnd);

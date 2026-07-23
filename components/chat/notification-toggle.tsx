@@ -6,7 +6,7 @@
  * 集成到 multimodal-input 工具栏，允许用户开启桌面通知。
  * 开启后，当 Agent 回复完成时（流式结束）发送桌面通知。
  *
- * 使用 shadcn/ui Button + Tooltip + DropdownMenu 组件。
+ * 使用 shadcn/ui Button + Tooltip 组件。
  */
 
 import { BellIcon, BellOffIcon, BellRingIcon } from "lucide-react";
@@ -16,14 +16,6 @@ import { useLocalStorage } from "usehooks-ts";
 import { useBrowserNotification } from "@/hooks/use-browser-notification";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export interface NotificationToggleProps {
@@ -99,78 +91,35 @@ function PureNotificationToggle({
     }
   };
 
-  const handleTest = () => {
-    const ok = notify("OPC 测试通知", {
-      body: "如果你看到了这条通知，说明配置成功！",
-      tag: "opc-notification-test",
-    });
-    if (!ok) {
-      toast.error("通知发送失败，请检查权限");
-    }
-  };
-
   const isEnabled = enabled && permission === "granted";
 
   return (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label={isEnabled ? "通知已开启" : "通知已关闭"}
-              className={cn(
-                "h-8 w-8 rounded-lg border border-border/40 p-1 transition-colors",
-                isEnabled
-                  ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-                  : "text-foreground hover:border-border hover:bg-accent hover:text-foreground"
-              )}
-              data-testid="notification-toggle"
-              type="button"
-              variant="ghost"
-            >
-              {isEnabled ? (
-                <BellRingIcon className="size-3.5 text-primary" />
-              ) : (
-                <BellIcon className="size-3.5 text-amber-500" />
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent>
-          {isEnabled ? "桌面通知已开启" : "桌面通知已关闭"}
-        </TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align="start" sideOffset={4}>
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
-          桌面通知
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer" onClick={handleToggle}>
-          {isEnabled ? (
-            <>
-              <BellOffIcon className="size-4 mr-2 text-muted-foreground" />
-              <span>关闭通知</span>
-            </>
-          ) : (
-            <>
-              <BellRingIcon className="size-4 mr-2 text-primary" />
-              <span>开启通知</span>
-            </>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label={isEnabled ? "关闭桌面通知" : "开启桌面通知"}
+          className={cn(
+            "h-8 w-8 rounded-lg border border-border/40 p-1 transition-colors",
+            isEnabled
+              ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+              : "text-foreground hover:border-border hover:bg-accent hover:text-foreground"
           )}
-        </DropdownMenuItem>
-        {isEnabled && (
-          <DropdownMenuItem className="cursor-pointer" onClick={handleTest}>
-            <BellIcon className="size-4 mr-2 text-amber-500" />
-            <span>发送测试通知</span>
-          </DropdownMenuItem>
-        )}
-        {permission === "denied" && (
-          <div className="px-2 py-1.5 text-[11px] text-amber-600 dark:text-amber-400">
-            权限被拒绝，请在浏览器设置中允许通知
-          </div>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          data-testid="notification-toggle"
+          type="button"
+          variant="ghost"
+          onClick={handleToggle}
+        >
+          {isEnabled ? (
+            <BellRingIcon className="size-3.5 text-primary" />
+          ) : (
+            <BellIcon className="size-3.5 text-amber-500" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        {isEnabled ? "点击关闭桌面通知" : "点击开启桌面通知"}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -11,14 +11,18 @@
  * - 移动端：iOS Safari 16.4+ 支持 PWA 通知
  *
  * 使用方式：
- *   const { notify, permission, requestPermission, supported } = useBrowserNotification();
- *   await requestPermission();
- *   notify("任务完成", { body: "您的报告已生成" });
+ * const { notify, permission, requestPermission, supported } = useBrowserNotification();
+ * await requestPermission();
+ * notify("任务完成", { body: "您的报告已生成" });
  */
 
 import { useCallback, useEffect, useState } from "react";
 
-export type NotificationPermissionState = "default" | "granted" | "denied" | "unsupported";
+export type NotificationPermissionState =
+  | "default"
+  | "granted"
+  | "denied"
+  | "unsupported";
 
 export interface NotifyOptions {
   /** 通知正文 */
@@ -55,26 +59,35 @@ export interface UseBrowserNotificationReturn {
 }
 
 export function useBrowserNotification(): UseBrowserNotificationReturn {
-  const supported =
-    typeof window !== "undefined" && "Notification" in window;
-
+  const [supported, setSupported] = useState(false);
   const [permission, setPermission] = useState<NotificationPermissionState>(
-    supported ? Notification.permission : "unsupported",
+    "unsupported"
   );
 
-  // 监听权限变化（部分浏览器支持 permissions API）
+  // 在客户端挂载后检测支持性和初始权限
   useEffect(() => {
-    if (!supported) return;
+    const isSupported =
+      typeof window !== "undefined" && "Notification" in window;
+    setSupported(isSupported);
+
+    if (isSupported) {
+      setPermission(Notification.permission as NotificationPermissionState);
+    } else {
+      setPermission("unsupported");
+    }
+
+    if (!isSupported) return;
 
     const updatePermission = () => {
       setPermission(Notification.permission as NotificationPermissionState);
     };
 
-    // 轮询兜底（permissions API 兼容性有限）
+    let status: PermissionStatus | undefined;
     if ("permissions" in navigator) {
       navigator.permissions
         .query({ name: "notifications" as PermissionName })
-        .then((status) => {
+        .then((s) => {
+          status = s;
           status.addEventListener("change", updatePermission);
         })
         .catch(() => {
@@ -83,12 +96,18 @@ export function useBrowserNotification(): UseBrowserNotificationReturn {
     }
 
     return () => {
-      // permissions API 的清理在 catch 中跳过
+      // 清理监听器，防止内存泄漏
+      if (status) {
+        status.removeEventListener("change", updatePermission);
+      }
     };
-  }, [supported]);
+  }, []);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (!supported) return false;
+    // 函数内部动态检测，避免闭包捕获旧的 supported 值
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return false;
+    }
 
     if (Notification.permission === "granted") {
       setPermission("granted");
@@ -113,15 +132,16 @@ export function useBrowserNotification(): UseBrowserNotificationReturn {
         });
       });
     }
-  }, [supported]);
+  }, []);
 
   const notify = useCallback(
     (title: string, options: NotifyOptions = {}): boolean => {
-      if (!supported) return false;
+      // 函数内部动态检测，避免闭包捕获旧的 supported 值
+      if (typeof window === "undefined" || !("Notification" in window)) {
+        return false;
+      }
 
-      // 权限未授予时自动请求
       if (Notification.permission !== "granted") {
-        // 异步请求，本次通知丢失（调用方应先 requestPermission）
         requestPermission();
         return false;
       }
@@ -168,20 +188,17 @@ export function useBrowserNotification(): UseBrowserNotificationReturn {
         return false;
       }
     },
-    [supported, requestPermission],
+    [requestPermission]
   );
 
   const closeAll = useCallback(() => {
-    if (!supported) return;
-    // Notification API 没有原生 closeAll，需 Service Worker 配合
-    // 这里关闭最近的通知（兼容方案）
+    if (typeof window === "undefined" || !("Notification" in window)) return;
     try {
-      // 触发一次空通知并立即关闭，作为清理信号
       // 真正的批量关闭需通过 Service Worker 的 registration.getNotifications()
     } catch {
       // ignore
     }
-  }, [supported]);
+  }, []);
 
   return {
     supported,

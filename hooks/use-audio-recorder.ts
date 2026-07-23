@@ -73,6 +73,16 @@ export function useAudioRecorder(
   const [error, setError] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
 
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    setSupported(
+      typeof window !== "undefined" &&
+        typeof navigator !== "undefined" &&
+        "MediaRecorder" in window &&
+        !!navigator.mediaDevices?.getUserMedia
+    );
+  }, []);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -89,12 +99,6 @@ export function useAudioRecorder(
     onTranscribeRef.current = onTranscribe;
     onErrorRef.current = onError;
   }, [onTranscribe, onError]);
-
-  const supported =
-    typeof window !== "undefined" &&
-    typeof navigator !== "undefined" &&
-    "MediaRecorder" in window &&
-    !!navigator.mediaDevices?.getUserMedia;
 
   // 清理资源
   const cleanup = useCallback(() => {

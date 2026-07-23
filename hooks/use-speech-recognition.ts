@@ -138,9 +138,13 @@ export function useSpeechRecognition(
   }, [onResult, onInterim, onError]);
 
   // 浏览器支持检测
-  const supported =
-    typeof window !== "undefined" &&
-    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const [supported, setSupported] = useState(false);
+  useEffect(() => {
+    setSupported(
+      typeof window !== "undefined" &&
+      Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
+    );
+  }, []);
 
   // 初始化 recognition 实例（仅在 supported 时）
   useEffect(() => {
