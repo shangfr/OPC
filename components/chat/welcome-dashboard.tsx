@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
-import { Button } from "@/components/ui/button";
 import { cardVariants } from "@/components/ui/card";
 import { getAvatarChar } from "@/lib/agent-groups";
 import type { Agent } from "@/lib/db/schema";
