@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftRight, Download, Search } from "lucide-react";
+import { ArrowLeftRight, Download, PenSquare, Search } from "lucide-react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -87,6 +87,22 @@ function PureChatHeader({
     if (!open) setSearch("");
   }, [open]);
 
+  // 新建对话：创建一个空白对话并跳转
+  const handleNewChat = async () => {
+    try {
+      const res = await fetch("/api/chat/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) throw new Error("Failed to create chat");
+      const { chatId } = await res.json();
+      router.push(`/chat/${chatId}`);
+    } catch {
+      toast.error("创建对话失败，请重试");
+    }
+  };
+
   // 导出当前对话为 Markdown 文件
   // OPC 场景下用于知识沉淀：将高质量对话归档到本地或知识库
   const [isExporting, setIsExporting] = useState(false);
@@ -134,6 +150,20 @@ function PureChatHeader({
       )}
 
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+        {/* 新建对话 */}
+        <button
+          className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/[0.1] hover:border-primary/30"
+          onClick={handleNewChat}
+          title="新建对话"
+          type="button"
+        >
+          <PenSquare className="size-3.5" />
+        </button>
+
+        <KeyboardShortcutsHelp />
+
+
+
         {/* 导出对话为 Markdown：OPC 场景下用于知识沉淀与归档 */}
         <button
           className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"

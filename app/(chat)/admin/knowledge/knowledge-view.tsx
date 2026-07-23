@@ -72,6 +72,7 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
         className="gap-1.5"
         onClick={() => setCreateOpen(true)}
         size="sm"
+        variant="gradient"
       >
         <Plus className="size-4" />
         <span className="hidden sm:inline">新建知识库</span>
@@ -357,15 +358,20 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
             className={`space-y-3 ${selectedKb ? "hidden lg:block" : ""}`}
           >
             {knowledgeBases.length === 0 ? (
-              <div className="empty-state py-16">
-                <BookOpen className="mb-3 size-10 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground">
+              <div className="empty-state flex flex-col items-center py-16">
+                <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-blue-500/10">
+                  <BookOpen className="size-8 text-blue-500" />
+                </div>
+                <p className="text-sm font-medium text-foreground/80">
                   还没有知识库
                 </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  创建知识库后，可上传文档为 AI 提供检索增强
+                </p>
                 <Button
-                  className="mt-3 gap-2"
+                  className="mt-4 gap-2"
                   onClick={() => setCreateOpen(true)}
-                  variant="outline"
+                  variant="gradient"
                 >
                   <Plus className="size-4" />
                   创建第一个知识库
@@ -374,10 +380,10 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
             ) : (
               knowledgeBases.map((kb) => (
                 <div
-                  className={`group flex w-full cursor-pointer items-start gap-3 rounded-xl border p-4 text-left transition-all ${
+                  className={`group flex w-full cursor-pointer items-start gap-3 rounded-xl border p-4 text-left transition-all duration-200 ${
                     selectedKb?.id === kb.id
-                      ? "border-primary/50 bg-primary/[0.03] ring-1 ring-primary/20"
-                      : "border-border/60 hover:border-border hover:bg-accent/30"
+                      ? "border-primary/50 bg-primary/[0.04] ring-1 ring-primary/20 shadow-sm"
+                      : "border-border/60 hover:border-border hover:bg-accent/30 hover:shadow-sm"
                   }`}
                   key={kb.id}
                   onClick={() =>
@@ -388,8 +394,8 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                   role="button"
                   tabIndex={0}
                 >
-                  <div className="mt-0.5 rounded-lg bg-primary/10 p-2">
-                    <BookOpen className="size-4 text-primary" />
+                  <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 transition-transform duration-200 group-hover:scale-110">
+                    <BookOpen className="size-4 text-blue-500" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -397,7 +403,7 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                       {kb.contextual === 1 && (
                         <Badge
                           className="px-1.5 py-0 text-[10px]"
-                          variant="secondary"
+                          variant="info"
                         >
                           增强
                         </Badge>
@@ -437,7 +443,9 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
           >
             {!selectedKb ? (
               <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-4 text-muted-foreground">
-                <FileText className="size-8 opacity-30" />
+                <div className="flex size-16 items-center justify-center rounded-2xl bg-muted/60">
+                  <FileText className="size-8 text-muted-foreground/40" />
+                </div>
                 <p className="text-sm">
                   {knowledgeBases.length > 0
                     ? "选择一个知识库查看文档"
@@ -445,13 +453,18 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                 </p>
                 {/* 存储用量：仅管理员可见 */}
                 {userIsAdmin && usage && (
-                  <div className="mt-2 w-full max-w-[240px] space-y-2 rounded-lg border border-border/40 px-4 py-3">
-                    <p className="text-center text-xs font-medium">
-                      存储用量
-                    </p>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className="mt-2 w-full max-w-[260px] space-y-2.5 rounded-xl border border-border/40 bg-muted/20 px-4 py-3.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-foreground/80">
+                        存储用量
+                      </p>
+                      <span className="text-[11px] text-muted-foreground">
+                        {Math.min((usage.used.word_num / usage.total.word_num) * 100, 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full bg-primary/70 transition-all"
+                        className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-500"
                         style={{
                           width: `${Math.min((usage.used.word_num / usage.total.word_num) * 100, 100)}%`,
                         }}
@@ -502,6 +515,7 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                       disabled={uploading}
                       onClick={() => fileInputRef.current?.click()}
                       size="sm"
+                      variant="gradient"
                     >
                       {uploading ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -520,8 +534,10 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                   </div>
                 ) : documents.length === 0 ? (
                   <div className="flex flex-col items-center py-10 text-muted-foreground">
-                    <FileText className="mb-2 size-6 opacity-30" />
-                    <p className="text-sm">暂无文档</p>
+                    <div className="mb-3 flex size-12 items-center justify-center rounded-xl bg-muted/60">
+                      <FileText className="size-6 text-muted-foreground/40" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground/70">暂无文档</p>
                     <p className="mt-1 text-xs">
                       点击上方按钮上传 PDF、DOCX、TXT 等文件
                     </p>
@@ -530,11 +546,13 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                   <div className="space-y-1">
                     {documents.map((doc) => (
                       <div
-                        className="group flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent/50"
+                        className="group flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-all duration-200 hover:bg-accent/50"
                         key={doc.id}
                       >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <FileText className="size-3.5 shrink-0 text-muted-foreground" />
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-blue-500/10">
+                            <FileText className="size-3.5 text-blue-500" />
+                          </span>
                           <span className="truncate">
                             {doc.name}
                           </span>
@@ -543,7 +561,7 @@ export function KnowledgeView({ userIsAdmin = false }: { userIsAdmin?: boolean }
                               className="shrink-0 px-1.5 py-0 text-[10px]"
                               variant={
                                 doc.embedding_stat === "processing"
-                                  ? "secondary"
+                                  ? "warning"
                                   : "destructive"
                               }
                             >

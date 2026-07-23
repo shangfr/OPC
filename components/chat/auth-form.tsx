@@ -23,9 +23,9 @@ export function AuthForm({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <Form action={action} className="flex flex-col gap-4">
+    <Form action={action} className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label className="font-normal text-muted-foreground" htmlFor="email">
+        <Label className="text-[13px] font-medium text-foreground/80" htmlFor="email">
           邮箱
         </Label>
         <Input
@@ -41,7 +41,7 @@ export function AuthForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label className="font-normal text-muted-foreground" htmlFor="password">
+        <Label className="text-[13px] font-medium text-foreground/80" htmlFor="password">
           密码
         </Label>
         <div className="relative">

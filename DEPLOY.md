@@ -211,7 +211,6 @@ DATABASE_URL=$PROD_POSTGRES_URL npx tsx lib/db/seed-agents.ts
 | `/admin/applications` | 仅平台管理员 |
 | `/admin/orders` | 仅平台管理员 |
 | `/admin/stats` | 仅平台管理员 |
-| `/admin/opcs` | 平台管理员 + 企业管理员 |
 | `/admin/users` | 平台管理员 + 企业管理员 |
 
 ## 六、角色权限矩阵

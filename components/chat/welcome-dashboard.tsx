@@ -211,17 +211,16 @@ export function WelcomeDashboard({
               type="button"
               onClick={action.onClick}
               className={cn(
-                "group flex items-center gap-4 text-left transition-all duration-300 hover:-translate-y-0.5",
+                "group flex items-center gap-4 text-left",
                 cardVariants({
-                  variant: "base",
+                  variant: "interactive",
                   padding: "lg",
-                  className: "hover:shadow-md",
                 })
               )}
             >
               <div
                 className={cn(
-                  "flex size-12 shrink-0 items-center justify-center rounded-xl transition-colors",
+                  "flex size-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110",
                   action.bgColor
                 )}
               >
@@ -233,7 +232,7 @@ export function WelcomeDashboard({
                   {action.description}
                 </p>
               </div>
-              <ArrowRight className="size-4 shrink-0 text-muted-foreground/40 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-foreground" />
+              <ArrowRight className="size-4 shrink-0 text-muted-foreground/40 transition-all duration-300 group-hover:translate-x-1 group-hover:text-primary" />
             </button>
           ))}
         </div>
@@ -250,16 +249,14 @@ export function WelcomeDashboard({
                 type="button"
                 onClick={() => handleStartChatWithPrompt(s.prompt)}
                 className={cn(
-                  "group flex items-start gap-3 text-left transition-all duration-300 hover:-translate-y-0.5",
+                  "group flex items-start gap-3 text-left",
                   cardVariants({
-                    variant: "base",
+                    variant: "interactive",
                     padding: "md",
-                    className:
-                      "hover:border-primary/30 hover:shadow-[0_4px_24px_-4px_rgba(99,102,241,0.15)]",
                   })
                 )}
               >
-                <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", s.bgColor)}>
+                <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110", s.bgColor)}>
                   <s.icon className={cn("size-4", s.color)} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -295,15 +292,14 @@ export function WelcomeDashboard({
                   type="button"
                   onClick={() => handleStartChatWithAgent(agent)}
                   className={cn(
-                    "group flex items-center gap-3 text-left transition-all duration-300 hover:-translate-y-0.5",
+                    "group flex items-center gap-3 text-left",
                     cardVariants({
-                      variant: "base",
+                      variant: "interactive",
                       padding: "md",
-                      className: "hover:border-primary/30 hover:shadow-md",
                     })
                   )}
                 >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-sm font-semibold text-primary transition-transform duration-300 group-hover:scale-110">
                     {getAvatarChar(agent.name)}
                   </div>
                   <div className="min-w-0 flex-1">

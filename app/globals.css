@@ -60,7 +60,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* 美化：primary 改为深青蓝色，建立品牌识别度（与 ring/chart 色系统一） */
+  --primary: oklch(0.45 0.14 240);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -81,7 +82,8 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  /* 美化：sidebar-primary 与 primary 保持一致 */
+  --sidebar-primary: oklch(0.45 0.14 240);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
@@ -109,8 +111,9 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  /* 美化：暗色模式 primary 改为亮青蓝色，保持品牌一致性 */
+  --primary: oklch(0.65 0.16 240);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -129,8 +132,9 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  /* 美化：暗色模式 sidebar-primary 与 primary 保持一致 */
+  --sidebar-primary: oklch(0.65 0.16 240);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 0.1);
@@ -173,13 +177,21 @@
   p {
     line-height: 1.6;
   }
+  /* 美化：自定义选中文本颜色，使用品牌色 */
+  ::selection {
+    background-color: oklch(0.65 0.16 240 / 0.2);
+    color: inherit;
+  }
+  .dark ::selection {
+    background-color: oklch(0.65 0.16 240 / 0.3);
+  }
 }
 
 button:focus-visible,
 select:focus-visible,
 [role="button"]:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px oklch(0.55 0.16 250 / 0.5);
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px oklch(0.55 0.16 240 / 0.5);
 }
 
 @utility text-balance {
@@ -234,13 +246,15 @@ select:focus-visible,
 @keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+/* 美化：Skeleton 专用扫光动画，从左滑到右 */
+@keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 @keyframes dot-pulse { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
 @keyframes message-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes thinking-dot { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
-@keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.16 250 / 0%); } 50% { box-shadow: 0 0 0 4px oklch(0.55 0.16 250 / 10%); } }
+@keyframes glow-pulse { 0%, 100% { box-shadow: 0 0 0 0 oklch(0.55 0.16 240 / 0%); } 50% { box-shadow: 0 0 0 4px oklch(0.55 0.16 240 / 10%); } }
 @keyframes stat-enter { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes subtle-lift { from { transform: translateY(0); box-shadow: var(--shadow-card); } to { transform: translateY(-1px); box-shadow: var(--shadow-float); } }
-@keyframes border-glow { 0%, 100% { border-color: oklch(0.55 0.18 250 / 0.3); } 50% { border-color: oklch(0.65 0.2 250 / 0.6); } }
+@keyframes border-glow { 0%, 100% { border-color: oklch(0.55 0.18 240 / 0.3); } 50% { border-color: oklch(0.65 0.2 240 / 0.6); } }
 @keyframes scan-line { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
 
 /* ===== Auth 页面动画 ===== */
@@ -282,19 +296,19 @@ select:focus-visible,
 .cm-scroller { @apply overflow-auto!; }
 .ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
 .ͼo.cm-selectionBackground,
-.ͼo.cm-content::selection { background: oklch(0.55 0.18 250 / 0.15) !important; }
+.ͼo.cm-content::selection { background: oklch(0.55 0.18 240 / 0.15) !important; }
 .dark .ͼo.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
 .dark .ͼo.cm-selectionBackground,
-.dark .ͼo.cm-content::selection { background: oklch(0.55 0.18 250 / 0.2) !important; }
+.dark .ͼo.cm-content::selection { background: oklch(0.55 0.18 240 / 0.2) !important; }
 .cm-activeLine { @apply bg-muted/50! rounded-sm!; }
 .cm-activeLineGutter { @apply bg-transparent!; }
 .cm-activeLineGutter .cm-gutterElement { color: var(--foreground) !important; opacity: 0.7; }
 .cm-gutter.cm-lineNumbers .cm-gutterElement { padding-right: 12px !important; }
 .cm-foldGutter { @apply min-w-3; }
-.cm-cursor { border-left-color: oklch(0.55 0.18 250) !important; border-left-width: 2px !important; }
+.cm-cursor { border-left-color: oklch(0.55 0.18 240) !important; border-left-width: 2px !important; }
 .cm-matchingBracket {
-  background: oklch(0.55 0.18 250 / 0.12) !important;
-  outline: 1px solid oklch(0.55 0.18 250 / 0.3);
+  background: oklch(0.55 0.18 240 / 0.12) !important;
+  outline: 1px solid oklch(0.55 0.18 240 / 0.3);
   border-radius: 2px;
 }
 
@@ -337,13 +351,13 @@ select:focus-visible,
     transition: background 0.2s ease;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: oklch(0 0 0 / 0.22);
+    background: var(--primary);
   }
   .dark *::-webkit-scrollbar-thumb {
     background: oklch(1 1 1 / 0.15);
   }
   .dark *::-webkit-scrollbar-thumb:hover {
-    background: oklch(1 1 1 / 0.28);
+    background: var(--primary);
   }
   *::-webkit-scrollbar-corner {
     background: transparent;

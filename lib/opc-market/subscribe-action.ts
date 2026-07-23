@@ -118,7 +118,7 @@ export async function cancelSubscriptionAction(
       userId: session.user.id,
     });
 
-    revalidatePath("/admin/opcs");
+    revalidatePath("/admin");
     revalidatePath("/marketplace");
     return { success: true };
   } catch (e) {

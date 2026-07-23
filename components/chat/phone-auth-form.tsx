@@ -175,9 +175,10 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
 
       {/* 提交按钮 */}
       <Button
-        className="touch-target mt-2 w-full"
+        className="touch-target mt-2 h-11 w-full text-[15px] font-medium"
         disabled={state.status === "in_progress" || phone.length !== 11 || code.length !== 6}
         type="submit"
+        variant="gradient"
       >
         {state.status === "in_progress" ? (
           <Loader2 className="size-4 animate-spin" />

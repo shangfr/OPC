@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 };
 
 const LIGHT_THEME_COLOR = "hsl(0 0% 100%)";
-const DARK_THEME_COLOR = "hsl(0 0% 14.5%)";
+const DARK_THEME_COLOR = "oklch(0.145 0 0)";
 const THEME_COLOR_SCRIPT = `\
 (function() {
   var html = document.documentElement;

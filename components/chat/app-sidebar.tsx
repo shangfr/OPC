@@ -12,7 +12,6 @@ import {
   Home,
   MessagesSquareIcon,
   PanelLeftIcon,
-  PenSquareIcon,
   Pin,
   Receipt,
   Settings,
@@ -46,8 +45,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useActiveChat } from "@/hooks/use-active-chat";
-import { safeSessionStorageSet } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -71,8 +68,6 @@ type SidebarUser = User & {
 export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; isAdmin: boolean; }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { agentId, messages } = useActiveChat();
-  const isEmptyChat = messages.length === 0;
   const { setOpenMobile, toggleSidebar } = useSidebar();
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
@@ -100,16 +95,17 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
           <SidebarMenu>
             <SidebarMenuItem className="flex items-center justify-between">
               <div className="group/logo relative flex items-center gap-2.5">
-                {/* 折叠时的 Logo 图标 */}
-                <SidebarMenuButton asChild className="size-8 shrink-0 items-center justify-center rounded-lg !p-0 group-data-[collapsible=icon]:group-hover/logo:opacity-0 transition-opacity duration-150" tooltip="OPC Bot" >
+                {/* 折叠时的 Logo 图标 — 增加品牌色光环 */}
+                <SidebarMenuButton asChild className="size-8 shrink-0 items-center justify-center rounded-lg !p-0 ring-1 ring-primary/10 transition-all duration-200 group-data-[collapsible=icon]:group-hover/logo:opacity-0 hover:ring-primary/30 group-data-[collapsible=icon]:group-hover/logo:ring-primary/0" tooltip="OPC Bot" >
                   <Link href="/" onClick={() => setOpenMobile(false)}>
                     <img alt="OPC Bot" className="size-8 rounded-lg object-cover" src="/logo.jpg" />
                   </Link>
                 </SidebarMenuButton>
 
-                {/* 展开时的品牌名称 */}
-                <div className="flex items-center gap-1.5 group-data-[collapsible=icon]:hidden">
+                {/* 展开时的品牌名称 — 增加品牌色点缀 */}
+                <div className="flex items-center gap-1.5 transition-opacity duration-200 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:pointer-events-none">
                   <span className="text-base font-semibold tracking-tight text-sidebar-foreground"> OPC Bot </span>
+                  <span className="flex size-1.5 rounded-full bg-primary/60" />
                 </div>
 
                 {/* 折叠时悬停出现的展开按钮 */}
@@ -148,40 +144,15 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname === "/"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="首页">
                     <Link href="/" onClick={() => setOpenMobile(false)}>
-                      <Home className="size-5" />
+                      <span className="flex size-7 items-center justify-center rounded-md bg-sky-500/10">
+                        <Home className="size-4 text-sky-500" />
+                      </span>
                       <span>首页</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
-                {/* 新建对话 — 主操作 CTA（参考 ChatGPT / Claude 侧边栏顶部主按钮） */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className="h-10 w-full gap-2.5 rounded-lg border border-primary/20 bg-primary/[0.06] text-[14px] font-medium text-primary transition-all duration-150 hover:bg-primary/[0.1] hover:border-primary/30 disabled:opacity-100 disabled:bg-muted/60 disabled:border-border/60 disabled:text-muted-foreground/60 group-data-[collapsible=icon]:size-9 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-primary/20 group-data-[collapsible=icon]:bg-primary/[0.06] group-data-[collapsible=icon]:text-primary"
-                    disabled={isEmptyChat}
-                    onClick={async () => {
-                      setOpenMobile(false);
-                      try {
-                        const res = await fetch("/api/chat/create", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ agentId: agentId ?? undefined, }),
-                        });
-                        if (!res.ok) { throw new Error("Failed to create chat"); }
-                        const { chatId } = await res.json();
-                        // Store agentId temporarily for page initialization
-                        if (agentId) { safeSessionStorageSet( `pending-chat-${chatId}`, agentId ); }
-                        router.push(`/chat/${chatId}`);
-                      } catch {
-                        toast.error("创建对话失败，请重试");
-                      }
-                    }} 
-                    tooltip={isEmptyChat ? "当前已是新对话" : "新建对话"}
-                  >
-                    <PenSquareIcon className="size-5" />
-                    <span>新建对话</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {/* 新建对话已移至 Header，侧边栏不再重复展示 */}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -198,7 +169,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/explore"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="智库" >
                       <Link href="/explore" onClick={() => setOpenMobile(false)} title="OPC智库咨询台">
-                        <Bot className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-rose-500/10">
+                          <Bot className="size-4 text-rose-500" />
+                        </span>
                         <span>智库</span>
                       </Link>
                     </SidebarMenuButton>
@@ -210,7 +183,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/tickets")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="智客" >
                       <Link href="/tickets" onClick={() => setOpenMobile(false)} title="AI资源整合引擎">
-                        <ClipboardList className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-amber-500/10">
+                          <ClipboardList className="size-4 text-amber-500" />
+                        </span>
                         <span>智客</span>
                       </Link>
                     </SidebarMenuButton>
@@ -222,7 +197,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/pinned"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="智汇" >
                       <Link href="/pinned" onClick={() => setOpenMobile(false)} title="信息汇聚中枢">
-                        <Pin className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-violet-500/10">
+                          <Pin className="size-4 text-violet-500" />
+                        </span>
                         <span>智汇</span>
                       </Link>
                     </SidebarMenuButton>
@@ -234,7 +211,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/artifacts"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="智品" >
                       <Link href="/artifacts" onClick={() => setOpenMobile(false)} title="AI交付物品库">
-                        <FileText className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10">
+                          <FileText className="size-4 text-emerald-500" />
+                        </span>
                         <span>智品</span>
                       </Link>
                     </SidebarMenuButton>
@@ -256,7 +235,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/knowledge")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="知识库" >
                       <Link href="/knowledge" onClick={() => setOpenMobile(false)}>
-                        <BookOpen className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-blue-500/10">
+                          <BookOpen className="size-4 text-blue-500" />
+                        </span>
                         <span>知识库</span>
                       </Link>
                     </SidebarMenuButton>
@@ -267,7 +248,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={pathname === "/creator"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="创作者中心" >
                         <Link href="/creator" onClick={() => setOpenMobile(false)}>
-                          <DollarSign className="size-5" />
+                          <span className="flex size-7 items-center justify-center rounded-md bg-green-500/10">
+                            <DollarSign className="size-4 text-green-500" />
+                          </span>
                           <span>创作者中心</span>
                         </Link>
                       </SidebarMenuButton>
@@ -279,7 +262,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/marketplace"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="交易市场" >
                       <Link href="/marketplace" onClick={() => setOpenMobile(false)}>
-                        <ShoppingCart className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-orange-500/10">
+                          <ShoppingCart className="size-4 text-orange-500" />
+                        </span>
                         <span>交易市场</span>
                       </Link>
                     </SidebarMenuButton>
@@ -291,7 +276,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                     <SidebarMenuItem>
                       <SidebarMenuButton asChild isActive={pathname === "/team"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="团队设置" >
                         <Link href="/team" onClick={() => setOpenMobile(false)}>
-                          <Settings className="size-5" />
+                          <span className="flex size-7 items-center justify-center rounded-md bg-slate-500/10">
+                            <Settings className="size-4 text-slate-500" />
+                          </span>
                           <span>团队设置</span>
                         </Link>
                       </SidebarMenuButton>
@@ -314,9 +301,11 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   {/* 订阅管理 — 所有正式用户 */}
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/settings"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="订阅管理" >
-                      <Link href="/settings" onClick={() => setOpenMobile(false)}>
-                        <CreditCard className="size-5" />
-                        <span>订阅管理</span>
+                        <Link href="/settings" onClick={() => setOpenMobile(false)}>
+                          <span className="flex size-7 items-center justify-center rounded-md bg-indigo-500/10">
+                            <CreditCard className="size-4 text-indigo-500" />
+                          </span>
+                          <span>订阅管理</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -338,7 +327,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/admin"} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="管理后台" >
                       <Link href="/admin" onClick={() => setOpenMobile(false)}>
-                        <Shield className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-red-500/10">
+                          <Shield className="size-4 text-red-500" />
+                        </span>
                         <span>管理后台</span>
                       </Link>
                     </SidebarMenuButton>
@@ -350,29 +341,23 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/applications")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="上架审核" >
                       <Link href="/admin/applications" onClick={() => setOpenMobile(false)}>
-                        <FileCheck className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-teal-500/10">
+                          <FileCheck className="size-4 text-teal-500" />
+                        </span>
                         <span>上架审核</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   )}
 
-                  {/* OPC 管理 — 平台管理员 + 企业团队管理员 */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/opcs")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="OPC 管理" >
-                      <Link href="/admin/opcs" onClick={() => setOpenMobile(false)}>
-                        <Bot className="size-5" />
-                        <span>OPC 管理</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-
                   {/* 订单流水 — 仅平台管理员 */}
                   {isAdmin && (
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/orders")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="订单流水" >
                       <Link href="/admin/orders" onClick={() => setOpenMobile(false)}>
-                        <Receipt className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-cyan-500/10">
+                          <Receipt className="size-4 text-cyan-500" />
+                        </span>
                         <span>订单流水</span>
                       </Link>
                     </SidebarMenuButton>
@@ -384,7 +369,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/stats")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="数据看板" >
                       <Link href="/admin/stats" onClick={() => setOpenMobile(false)}>
-                        <BarChart3 className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-fuchsia-500/10">
+                          <BarChart3 className="size-4 text-fuchsia-500" />
+                        </span>
                         <span>数据看板</span>
                       </Link>
                     </SidebarMenuButton>
@@ -396,7 +383,9 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/users")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="用户管理" >
                       <Link href="/admin/users" onClick={() => setOpenMobile(false)}>
-                        <Users className="size-5" />
+                        <span className="flex size-7 items-center justify-center rounded-md bg-pink-500/10">
+                          <Users className="size-4 text-pink-500" />
+                        </span>
                         <span>用户管理</span>
                       </Link>
                     </SidebarMenuButton>

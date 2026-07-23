@@ -76,7 +76,6 @@ export async function proxy(request: NextRequest) {
   //     /admin/applications → 仅平台管理员
   //     /admin/orders → 仅平台管理员
   //     /admin/stats → 仅平台管理员
-  //     /admin/opcs → 平台管理员 + Team 套餐及以上用户
   //     /admin/users → 平台管理员 + Team 套餐及以上用户
   //     /admin/tickets → 仅平台管理员（供需管理后台）
   //     /admin/knowledge → 仅平台管理员（知识库管理后台）
@@ -89,7 +88,6 @@ export async function proxy(request: NextRequest) {
       "/admin/knowledge",
     ];
     const TEAM_PLAN_ALLOWED = [
-      "/admin/opcs",
       "/admin/users",
     ];
 

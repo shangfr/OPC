@@ -129,7 +129,9 @@ export function SidebarUserNav({
               className="cursor-pointer text-[13px]"
               onSelect={() => router.push("/profile")}
             >
-              <UserCircle className="mr-2 size-4" />
+              <span className="mr-2 flex size-6 items-center justify-center rounded-md bg-sky-500/10">
+                <UserCircle className="size-3.5 text-sky-500" />
+              </span>
               个人中心
             </DropdownMenuItem>
 
@@ -141,9 +143,13 @@ export function SidebarUserNav({
               }
             >
               {resolvedTheme === "dark" ? (
-                <Sun className="mr-2 size-4" />
+                <span className="mr-2 flex size-6 items-center justify-center rounded-md bg-amber-500/10">
+                  <Sun className="size-3.5 text-amber-500" />
+                </span>
               ) : (
-                <Moon className="mr-2 size-4" />
+                <span className="mr-2 flex size-6 items-center justify-center rounded-md bg-indigo-500/10">
+                  <Moon className="size-3.5 text-indigo-500" />
+                </span>
               )}
               {`切换${resolvedTheme === "light" ? "暗色" : "亮色"}模式`}
             </DropdownMenuItem>
@@ -156,7 +162,9 @@ export function SidebarUserNav({
                 onClick={() => signOutAction()}
                 type="button"
               >
-                <LogOut className="mr-2 size-4" />
+                <span className="mr-2 flex size-6 items-center justify-center rounded-md bg-red-500/10">
+                  <LogOut className="size-3.5 text-red-500" />
+                </span>
                 退出登录
               </button>
             </DropdownMenuItem>

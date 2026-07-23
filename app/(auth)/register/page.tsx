@@ -69,15 +69,15 @@ export default function Page() {
 
       {/* 注册方式切换 Tab */}
       <div
-        className="auth-slide-in mt-6 flex w-full rounded-lg border border-border/50 bg-muted/30 p-1"
+        className="auth-slide-in mt-6 flex w-full rounded-xl border border-border/50 bg-muted/40 p-1"
         style={{ animationDelay: "0.24s" }}
       >
         <button
           className={cn(
-            "flex-1 rounded-md py-1.5 text-xs font-medium transition-colors",
+            "flex-1 rounded-lg py-2 text-xs font-medium transition-all duration-200",
             authMode === "phone"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-background text-primary shadow-sm ring-1 ring-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
           )}
           onClick={() => setAuthMode("phone")}
           type="button"
@@ -86,10 +86,10 @@ export default function Page() {
         </button>
         <button
           className={cn(
-            "flex-1 rounded-md py-1.5 text-xs font-medium transition-colors",
+            "flex-1 rounded-lg py-2 text-xs font-medium transition-all duration-200",
             authMode === "email"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-background text-primary shadow-sm ring-1 ring-primary/20"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
           )}
           onClick={() => setAuthMode("email")}
           type="button"
