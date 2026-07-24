@@ -105,23 +105,28 @@ export function GlobalHeader() {
 
   return (
     <header className={cn("page-header sidebar-inset-header", isHome && "md:block hidden")}>
-      <div className="flex min-w-0 items-center gap-2">
-        {/* 移动端侧边栏触发器：桌面端由侧边栏自身控制 */}
-        <SidebarTrigger className="-ml-1 md:hidden" />
-        <Separator orientation="vertical" className="mr-1 h-4 md:hidden" />
+      {/* 移动端侧边栏触发器：桌面端由侧边栏自身控制 */}
+      <SidebarTrigger className="-ml-1 md:hidden" />
+      <Separator orientation="vertical" className="mr-1 h-4 md:hidden" />
+      {/* 图标 + 标题 + 描述：整体靠右对齐 */}
+      <div className="ml-auto flex min-w-0 items-center gap-2">
+
+        {!isHome && (
+          <div className="flex min-w-0 flex-col items-end gap-0.5 text-right">
+            {/* 添加 title 属性，鼠标悬停时显示描述 */}
+            <span 
+              className="truncate text-sm font-medium text-foreground/80 cursor-default"
+              title={pageDescription} 
+            >
+              {pageTitle}
+            </span>
+            {/* 移除了原来的 pageDescription span */}
+          </div>
+        )}
+
         <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md", pageBgColor)}>
           <PageIcon className={cn("size-4", pageColor)} />
         </span>
-        {!isHome && (
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="truncate text-sm font-medium text-foreground/80">
-              {pageTitle}
-            </span>
-            <span className="hidden truncate text-[11px] text-muted-foreground/60 sm:block">
-              {pageDescription}
-            </span>
-          </div>
-        )}
       </div>
     </header>
   );

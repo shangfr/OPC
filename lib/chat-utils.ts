@@ -85,6 +85,17 @@ export function exportMessagesToMarkdown(
   const now = new Date();
   const lines: string[] = [];
 
+  // 防御性排序：确保消息按时间正序排列（早 → 晚）
+  // 即使上游 API 已按 createdAt 升序返回，这里再做一次稳定排序，
+  // 避免因缓存、流式追加等场景导致顺序错乱，影响知识沉淀与分享可读性。
+  const sortedMessages = [...messages].sort((a, b) => {
+    const ta = getMessageCreatedAt(a);
+    const tb = getMessageCreatedAt(b);
+    const tsa = ta ? new Date(ta).getTime() : 0;
+    const tsb = tb ? new Date(tb).getTime() : 0;
+    return tsa - tsb;
+  });
+
   const title = options?.title || "对话记录";
   lines.push(`# ${title}`);
   lines.push("");
@@ -92,14 +103,14 @@ export function exportMessagesToMarkdown(
   if (options?.agentName) {
     lines.push(`> 关联 Agent：${options.agentName}`);
   }
-  lines.push(`> 消息数量：${messages.length}`);
+  lines.push(`> 消息数量：${sortedMessages.length}`);
 
   // 统计总字数
-  const totalChars = messages.reduce(
+  const totalChars = sortedMessages.reduce(
     (sum, m) => sum + estimateCharCount(extractMessageText(m)),
     0,
   );
-  const totalTokens = messages.reduce(
+  const totalTokens = sortedMessages.reduce(
     (sum, m) => sum + estimateTokenCount(extractMessageText(m)),
     0,
   );
@@ -108,7 +119,7 @@ export function exportMessagesToMarkdown(
   lines.push("---");
   lines.push("");
 
-  for (const message of messages) {
+  for (const message of sortedMessages) {
     const role = message.role === "user" ? "🧑 用户" : "🤖 助手";
     const rawTime = getMessageCreatedAt(message);
     const time = rawTime ? new Date(rawTime).toLocaleString("zh-CN") : "";

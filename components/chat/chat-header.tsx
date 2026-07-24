@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeftRight, Download, PenSquare, Search } from "lucide-react";
+import { ArrowLeftRight, Download, MoreVertical, PenSquare, Search, Share } from "lucide-react";
 import { memo, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { getAvatarChar } from "@/lib/agent-groups";
 import type { Agent } from "@/lib/db/schema";
 import {
@@ -15,12 +15,18 @@ import {
 import type { ChatMessage } from "@/lib/types";
 import { cn, fetcher, safeSessionStorageSet } from "@/lib/utils";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { KeyboardShortcutsHelp } from "./keyboard-shortcuts-help";
+import { updateChatVisibility } from "@/app/(chat)/actions";
 import { VisibilitySelector, type VisibilityType } from "./visibility-selector";
 
 function PureChatHeader({
@@ -105,7 +111,9 @@ function PureChatHeader({
 
   // 导出当前对话为 Markdown 文件
   // OPC 场景下用于知识沉淀：将高质量对话归档到本地或知识库
+  const { mutate } = useSWRConfig();
   const [isExporting, setIsExporting] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const handleExport = async () => {
     if (isExporting) return;
     setIsExporting(true);
@@ -114,8 +122,13 @@ function PureChatHeader({
         `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/messages?chatId=${chatId}`,
       );
       if (!res.ok) throw new Error("获取消息失败");
-      const messages: ChatMessage[] = await res.json();
-      if (!messages || messages.length === 0) {
+      // 修复：API 返回的是 { messages, title, visibility, ... } 对象，而非裸数组。
+      // 之前直接把整个响应对象当作 messages 数组使用，导致 .length 异常、
+      // exportMessagesToMarkdown 内部 map 报错。这里正确解构 .messages 字段。
+      const data: { messages?: ChatMessage[]; error?: string } = await res.json();
+      if (data.error) throw new Error(data.error);
+      const messages: ChatMessage[] = data.messages ?? [];
+      if (messages.length === 0) {
         toast.error("当前对话没有可导出的消息");
         return;
       }
@@ -130,6 +143,48 @@ function PureChatHeader({
       toast.error("导出失败，请重试");
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      // 1. 先将对话设为公开，否则他人打开链接会 403
+      await updateChatVisibility({ chatId, visibility: "public" });
+      // 同步本地 SWR 缓存（key 与 useChatVisibility 一致），
+      // 让 VisibilitySelector 立即显示"公开"，无需刷新页面。
+      mutate(`${chatId}-visibility`, "public", false);
+
+      // 2. 构造分享链接：对方打开后会走 /api/messages?chatId= 接口，
+      //    该接口在 getMessagesByChatId 中已按 createdAt 升序返回，
+      //    且 exportMessagesToMarkdown 内部还有一次稳定排序，
+      //    因此时间顺序一定是正确的（早 → 晚）。
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+      const shareUrl = `${origin}${basePath}/chat/${chatId}`;
+
+      // 3. 复制到剪贴板
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("分享链接已复制，对方打开即可按时间顺序查看对话");
+      } else {
+        // 降级：clipboard API 不可用时，用 textarea + execCommand
+        const textarea = document.createElement("textarea");
+        textarea.value = shareUrl;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        toast.success("分享链接已复制，对方打开即可按时间顺序查看对话");
+      }
+    } catch {
+      toast.error("分享失败，请重试");
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -158,17 +213,6 @@ function PureChatHeader({
           type="button"
         >
           <PenSquare className="size-3.5" />
-        </button>
-
-        {/* 导出对话为 Markdown：OPC 场景下用于知识沉淀与归档 */}
-        <button
-          className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-          disabled={isExporting}
-          onClick={handleExport}
-          title="导出为 Markdown"
-          type="button"
-        >
-          <Download className="size-3.5" />
         </button>
 
         {/* OPC 切换按钮 */}
@@ -241,7 +285,46 @@ function PureChatHeader({
           </PopoverContent>
         </Popover>
 
-        <KeyboardShortcutsHelp />
+        {/* 更多操作：导出 / 分享（改为 Popover） */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              disabled={isExporting || isSharing}
+              title="更多操作"
+              type="button"
+            >
+              <MoreVertical className="size-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-44 p-1.5" sideOffset={8}>
+            {/* 导出按钮 */}
+            <button
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              disabled={isExporting}
+              onClick={() => {
+                handleExport();
+              }}
+              type="button"
+            >
+              <Download className="size-4" />
+              <span>{isExporting ? "导出中…" : "导出"}</span>
+            </button>
+
+            {/* 分享按钮 */}
+            <button
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              disabled={isSharing}
+              onClick={() => {
+                handleShare();
+              }}
+              type="button"
+            >
+              <Share className="size-4" />
+              <span>{isSharing ? "分享中…" : "分享"}</span>
+            </button>
+          </PopoverContent>
+        </Popover>
 
       </div>
     </header>

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FlexibleProvider } from "@/components/flexible-provider";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,7 +26,8 @@ export const viewport: Viewport = {
 
 const LIGHT_THEME_COLOR = "hsl(0 0% 100%)";
 const DARK_THEME_COLOR = "oklch(0.145 0 0)";
-const THEME_COLOR_SCRIPT = `\
+
+const THEME_COLOR_SCRIPT = `
 (function() {
   var html = document.documentElement;
   var meta = document.querySelector('meta[name="theme-color"]');
@@ -47,20 +47,20 @@ const THEME_COLOR_SCRIPT = `\
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    // 修改点 1: html 标签添加 h-screen overflow-hidden
+    // 这能防止整个页面滚动，解决初始页面的空白滚动空间问题
+    <html lang="zh-CN" className="h-screen overflow-hidden" suppressHydrationWarning>
       <head>
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
-          dangerouslySetInnerHTML={{
-            __html: THEME_COLOR_SCRIPT,
-          }}
+          dangerouslySetInnerHTML={{ __html: THEME_COLOR_SCRIPT }}
         />
       </head>
-      <body className="antialiased">
+      {/* 修改点 2: body 标签添加 h-full w-full overflow-hidden */}
+      {/* 确保 body 填满 html，且不产生额外滚动条 */}
+      <body className="antialiased h-full w-full overflow-hidden">
         <FlexibleProvider />
         <ThemeProvider
           attribute="class"
