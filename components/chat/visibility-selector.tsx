@@ -28,13 +28,13 @@ const visibilities: Array<{
   {
     id: "private",
     label: "私密",
-    description: "只有你自己可以访问此对话",
+    description: "对话内容不公开",
     icon: <LockIcon />,
   },
   {
     id: "public",
     label: "公开",
-    description: "任何有链接的人都可以访问此对话",
+    description: "分享对话链接",
     icon: <GlobeIcon />,
   },
 ];
@@ -79,7 +79,7 @@ export function VisibilitySelector({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="min-w-[300px]">
+      <DropdownMenuContent align="end" className="w-32">
         {visibilities.map((visibility) => (
           <DropdownMenuItem
             className="group/item flex flex-row items-center justify-between gap-4"

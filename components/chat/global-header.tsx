@@ -29,7 +29,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // 这些页面有自己的 page-header（含上下文操作按钮），不渲染 GlobalHeader 避免重复
-const EXCLUDED_PATHS = ["/chat"];
+// 首页 `/` 有自己的品牌区（MobileHome / WelcomeDashboard），不渲染 GlobalHeader
+const EXCLUDED_PATHS = ["/", "/chat"];
 
 // 路由标题 + 图标 + 描述映射
 const ROUTE_TITLES: {

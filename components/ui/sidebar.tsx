@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PanelLeftIcon } from "lucide-react"
@@ -158,29 +157,39 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent 
-          dir={dir}
+      <>
+        {/* 背景遮罩：点击关闭侧边栏 */}
+        <div
+          className={cn(
+            "fixed inset-0 z-30 bg-black/30 transition-opacity duration-300 md:hidden",
+            openMobile ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          )}
+          onClick={() => setOpenMobile(false)}
+          aria-hidden="true"
+        />
+        {/* 推入式侧边栏：从左侧滑入，推动主内容区 */}
+        <div
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          // side="left" 会自动触发 Shadcn 内置的左滑入/左滑出动画
-          side="left"
-          // 🚨 移除所有 !animate-in 等强加的动画类，只保留布局、宽度和背景
-          className="w-[18rem] flex flex-col border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden" 
-          showCloseButton={false}
+          dir={dir}
+          className={cn(
+            "fixed inset-y-0 left-0 z-40 flex h-svh w-[18rem] flex-col border-r border-sidebar-border bg-sidebar p-0 text-sidebar-foreground transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:hidden",
+            openMobile ? "translate-x-0" : "-translate-x-full",
+            className
+          )}
+          {...props}
         >
-          <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-          </SheetHeader>
-          
+          <div className="sr-only">
+            <span role="heading" aria-level={2}>Sidebar</span>
+            <span>Mobile navigation sidebar</span>
+          </div>
           {/* 内部滚动区域 */}
           <div className="flex h-full w-full flex-1 flex-col overflow-y-auto overscroll-contain">
             {children}
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </>
     )
   }
 
@@ -289,11 +298,14 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
 }
 
 function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+  const { isMobile, openMobile } = useSidebar()
   return (
     <main
       data-slot="sidebar-inset"
       className={cn(
         "relative flex w-full flex-1 flex-col bg-background [transform:translate3d(0,0,0)]",
+        "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        isMobile && openMobile && "translate-x-[18rem] overflow-hidden",
         "md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
         className
       )}
