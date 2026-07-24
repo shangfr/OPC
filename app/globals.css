@@ -61,7 +61,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* 美化：primary 改为深青蓝色，建立品牌识别度（与 ring/chart 色系统一） */
-  --primary: oklch(0.45 0.14 240);
+  --primary: oklch(0.75 0.15 195);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -89,7 +89,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   /* 现代化：侧边栏聚焦态青色 */
-  --sidebar-ring: oklch(0.72 0.14 195);
+  --sidebar-ring: oklch(0.85 0.15 195);
   --shadow-card: 0 1px 3px oklch(0 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.04);
   --shadow-float: 0 4px 16px -4px oklch(0 0 0 / 0.1), 0 2px 6px -2px oklch(0 0 0 / 0.06);
   --shadow-composer: 0 1px 2px oklch(0 0 0 / 0.05);
@@ -112,7 +112,7 @@
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   /* 美化：暗色模式 primary 改为亮青蓝色，保持品牌一致性 */
-  --primary: oklch(0.65 0.16 240);
+  --primary: oklch(0.85 0.15 195);
   --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
