@@ -160,10 +160,6 @@ function PureChatHeader({
           <PenSquare className="size-3.5" />
         </button>
 
-        <KeyboardShortcutsHelp />
-
-
-
         {/* 导出对话为 Markdown：OPC 场景下用于知识沉淀与归档 */}
         <button
           className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
@@ -245,12 +241,8 @@ function PureChatHeader({
           </PopoverContent>
         </Popover>
 
-        {!isReadonly && (
-          <VisibilitySelector
-            chatId={chatId}
-            selectedVisibilityType={selectedVisibilityType}
-          />
-        )}
+        <KeyboardShortcutsHelp />
+
       </div>
     </header>
   );
