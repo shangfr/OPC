@@ -207,7 +207,7 @@ function PureChatHeader({
       <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
         {/* 新建对话 */}
         <button
-          className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/[0.1] hover:border-primary/30"
+          className="touch-target inline-flex items-center gap-1.5 rounded-lg bg-primary/[0.06] px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/[0.1] hover:border-primary/30"
           onClick={handleNewChat}
           title="新建对话"
           type="button"
@@ -219,7 +219,7 @@ function PureChatHeader({
         <Popover onOpenChange={setOpen} open={open}>
           <PopoverTrigger asChild>
             <button
-              className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="touch-target inline-flex items-center gap-1.5 rounded-lg bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               disabled={switching}
               title="切换 OPC"
               type="button"
@@ -289,7 +289,7 @@ function PureChatHeader({
         <Popover>
           <PopoverTrigger asChild>
             <button
-              className="touch-target inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+              className="touch-target inline-flex items-center gap-1.5 rounded-lg bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
               disabled={isExporting || isSharing}
               title="更多操作"
               type="button"

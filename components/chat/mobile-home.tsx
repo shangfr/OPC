@@ -14,8 +14,6 @@ import {
   Bot,
   Lightbulb,
   Mail,
-  Code2,
-  FileText,
   Sparkles,
   ArrowRight,
 } from "lucide-react";
@@ -90,20 +88,6 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
         prompt: "请帮我头脑风暴 5 个面向年轻人的线下活动创意，要求新颖且可落地。",
         color: "text-amber-500",
         bg: "bg-amber-500/10",
-      },
-      {
-        icon: FileText,
-        title: "总结文章",
-        prompt: "请把下面这段文字总结成 3 个要点：\n\n（在此粘贴需要总结的内容）",
-        color: "text-emerald-500",
-        bg: "bg-emerald-500/10",
-      },
-      {
-        icon: Code2,
-        title: "解释代码",
-        prompt: "请用通俗易懂的语言解释下面这段代码的作用：\n\n（在此粘贴代码）",
-        color: "text-violet-500",
-        bg: "bg-violet-500/10",
       },
     ],
     []
@@ -180,22 +164,32 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
                 onClick={() => createChat(s.prompt)}
                 className="flex items-center gap-3 rounded-xl border border-border/40 bg-card p-3 text-left transition-all hover:border-primary/30 hover:bg-accent"
               >
-                <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg", s.bg)}>
+                <div
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                    s.bg
+                  )}
+                >
                   <s.icon className={cn("size-4", s.color)} />
                 </div>
-                <div className="min-w-0 flex-1">
+                
+                {/* 修改点：添加 max-w-[calc(100%-theme('spacing.8'))-theme('spacing.3')] 或依赖 flex-1 自动收缩 */}
+                {/* 添加 break-all 让长文本自动换行 */}
+                <div className="min-w-0 flex-1"> 
                   <p className="text-sm font-medium text-foreground">{s.title}</p>
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {s.prompt.slice(0, 30)}...
+                  
+                  {/* 🚨 关键修复：添加 break-all 或 break-words */}
+                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2 break-words">
+                    {s.prompt}
                   </p>
                 </div>
+                
                 <ArrowRight className="size-3.5 shrink-0 text-muted-foreground/40" />
               </button>
             ))}
           </div>
-        </div>
-      </div>
-
+        </div> 
+      </div> 
       {/* ===== 底部输入栏 ===== */}
       <div className="w-full overflow-x-hidden border-t border-border/50 bg-background px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
