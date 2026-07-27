@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "@/components/chat/toast";
 import { registerEnterpriseAction } from "@/lib/enterprise/actions";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 /**
  * 企业注册/升级页面
@@ -59,83 +62,120 @@ export default function RegisterEnterprisePage() {
         <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10">
           <Building2 className="size-6 text-primary" />
         </div>
-        <h1 className="text-lg font-semibold text-foreground">升级企业账号</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1
+          className="auth-slide-in text-[28px] font-bold tracking-tight text-center"
+          style={{ animationDelay: "0.1s" }}
+        >
+          升级企业账号
+        </h1>
+        <p
+          className="auth-slide-in text-[15px] text-muted-foreground/80 text-center"
+          style={{ animationDelay: "0.18s" }}
+        >
           升级为企业账号，获得团队功能并成为企业管理员
         </p>
       </div>
 
-      <div className="auth-slide-in w-full" style={{ animationDelay: "0.28s" }}>
+      <div
+        className="auth-slide-in mt-5 w-full pt-2"
+        style={{ animationDelay: "0.28s" }}
+      >
         <form action={formAction} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="name">
-              企业名称
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              placeholder="例如：智谱科技有限公司"
-              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"
-            />
+          {/* 企业信息分组 */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-foreground/80">
+              <Separator className="flex-1" />
+              企业信息
+              <Separator className="flex-1" />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="name">
+                企业名称
+              </label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                required
+                placeholder="例如：智谱科技有限公司"
+                className="h-11"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="creditCode">
+                统一社会信用代码
+              </label>
+              <Input
+                id="creditCode"
+                name="creditCode"
+                type="text"
+                required
+                placeholder="18 位信用代码"
+                className="h-11"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="creditCode">
-              统一社会信用代码
-            </label>
-            <input
-              id="creditCode"
-              name="creditCode"
-              type="text"
-              required
-              placeholder="18 位信用代码"
-              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
+          {/* 联系信息分组 */}
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-[13px] font-medium text-foreground/80">
+              <Separator className="flex-1" />
+              联系信息
+              <Separator className="flex-1" />
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="contactName">
-              联系人姓名
-            </label>
-            <input
-              id="contactName"
-              name="contactName"
-              type="text"
-              required
-              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"
-            />
-          </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="contactName">
+                联系人姓名
+              </label>
+              <Input
+                id="contactName"
+                name="contactName"
+                type="text"
+                required
+                className="h-11"
+              />
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground" htmlFor="contactPhone">
-              联系电话
-            </label>
-            <input
-              id="contactPhone"
-              name="contactPhone"
-              type="tel"
-              required
-              placeholder="企业联系电话"
-              className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/10"
-            />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="contactPhone">
+                联系电话
+              </label>
+              <Input
+                id="contactPhone"
+                name="contactPhone"
+                type="tel"
+                required
+                placeholder="企业联系电话"
+                className="h-11"
+              />
+            </div>
           </div>
 
           {state?.error && (
-            <p className="text-sm text-destructive">{state.error}</p>
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {state.error}
+            </div>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={pending}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            variant="gradient"
+            className="h-11 w-full text-[15px] font-medium"
           >
             {pending ? (
               <Loader2 className="size-4 animate-spin" />
             ) : null}
             升级企业账号
-          </button>
+          </Button>
 
           <p className="text-center text-[13px] text-muted-foreground">
             {"还没有账号？"}

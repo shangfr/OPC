@@ -5,8 +5,8 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import useSWR, { useSWRConfig } from "swr";
-import { getAvatarChar } from "@/lib/agent-groups";
-import type { Agent } from "@/lib/db/schema";
+import { buildGroupFromCategory, DEFAULT_THEME, getAvatarChar } from "@/lib/agent-groups";
+import type { Agent, Category } from "@/lib/db/schema";
 import {
   downloadTextFile,
   exportMessagesToMarkdown,
@@ -47,6 +47,13 @@ function PureChatHeader({
 
   const { data: agents = [] } = useSWR<Agent[]>(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/agents`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60_000 }
+  );
+
+  // 获取分类列表，用于为 OPC 列表项应用分组配色
+  const { data: categories = [] } = useSWR<(Category & { sortOrder: number; colorKey: string })[]>(
+    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/categories`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 60_000 }
   );
@@ -261,7 +268,11 @@ function PureChatHeader({
                       onClick={() => handleSwitch(agent)}
                       type="button"
                     >
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
+                      <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${(() => {
+                        const cat = categories.find((c) => c.id === agent.categoryId);
+                        const group = cat ? buildGroupFromCategory(cat) : DEFAULT_THEME;
+                        return `${group.bg} ${group.text}`;
+                      })()}`}>
                         {avatarChar}
                       </div>
                       <div className="min-w-0 flex-1">

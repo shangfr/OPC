@@ -17,6 +17,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -118,7 +119,15 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
         {/* Hero */}
         <div className="flex flex-col items-center pt-6 pb-8 text-center">
           <div className="mb-4 flex size-16 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-primary/10">
-            <img alt="OPC Bot" className="size-full object-cover" src="/logo.jpg" />
+            <Image
+              alt="OPC Bot"
+              className="size-full object-cover"
+              height={64}
+              src="/logo.jpg"
+              width={64}
+              sizes="64px"
+              priority
+            />
           </div>
           <p className="mb-1 text-sm text-muted-foreground">
             {greeting}
@@ -134,8 +143,8 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
             onClick={() => createChat()}
             className="flex flex-col items-center gap-2 rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/30 hover:bg-accent"
           >
-            <div className="flex size-10 items-center justify-center rounded-lg bg-sky-500/10">
-              <Sparkles className="size-5 text-sky-500" />
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+              <Sparkles className="size-5 text-primary" />
             </div>
             <span className="text-sm font-medium">新建对话</span>
           </button>
@@ -144,8 +153,8 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
             onClick={() => router.push("/explore")}
             className="flex flex-col items-center gap-2 rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/30 hover:bg-accent"
           >
-            <div className="flex size-10 items-center justify-center rounded-lg bg-rose-500/10">
-              <Bot className="size-5 text-rose-500" />
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+              <Bot className="size-5 text-primary" />
             </div>
             <span className="text-sm font-medium">选择 OPC</span>
           </button>

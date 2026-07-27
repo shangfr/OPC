@@ -131,7 +131,7 @@ export function DocumentPreview({
     : artifact.status === "streaming"
       ? ({
           title: artifact.title,
-          kind: artifact.kind as any,
+          kind: artifact.kind,
           content: artifact.content,
           id: artifact.documentId,
           createdAt: new Date(),

@@ -9,7 +9,7 @@
  * 交互：点击文本区域跳过动画
  */
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect } from "react";
 import { useTypewriter } from "@/hooks/use-typewriter";
 import { sanitizeText, cn } from "@/lib/utils";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
@@ -20,6 +20,8 @@ interface TypewriterTextProps {
   isStreaming: boolean;
   isUser: boolean;
   testId?: string;
+  /** 当打字机动画状态变化时通知父组件，使父组件可在流结束后仍保持挂载直到动画完成 */
+  onTypingChange?: (isTyping: boolean) => void;
 }
 
 function PureTypewriterText({
@@ -28,6 +30,7 @@ function PureTypewriterText({
   isStreaming,
   isUser,
   testId,
+  onTypingChange,
 }: TypewriterTextProps) {
   const { displayedText, isTyping, skip } = useTypewriter({
     text: sanitizeText(text),
@@ -36,6 +39,11 @@ function PureTypewriterText({
     enabled: !isUser,
     speed: 30,
   });
+
+  // 将打字机状态同步到父组件，使父组件能在流结束后继续挂载本组件直到动画完成
+  useEffect(() => {
+    onTypingChange?.(isTyping);
+  }, [isTyping, onTypingChange]);
 
   // 始终绑定 onClick，内部判断是否需要跳过
   const handleClick = useCallback(() => {
@@ -69,5 +77,6 @@ export const TypewriterText = memo(PureTypewriterText, (prev, next) => {
     prev.isStreaming === next.isStreaming &&
     prev.isUser === next.isUser &&
     prev.testId === next.testId
+    // onTypingChange 是稳定回调（来自 useState setter），不参与 memo 比较
   );
 });

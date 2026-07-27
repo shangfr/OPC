@@ -15,8 +15,8 @@ import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
 import { cardVariants } from "@/components/ui/card";
-import { getAvatarChar } from "@/lib/agent-groups";
-import type { Agent } from "@/lib/db/schema";
+import { buildGroupFromCategory, DEFAULT_THEME, getAvatarChar } from "@/lib/agent-groups";
+import type { Agent, Category } from "@/lib/db/schema";
 import { cn, fetcher, safeSessionStorageSet } from "@/lib/utils";
 
 interface WelcomeDashboardProps {
@@ -38,6 +38,13 @@ export function WelcomeDashboard({
 
   const { data: agents = [] } = useSWR<Agent[]>(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/agents`,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60_000 }
+  );
+
+  // 获取分类列表，用于为推荐 OPC 卡片应用分组配色
+  const { data: categories = [] } = useSWR<(Category & { sortOrder: number; colorKey: string })[]>(
+    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/categories`,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 60_000 }
   );
@@ -285,30 +292,37 @@ export function WelcomeDashboard({
               </button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {activeAgents.slice(0, 6).map((agent) => (
-                <button
-                  key={agent.id}
-                  type="button"
-                  onClick={() => handleStartChatWithAgent(agent)}
-                  className={cn(
-                    "group flex items-center gap-3 text-left",
-                    cardVariants({
-                      variant: "interactive",
-                      padding: "md",
-                    })
-                  )}
-                >
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-sm font-semibold text-primary transition-transform duration-300 group-hover:scale-110">
-                    {getAvatarChar(agent.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{agent.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {agent.description}
-                    </p>
-                  </div>
-                </button>
-              ))}
+              {activeAgents.slice(0, 6).map((agent) => {
+                // 为每个 OPC 应用其分组的配色系统，与 /explore 页面保持一致
+                const cat = categories.find((c) => c.id === agent.categoryId);
+                const group = cat ? buildGroupFromCategory(cat) : DEFAULT_THEME;
+                return (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    onClick={() => handleStartChatWithAgent(agent)}
+                    className={cn(
+                      "group flex items-center gap-3 text-left",
+                      cardVariants({
+                        variant: "interactive",
+                        padding: "md",
+                      })
+                    )}
+                  >
+                    <div
+                      className={`flex size-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold shadow-sm transition-transform duration-300 group-hover:scale-110 ${group.bg} ${group.text}`}
+                    >
+                      {getAvatarChar(agent.name)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{agent.name}</p>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {agent.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

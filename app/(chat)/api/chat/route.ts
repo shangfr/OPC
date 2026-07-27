@@ -178,7 +178,7 @@ export async function POST(request: Request) {
         userMessage: message,
         selectedVisibilityType,
         agentId,
-        agentRecord: agentRecord as any,
+        agentRecord,
         chatModel,
         session,
         summarizeTask,
@@ -449,10 +449,43 @@ export async function POST(request: Request) {
         // 推理模型（如 DeepSeek）会先输出 reasoning_content（思考过程），
         // 再输出 content（正文）。若 sendReasoning 为 false，reasoning-delta
         // 会被 toUIMessageStream 过滤掉，但 reasoning-start / reasoning-end
-        // 仍然转发，导致思考阶段前端无任何文本输出 → 表现为"先出一句后卡顿，
-        // 再一次性输出一大段"。
-        // 修复：仅在 thinkingEnabled 为 true 时发送 reasoning，关闭思考模式时不输出思考过程。
-        dataStream.merge(result.toUIMessageStream({ sendReasoning: isReasoningModel && thinkingEnabled }));
+        // 仍然转发，导致前端创建一个空的 reasoning part。
+        //
+        // 这个空 reasoning part 会导致：
+        // 1. 思考阶段前端 hasVisibleContent=false，显示骨架屏而非打字机
+        // 2. 思考阶段结束后文本一次性到达，打字机来不及渲染
+        //
+        // 修复：关闭思考模式时，额外过滤掉 reasoning-start / reasoning-end，
+        // 确保前端不创建空 reasoning part，文本流直接进入 text part。
+        const uiMessageStream: Parameters<typeof dataStream.merge>[0] =
+          result.toUIMessageStream({
+            sendReasoning: isReasoningModel && thinkingEnabled,
+          });
+
+        if (isReasoningModel && !thinkingEnabled) {
+          // 过滤掉所有 reasoning 事件，避免前端创建空 reasoning part
+          const filteredStream = uiMessageStream.pipeThrough(
+            new TransformStream({
+              transform(chunk, controller) {
+                const type = (chunk as { type?: string }).type;
+                if (
+                  type === "reasoning-start" ||
+                  type === "reasoning-delta" ||
+                  type === "reasoning-end"
+                ) {
+                  return;
+                }
+                controller.enqueue(chunk);
+              },
+            }),
+          );
+          // pipeThrough 会丢失泛型信息，需断言为 merge 期望的类型
+          dataStream.merge(
+            filteredStream as Parameters<typeof dataStream.merge>[0],
+          );
+        } else {
+          dataStream.merge(uiMessageStream);
+        }
 
         if (titlePromise) {
           try {

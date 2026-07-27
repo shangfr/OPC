@@ -1,17 +1,12 @@
 import { z } from "zod";
-import { auth } from "@/app/(auth)/auth";
 import {
-  countRecentPhoneCodes,
   createPhoneVerificationCode,
   getUserByPhone,
 } from "@/lib/db/queries";
 import { ChatbotError } from "@/lib/errors";
 import {
-  generateVerificationCode,
   isValidChinaPhone,
   normalizePhone,
-  sendVerificationSms,
-  SMS_RATE_LIMIT,
 } from "@/lib/ai/sms-service";
 
 const schema = z.object({
@@ -22,10 +17,13 @@ const schema = z.object({
 /**
  * POST /api/phone/send-code
  *
- * 发送手机号验证码
- * - 限流：同一手机号每小时最多 5 次，两次发送间隔至少 60 秒
- * - 注册用途：如果手机号已注册，返回错误（防止重复注册）
- * - 登录用途：如果手机号未注册，返回错误（提示先注册）
+ * 发送手机号验证码（Mock 模式）
+ *
+ * Mock 行为：
+ * - 验证码固定为 123456
+ * - 不发送真实短信
+ * - 直接返回验证码给前端展示
+ * - 仍然保存到数据库供后续校验
  */
 export async function POST(request: Request) {
   try {
@@ -45,15 +43,6 @@ export async function POST(request: Request) {
       return new ChatbotError(
         "bad_request:api",
         "手机号格式不正确，请输入 11 位中国大陆手机号"
-      ).toResponse();
-    }
-
-    // 限流：每小时最多 5 次
-    const recentCount = await countRecentPhoneCodes(phone, 60);
-    if (recentCount >= SMS_RATE_LIMIT.maxPerHour) {
-      return new ChatbotError(
-        "rate_limit:api",
-        `发送过于频繁，每小时最多 ${SMS_RATE_LIMIT.maxPerHour} 次，请稍后再试`
       ).toResponse();
     }
 
@@ -79,26 +68,18 @@ export async function POST(request: Request) {
       }
     }
 
-    // 生成验证码并发送
-    const code = generateVerificationCode();
-    const sendResult = await sendVerificationSms(phone, code);
+    // Mock 模式：验证码固定为 123456
+    const code = "123456";
 
-    if (!sendResult.success) {
-      return new ChatbotError(
-        "bad_request:api",
-        `验证码发送失败: ${sendResult.error ?? "未知错误"}`
-      ).toResponse();
-    }
-
-    // 保存验证码到数据库
+    // 保存验证码到数据库（供后续校验）
     await createPhoneVerificationCode(phone, code, body.purpose);
 
     return Response.json(
       {
         success: true,
-        messageId: sendResult.messageId,
-        // 开发模式下返回验证码（仅用于调试，生产环境不返回）
-        debugCode: process.env.NODE_ENV === "development" ? code : undefined,
+        // Mock 模式下始终返回验证码
+        debugCode: code,
+        mockMode: true,
       },
       { status: 200 }
     );

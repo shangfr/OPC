@@ -1,7 +1,7 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import Image from "next/image";
-import { memo } from "react";
+import { memo, useCallback, useState } from "react";
 import { chatModels } from "@/lib/ai/models";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -64,6 +64,10 @@ const PurePreviewMessage = ({
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
 
+  // 跟踪打字机动画状态：当流结束后（isLoading=false）但动画仍在播放时，
+  // 保持 TypewriterText 挂载，避免文本一次性全部显示（关闭思考模式时的关键修复）
+  const [isTyping, setIsTyping] = useState(false);
+
   const attachments = attachmentsFromMessage.length > 0 && (
     <div
       className="flex flex-row justify-end gap-2"
@@ -116,9 +120,12 @@ const PurePreviewMessage = ({
 
     if (type === "text") {
       // 最后一条 assistant 消息：使用匀速打字机渲染
-      // 仅在流式输出（isLoading）时启用打字机队列
-      // 历史消息（非流式）和用户消息直接显示全文，避免打字机效果
-      const useTypewriterForThis = isAssistant && isLastAssistant && isLoading;
+      // 在流式输出（isLoading）期间启用打字机队列；
+      // 流结束后若动画仍在播放（isTyping），保持挂载直到动画完成，
+      // 避免关闭思考模式时文本一次性全部显示。
+      // 历史消息（非流式且动画已结束）和用户消息直接显示全文。
+      const useTypewriterForThis =
+        isAssistant && isLastAssistant && (isLoading || isTyping);
 
       if (useTypewriterForThis) {
         return (
@@ -128,6 +135,7 @@ const PurePreviewMessage = ({
             key={key}
             messageId={message.id}
             text={part.text}
+            onTypingChange={setIsTyping}
           />
         );
       }

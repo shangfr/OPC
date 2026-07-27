@@ -128,7 +128,7 @@ function PureSuggestedActions({
         className="grid w-full grid-cols-2 gap-2 sm:gap-3"
         data-testid="suggested-actions"
       >
-        {suggestedActions.map((suggestedAction: any, index: number) => (
+        {suggestedActions.map((suggestedAction: string, index: number) => (
           <motion.div
             animate={{ opacity: 1, y: 0 }}
             className="w-full"
@@ -156,7 +156,7 @@ function PureSuggestedActions({
               }}
               suggestion={suggestedAction}
             >
-              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-cyan-500/10 text-[11px] font-semibold text-cyan-600 transition-colors duration-200 group-hover/suggestion:bg-cyan-500/20 group-hover/suggestion:text-cyan-700 dark:text-cyan-400 dark:group-hover/suggestion:text-cyan-300">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] font-semibold text-primary transition-colors duration-200 group-hover/suggestion:bg-primary/20">
                 {index + 1}
               </span>
               <span className="min-w-0 flex-1">{suggestedAction}</span>

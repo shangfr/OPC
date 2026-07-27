@@ -90,7 +90,7 @@ export function CreatorRevenueView({
     try {
       const apps = await getMyApplicationsAction();
       // 保留 pending（审核中）和 rejected（已驳回，需提示用户）
-      setApplications(apps.filter((a: any) => a.status === "pending" || a.status === "rejected"));
+      setApplications(apps.filter((a) => a.status === "pending" || a.status === "rejected"));
     } catch {
       // 静默忽略
     }

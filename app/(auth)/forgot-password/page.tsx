@@ -1,15 +1,13 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckCircle, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { LoaderIcon } from "@/components/chat/icons";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-// 静态生成：忘记密码页为纯客户端交互，无需动态渲染
-export const dynamic = "force-static";
+import { motion } from "motion/react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -46,9 +44,9 @@ export default function ForgotPasswordPage() {
 
       setSent(true);
 
-      // 仅在开发模式下显示重置链接，避免生产环境泄露
-      if (data.resetLink && process.env.NODE_ENV === "development") {
-        console.log("重置链接:", data.resetLink);
+      // Mock 模式下显示重置链接
+      if (data.resetLink) {
+        toast.info(`重置链接: ${data.resetLink}`, { duration: 15000 });
       }
     } catch {
       setError("网络错误，请稍后重试");
@@ -60,17 +58,24 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <>
-        <h1
-          className="auth-slide-in text-2xl font-semibold tracking-tight text-center"
-          style={{ animationDelay: "0.1s" }}
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-[28px] font-bold tracking-tight text-center"
         >
           邮件已发送
-        </h1>
-        <div
-          className="auth-slide-in mt-4 text-center"
-          style={{ animationDelay: "0.2s" }}
+        </motion.h1>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="mt-6 flex flex-col items-center text-center"
         >
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
+            <CheckCircle className="size-8 text-emerald-500" />
+          </div>
+          <p className="max-w-xs text-sm text-muted-foreground leading-relaxed">
             如果该邮箱已注册，您将收到一封包含重置密码链接的邮件。
           </p>
           <p className="mt-6">
@@ -78,10 +83,11 @@ export default function ForgotPasswordPage() {
               className="text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               href="/login"
             >
+              <ArrowLeftIcon className="mr-1 inline-block size-3" />
               返回登录
             </Link>
           </p>
-        </div>
+        </motion.div>
       </>
     );
   }
@@ -89,53 +95,60 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <h1
-        className="auth-slide-in text-2xl font-semibold tracking-tight text-center"
+        className="auth-slide-in text-[28px] font-bold tracking-tight text-center"
         style={{ animationDelay: "0.1s" }}
       >
         忘记密码
       </h1>
       <p
-        className="auth-slide-in text-sm text-muted-foreground text-center"
+        className="auth-slide-in text-[15px] text-muted-foreground/80 text-center"
         style={{ animationDelay: "0.18s" }}
       >
         输入您的邮箱，我们将发送重置密码的链接
       </p>
-      <div className="auth-slide-in w-full" style={{ animationDelay: "0.28s" }}>
+      <div
+        className="auth-slide-in mt-5 w-full"
+        style={{ animationDelay: "0.28s" }}
+      >
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-2">
-            <Label
-              className="font-normal text-muted-foreground"
-              htmlFor="email"
-            >
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-[13px] font-medium text-foreground/80" htmlFor="email">
               邮箱
             </Label>
-            <Input
-              autoComplete="email"
-              autoFocus
-              id="email"
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              type="email"
-              value={email}
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
+              <Input
+                autoComplete="email"
+                autoFocus
+                className="h-11 pl-10"
+                id="email"
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                type="email"
+                value={email}
+              />
+            </div>
           </div>
 
           {error && (
-            <p className="text-[13px] text-destructive leading-relaxed">{error}</p>
+            <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              <svg className="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              {error}
+            </div>
           )}
 
           <Button
-            className="relative"
+            className="relative h-11"
             disabled={loading}
             type="submit"
+            variant="gradient"
           >
             {loading ? "发送中..." : "发送重置链接"}
-            {loading && (
-              <span className="absolute right-4 animate-spin">
-                <LoaderIcon size={16} />
-              </span>
-            )}
           </Button>
 
           <p className="text-center text-[13px]">

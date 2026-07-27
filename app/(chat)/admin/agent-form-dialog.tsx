@@ -112,11 +112,11 @@ export function AgentFormDialog({
           isDefault: editingAgent.isDefault,
           sortOrder: editingAgent.sortOrder,
           categoryId: editingAgent.categoryId ?? "__none__",
-          visibility: (editingAgent as any).visibility ?? "public", // 兼容旧字段
+          visibility: editingAgent.visibility ?? "public",
         });
         // 读取当前上架状态用于只读展示
         setCurrentListingStatus(
-          (editingAgent as any).listingStatus ?? "private"
+          editingAgent.listingStatus ?? "private"
         );
       } else {
         setForm(emptyForm);

@@ -131,8 +131,8 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
       const result = await getMyApplicationsAction();
       setApplications(
         result
-          .filter((a: any) => a.status === "pending")
-          .map((a: any) => ({ id: a.id, agentId: a.agentId, status: a.status, type: a.type }))
+          .filter((a) => a.status === "pending")
+          .map((a) => ({ id: a.id, agentId: a.agentId, status: a.status, type: a.type }))
       );
     } catch {
       // 静默忽略
@@ -460,24 +460,24 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
                 </button>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="card-grid">
                 {myAgents.map((agent) => {
-                  const avatarChar = getAvatarChar(agent.name);
-                  const ls = (agent as any).listingStatus as string | undefined;
+                  const ls = agent.listingStatus;
                   const lsMeta = listingStatusBadge(ls);
                   return (
                     <div
-                      className={cn(
-                        "group rounded-xl border p-4 transition-all",
-                        agent.isActive
-                          ? "border-border/50 bg-card hover:border-border hover:shadow-sm"
-                          : "border-border/30 bg-muted/20 opacity-60"
-                      )}
                       key={agent.id}
+                      className={cn(
+                        "group relative overflow-hidden rounded-2xl border bg-gradient-to-br from-card to-muted/20 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[var(--shadow-float)]",
+                        agent.isActive
+                          ? "border-border/50"
+                          : "border-border/30 opacity-60"
+                      )}
                     >
+                      {/* 头像 + 名称 + 状态 */}
                       <div className="mb-3 flex items-start gap-3">
                         <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-base font-bold text-primary">
-                          {avatarChar}
+                          {getAvatarChar(agent.name)}
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="truncate text-sm font-semibold">{agent.name}</h3>
@@ -514,17 +514,21 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
                           </div>
                         </div>
                       </div>
+
+                      {/* 描述 */}
                       <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{agent.description}</p>
-                      <div className="flex items-center gap-1.5">
+
+                      {/* 操作按钮 — 统一使用 touch-target，移动端 44px 触控目标 */}
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <button
-                          className="touch-target inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border/50 px-2 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+                          className="touch-target inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border/50 px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
                           onClick={() => handleStartChat(agent)}
                           type="button"
                         >
                           对话
                         </button>
                         <button
-                          className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-2 py-1.5 text-xs transition-colors hover:bg-muted"
+                          className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-3 py-1.5 text-xs transition-colors hover:bg-muted"
                           onClick={() => openEdit(agent)}
                           title="编辑"
                           type="button"
@@ -534,7 +538,7 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
                         {/* 上架/撤回按钮 — 仅对有上架权限的用户显示 */}
                         {canListOpc && ls === "private" && !applications.find((a) => a.agentId === agent.id) && (
                           <button
-                            className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-2 py-1.5 text-xs transition-colors hover:bg-primary/5 hover:text-primary"
+                            className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-3 py-1.5 text-xs transition-colors hover:bg-primary/5 hover:text-primary"
                             disabled={applying === agent.id}
                             onClick={() => handleApplyListing(agent)}
                             title="申请上架"
@@ -545,7 +549,7 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
                         )}
                         {canListOpc && applications.find((a) => a.agentId === agent.id) && (
                           <button
-                            className="touch-target inline-flex items-center justify-center rounded-lg border border-amber-500/30 px-2 py-1.5 text-xs text-amber-600 transition-colors hover:bg-amber-500/5"
+                            className="touch-target inline-flex items-center justify-center rounded-lg border border-amber-500/30 px-3 py-1.5 text-xs text-amber-600 transition-colors hover:bg-amber-500/5"
                             disabled={applying === agent.id}
                             onClick={() => handleWithdrawListing(agent)}
                             title="撤回上架申请"
@@ -555,7 +559,7 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
                           </button>
                         )}
                         <button
-                          className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-2 py-1.5 text-xs transition-colors hover:bg-muted"
+                          className="touch-target inline-flex items-center justify-center rounded-lg border border-border/50 px-3 py-1.5 text-xs transition-colors hover:bg-muted"
                           onClick={() => handleToggleActive(agent)}
                           title={agent.isActive ? "停用" : "启用"}
                           type="button"
@@ -563,7 +567,7 @@ export function AgentCards({ canListOpc = true }: { canListOpc?: boolean }) {
                           {agent.isActive ? <PowerOff className="size-3.5" /> : <Power className="size-3.5" />}
                         </button>
                         <button
-                          className="touch-target inline-flex items-center justify-center rounded-lg border border-destructive/30 px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/5"
+                          className="touch-target inline-flex items-center justify-center rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/5"
                           onClick={() => setDeleteAgent(agent)}
                           title="删除"
                           type="button"

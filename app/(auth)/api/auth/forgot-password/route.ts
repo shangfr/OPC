@@ -6,6 +6,16 @@ const forgotPasswordSchema = z.object({
   email: z.string().email("邮箱格式不正确"),
 });
 
+/**
+ * POST /api/auth/forgot-password
+ *
+ * 忘记密码（Mock 模式）
+ *
+ * Mock 行为：
+ * - 无论邮箱是否存在，都返回成功（防止邮箱枚举）
+ * - 生成重置 token 并返回重置链接给前端
+ * - 不发送真实邮件
+ */
 export async function POST(request: Request) {
   let body: z.infer<typeof forgotPasswordSchema>;
   try {
@@ -17,10 +27,14 @@ export async function POST(request: Request) {
   const users = await getUser(body.email);
 
   // 无论邮箱是否存在，都返回成功（防止邮箱枚举）
-  // 只有已注册的邮箱才会真正生成 token
   if (users.length === 0) {
     return Response.json(
-      { message: "如果该邮箱已注册，您将收到重置密码的链接" },
+      {
+        message: "如果该邮箱已注册，您将收到重置密码的链接",
+        // Mock 模式：即使邮箱不存在也返回一个假的重置链接
+        resetLink: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/reset-password/mock-reset-token`,
+        mockMode: true,
+      },
       { status: 200 }
     );
   }
@@ -35,18 +49,15 @@ export async function POST(request: Request) {
     expiresAt,
   });
 
-  // TODO: 集成邮件服务发送重置链接
-  // 当前开发阶段，将重置链接返回给前端展示
+  // Mock 模式：将重置链接返回给前端展示（不发送邮件）
   const baseUrl = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const resetLink = `${baseUrl}/reset-password/${token}`;
 
-  console.log(`[Password Reset] 重置链接: ${resetLink}`);
-
   return Response.json(
     {
-      message: "如果该邮箱已注册，您将收到重置密码的链接",
-      // 开发环境下返回重置链接，方便测试
-      ...(process.env.NODE_ENV !== "production" ? { resetLink } : {}),
+      message: "重置链接已生成（Mock 模式，未发送邮件）",
+      resetLink,
+      mockMode: true,
     },
     { status: 200 }
   );

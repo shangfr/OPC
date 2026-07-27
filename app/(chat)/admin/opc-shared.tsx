@@ -380,12 +380,13 @@ export function AgentCard({
       </div>
 
       {/* hover 行动栏 — 移动端始终可见，桌面端 hover 显示 */}
-      <div className="flex items-center justify-between opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+      {/* 按钮统一使用 touch-target 类，移动端 44px 触控目标，桌面端紧凑 */}
+      <div className="flex flex-wrap items-center gap-1.5 opacity-100 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
         {admin ? (
           /* 管理操作 */
           <>
             <button
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
+              className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
               disabled={!agent.isActive}
               onClick={(e) => {
                 e.stopPropagation();
@@ -398,7 +399,7 @@ export function AgentCard({
             </button>
             {agent.phone && (
               <a
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
+                className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
                 href={`tel:${agent.phone}`}
                 onClick={(e) => e.stopPropagation()}
                 type="button"
@@ -409,7 +410,7 @@ export function AgentCard({
             )}
             {agent.phone && (
               <a
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
+                className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
                 href={`sms:${agent.phone}?body=${encodeURIComponent(`您好，我是OPC平台用户，想咨询一下关于${agent.name}的事宜。`)}`}
                 onClick={(e) => e.stopPropagation()}
                 type="button"
@@ -418,9 +419,9 @@ export function AgentCard({
                 短信
               </a>
             )}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
+                className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit?.(agent);
@@ -431,7 +432,7 @@ export function AgentCard({
                 编辑
               </button>
               <button
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                className="touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete?.(agent);
@@ -446,13 +447,13 @@ export function AgentCard({
         ) : (
           /* 用户操作 */
           <>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="hidden text-[10px] text-muted-foreground sm:inline">
               点击开始对话
             </span>
-            <div className="flex items-center gap-1">
+            <div className="ml-auto flex items-center gap-1.5">
               {agent.phone && (
                 <a
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
+                  className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
                   href={`tel:${agent.phone}`}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -462,7 +463,7 @@ export function AgentCard({
               )}
               {agent.phone && (
                 <a
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
+                  className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
                   href={`sms:${agent.phone}?body=${encodeURIComponent(`您好，我是OPC平台用户，想咨询一下关于${agent.name}的事宜。`)}`}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -471,7 +472,7 @@ export function AgentCard({
                 </a>
               )}
               <button
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
+                className={`touch-target inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors ${group.soft} ${group.softText} hover:bg-foreground/10 active:bg-foreground/20 cursor-pointer`}
                 onClick={(e) => {
                   e.stopPropagation();
                   onChat?.(agent);

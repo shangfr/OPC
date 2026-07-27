@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { CodeInput } from "@/components/ui/code-input";
 
 interface PhoneAuthFormProps {
   mode: "login" | "register";
@@ -85,12 +86,12 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
         return;
       }
 
-      toast.success("验证码已发送，请查收短信");
+      toast.success("验证码已发送");
       setCountdown(60);
 
-      // 开发模式下显示验证码
+      // Mock 模式下显示验证码
       if (data.debugCode) {
-        toast.info(`开发模式验证码: ${data.debugCode}`, { duration: 10000 });
+        toast.info(`验证码: ${data.debugCode}（Mock 模式）`, { duration: 10000 });
       }
     } catch {
       toast.error("网络错误，请重试");
@@ -108,15 +109,15 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
   return (
     <form action={handleSubmit} className="flex w-full flex-col gap-4">
       {/* 手机号输入 */}
-      <div className="flex flex-col gap-2">
-        <Label className="font-normal text-muted-foreground" htmlFor="phone-input">
+      <div className="flex flex-col gap-1.5">
+        <Label className="text-[13px] font-medium text-foreground/80" htmlFor="phone-input">
           手机号
         </Label>
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
           <Input
             autoComplete="tel"
-            className="pl-10"
+            className="h-11 pl-10"
             id="phone-input"
             inputMode="numeric"
             maxLength={11}
@@ -131,51 +132,42 @@ export function PhoneAuthForm({ mode }: PhoneAuthFormProps) {
         </div>
       </div>
 
-      {/* 验证码输入 + 发送按钮 */}
-      <div className="flex flex-col gap-2">
-        <Label className="font-normal text-muted-foreground" htmlFor="code-input">
-          验证码
-        </Label>
-        <div className="flex gap-2">
-          <Input
-            autoComplete="one-time-code"
-            className="flex-1"
-            id="code-input"
-            inputMode="numeric"
-            maxLength={6}
-            name="code"
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            placeholder="6 位验证码"
-            required
-            type="text"
-            value={code}
-          />
-          <Button
-            variant="outline"
-            className={cn(
-              "h-10 shrink-0 px-3 text-xs font-medium",
-              countdown > 0 || sending
-                ? "border-border/50 text-muted-foreground/50"
-                : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
-            )}
-            disabled={countdown > 0 || sending || phone.length !== 11}
-            onClick={handleSendCode}
+      {/* 验证码输入（6 格独立输入） */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-[13px] font-medium text-foreground/80" htmlFor="code-input">
+            验证码
+          </Label>
+          <button
             type="button"
+            onClick={handleSendCode}
+            disabled={countdown > 0 || sending || phone.length !== 11}
+            className={cn(
+              "text-[13px] font-medium transition-colors",
+              countdown > 0 || sending
+                ? "text-muted-foreground/50"
+                : "text-primary hover:text-primary/80"
+            )}
           >
             {sending ? (
               <Loader2 className="size-4 animate-spin" />
             ) : countdown > 0 ? (
-              `${countdown}s`
+              `${countdown}s 后重发`
             ) : (
               "获取验证码"
             )}
-          </Button>
+          </button>
         </div>
+        <CodeInput
+          value={code}
+          onChange={setCode}
+          disabled={state.status === "in_progress"}
+        />
       </div>
 
       {/* 提交按钮 */}
       <Button
-        className="touch-target mt-2 h-11 w-full text-[15px] font-medium"
+        className="touch-target mt-1 h-11 w-full text-[15px] font-medium"
         disabled={state.status === "in_progress" || phone.length !== 11 || code.length !== 6}
         type="submit"
         variant="gradient"

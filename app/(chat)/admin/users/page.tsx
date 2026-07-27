@@ -15,8 +15,8 @@ export default async function AdminUsersPage() {
   const teamRole = (session?.user?.teamRole as string) ?? null;
   const isEnterpriseAdmin = accountType === "enterprise" && (teamRole === "owner" || teamRole === "admin");
 
-  let users: any[] = [];
-  let pendingEnterprises: any[] = [];
+  let users: Awaited<ReturnType<typeof getAllUsers>> = [];
+  let pendingEnterprises: Awaited<ReturnType<typeof getPendingEnterprises>> = [];
 
   if (isPlatformAdmin) {
     // 平台管理员：查看所有用户 + 待审核企业
@@ -111,10 +111,10 @@ export default async function AdminUsersPage() {
             bannedAt: u.bannedAt?.toISOString() ?? null,
             bannedReason: u.bannedReason,
             createdAt: u.createdAt.toISOString(),
-            planName: (u as any).planName ?? "free",
-            subscriptionStatus: (u as any).subscriptionStatus ?? null,
-            enterpriseName: (u as any).enterpriseName ?? null,
-            enterpriseVerifyStatus: (u as any).enterpriseVerifyStatus ?? null,
+            planName: u.planName ?? "free",
+            subscriptionStatus: u.subscriptionStatus ?? null,
+            enterpriseName: u.enterpriseName ?? null,
+            enterpriseVerifyStatus: u.enterpriseVerifyStatus ?? null,
           }))}
         />
       )}

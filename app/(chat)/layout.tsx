@@ -42,7 +42,7 @@ async function SidebarShell({ children }: { children: React.ReactNode }) {
     >
       <HeaderActionsProvider>
         <ChatProvider>
-          <AppSidebar isAdmin={isAdminUser} user={session?.user as any} />
+          <AppSidebar isAdmin={isAdminUser} user={session?.user} />
           
           {/* 修复点 2: SidebarInset 设为 flex flex-col，使其成为垂直布局容器 */}
           <SidebarInset className="flex flex-col h-full overflow-hidden">

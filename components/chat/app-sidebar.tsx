@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { User } from "next-auth";
 import { useState } from "react";
@@ -98,7 +99,14 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                 {/* 折叠时的 Logo 图标 — 增加品牌色光环 */}
                 <SidebarMenuButton asChild className="size-8 shrink-0 items-center justify-center rounded-lg !p-0 ring-1 ring-primary/10 transition-all duration-200 group-data-[collapsible=icon]:group-hover/logo:opacity-0 hover:ring-primary/30 group-data-[collapsible=icon]:group-hover/logo:ring-primary/0" tooltip="OPC Bot" >
                   <Link href="/" onClick={() => setOpenMobile(false)}>
-                    <img alt="OPC Bot" className="size-8 rounded-lg object-cover" src="/logo.jpg" />
+                    <Image
+                      alt="OPC Bot"
+                      className="size-8 rounded-lg object-cover"
+                      height={32}
+                      src="/logo.jpg"
+                      width={32}
+                      sizes="32px"
+                    />
                   </Link>
                 </SidebarMenuButton>
 
