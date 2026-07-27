@@ -118,6 +118,13 @@ export async function POST(request: Request) {
     const clientIp = getClientIp(request);
     await checkIpRateLimit(clientIp);
 
+    // 在流式响应开始前捕获时间戳，确保用户消息的 createdAt
+    // 早于 AI 回复消息的 createdAt（onFinish 中设置）。
+    // 若在 after() 回调中才 new Date()，此时流可能已结束，
+    // 用户消息时间戳反而晚于 AI 回复，刷新后按 createdAt 排序时
+    // 会出现"回答在提问之前"的顺序错乱。
+    const userMessageCreatedAt = new Date();
+
     const [session, chat, agentRecord] = await Promise.all([
       auth(),
       isNewChat ? Promise.resolve(null) : getChatById({ id }),
@@ -365,6 +372,8 @@ export async function POST(request: Request) {
     if (message?.role === "user") {
       // 使用 after() 在响应返回后异步保存用户消息
       // 避免阻塞流式响应的首字输出
+      // createdAt 使用请求开始时捕获的 userMessageCreatedAt，
+      // 确保用户消息时间戳早于 AI 回复（onFinish 中设置）
       after(async () => {
         try {
           await saveMessages({
@@ -375,7 +384,7 @@ export async function POST(request: Request) {
                 role: "user",
                 parts: message.parts,
                 attachments: [],
-                createdAt: new Date(),
+                createdAt: userMessageCreatedAt,
               },
             ],
           });
@@ -421,19 +430,51 @@ export async function POST(request: Request) {
             messages: modelMessages,
             stopWhen: stepCountIs(5),
             experimental_activeTools: finalActiveTools,
-            providerOptions: {
+            providerOptions: (() => {
               // 思考模式开关：thinkingEnabled 控制是否启用推理/思考
-              // - 智谱 GLM thinking 模型：通过 thinking 参数控制
-              // - DeepSeek：通过 reasoning_effort 控制
-              // - OpenAI 兼容：通过 reasoningEffort 控制
-              ...(isReasoningModel && {
-                openai: {
-                  reasoningEffort: thinkingEnabled
-                    ? (modelConfig?.reasoningEffort ?? "medium")
-                    : "none",
-                },
-              }),
-            },
+              //
+              // ⚠️ @ai-sdk/openai-compatible 参数传递机制：
+              // 1. schema 字段（reasoningEffort / textVerbosity 等）：
+              //    通过 parseProviderOptions 从 openaiCompatible / {providerName} / {camelCaseName}
+              //    三个 key 解析，然后映射为请求体字段（reasoningEffort → reasoning_effort）
+              // 2. 非 schema 字段（如 thinking）：
+              //    只通过 providerOptions[{providerName}] 和 providerOptions[{camelCaseName}] 透传，
+              //    不读 openaiCompatible key！
+              //
+              // reasoning_effort 各厂商支持的值：
+              // - DeepSeek: high / low / medium / max / xhigh（不支持 minimal/none）
+              // - 智谱 GLM: 通过 thinking 参数控制开关，reasoning_effort 控制强度
+              //
+              // 因此：
+              // - reasoningEffort 放在 openaiCompatible 下（会被 parseProviderOptions 提取）
+              // - thinking 放在 {providerName} 下（如 zhipu，会被透传到请求体）
+              if (!isReasoningModel) return undefined;
+
+              const providerName = modelConfig?.provider;
+              const opts: Record<string, unknown> = {};
+
+              // 所有推理模型：通过 reasoningEffort 控制思考强度
+              // （parseProviderOptions 会从 openaiCompatible 提取，映射为 reasoning_effort）
+              // 关闭思考时用 "low"（DeepSeek 支持的最低值，"minimal"/"none" 会报 400）
+              opts.openaiCompatible = {
+                reasoningEffort: thinkingEnabled
+                  ? (modelConfig?.reasoningEffort ?? "medium")
+                  : "low",
+              };
+
+              if (providerName === "zhipuai") {
+                // 智谱 GLM：额外通过 thinking 参数控制开关
+                // thinking 是非 schema 字段，必须放在 {providerName} 下才能透传到请求体
+                // provider name 是 "zhipu"（见 config.ts providers.zhipuai.name）
+                opts.zhipu = {
+                  thinking: thinkingEnabled
+                    ? { type: "enabled" }
+                    : { type: "disabled" },
+                };
+              }
+
+              return opts as never;
+            })(),
             tools,
             experimental_telemetry: { isEnabled: isProductionEnvironment, functionId: "stream-text" },
           }),
@@ -447,45 +488,22 @@ export async function POST(request: Request) {
         );
 
         // 推理模型（如 DeepSeek）会先输出 reasoning_content（思考过程），
-        // 再输出 content（正文）。若 sendReasoning 为 false，reasoning-delta
-        // 会被 toUIMessageStream 过滤掉，但 reasoning-start / reasoning-end
-        // 仍然转发，导致前端创建一个空的 reasoning part。
+        // 再输出 content（正文）。
         //
-        // 这个空 reasoning part 会导致：
-        // 1. 思考阶段前端 hasVisibleContent=false，显示骨架屏而非打字机
-        // 2. 思考阶段结束后文本一次性到达，打字机来不及渲染
+        // ⚠️ 重要修复：始终发送 reasoning（sendReasoning: true）。
+        // 原因：当 sendReasoning 为 false 时，toUIMessageStream 会过滤 reasoning-delta，
+        // 但在某些 @ai-sdk/openai-compatible 版本中，这会导致后续的 text-delta 也无法
+        // 正常推送到前端，表现为"关闭思考模式后前端什么都看不到"。
         //
-        // 修复：关闭思考模式时，额外过滤掉 reasoning-start / reasoning-end，
-        // 确保前端不创建空 reasoning part，文本流直接进入 text part。
-        const uiMessageStream: Parameters<typeof dataStream.merge>[0] =
-          result.toUIMessageStream({
-            sendReasoning: isReasoningModel && thinkingEnabled,
-          });
-
-        if (isReasoningModel && !thinkingEnabled) {
-          // 过滤掉所有 reasoning 事件，避免前端创建空 reasoning part
-          const filteredStream = uiMessageStream.pipeThrough(
-            new TransformStream({
-              transform(chunk, controller) {
-                const type = (chunk as { type?: string }).type;
-                if (
-                  type === "reasoning-start" ||
-                  type === "reasoning-delta" ||
-                  type === "reasoning-end"
-                ) {
-                  return;
-                }
-                controller.enqueue(chunk);
-              },
-            }),
-          );
-          // pipeThrough 会丢失泛型信息，需断言为 merge 期望的类型
-          dataStream.merge(
-            filteredStream as Parameters<typeof dataStream.merge>[0],
-          );
-        } else {
-          dataStream.merge(uiMessageStream);
-        }
+        // 修复策略：
+        // 1. 始终 sendReasoning: true —— 保证 content（正文）能正常流式输出
+        // 2. thinkingEnabled 为 false 时，在 onFinish 中过滤掉 reasoning parts，
+        //    不写入数据库 —— 刷新后不显示思考过程
+        // 3. 前端 MessageReasoning 组件默认折叠 —— 流式过程中即使收到 reasoning
+        //    也只显示折叠的"思考"条，不影响正文阅读
+        dataStream.merge(
+          result.toUIMessageStream({ sendReasoning: isReasoningModel }),
+        );
 
         if (titlePromise) {
           try {
@@ -502,19 +520,28 @@ export async function POST(request: Request) {
       },
       generateId: generateUUID,
       onFinish: async ({ messages: finishedMessages }) => {
+        // 思考模式关闭时，过滤掉 reasoning parts，不写入数据库。
+        // 这样刷新页面后不会显示思考过程，保持与流式阶段一致的体验。
+        // （流式阶段 reasoning 已通过 sendReasoning: true 发送到前端，
+        //  但 MessageReasoning 组件默认折叠，用户不会看到。）
+        const partsToSave = (parts: any[]) =>
+          thinkingEnabled
+            ? parts
+            : parts.filter((p) => p.type !== "reasoning");
+
         if (isToolApprovalFlow) {
           for (const finishedMsg of finishedMessages) {
             const existingMsg = uiMessages.find((m) => m.id === finishedMsg.id);
             if (existingMsg) {
-              await updateMessage({ id: finishedMsg.id, parts: finishedMsg.parts });
+              await updateMessage({ id: finishedMsg.id, parts: partsToSave(finishedMsg.parts) });
             } else {
-              await saveMessages({ messages: [{ id: finishedMsg.id, role: finishedMsg.role, parts: finishedMsg.parts, createdAt: new Date(), attachments: [], chatId: id }] });
+              await saveMessages({ messages: [{ id: finishedMsg.id, role: finishedMsg.role, parts: partsToSave(finishedMsg.parts), createdAt: new Date(), attachments: [], chatId: id }] });
             }
           }
         } else if (finishedMessages.length > 0) {
           await saveMessages({
             messages: finishedMessages.map((currentMessage) => ({
-              id: currentMessage.id, role: currentMessage.role, parts: currentMessage.parts, createdAt: new Date(), attachments: [], chatId: id,
+              id: currentMessage.id, role: currentMessage.role, parts: partsToSave(currentMessage.parts), createdAt: new Date(), attachments: [], chatId: id,
             })),
           });
         }

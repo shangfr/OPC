@@ -74,7 +74,7 @@ export default function Page() {
 
   const handleSocialRegister = (provider: string) => {
     toast({
-      type: "info",
+      type: "error",
       description: `${provider}注册暂未接入，请使用手机号或邮箱注册`,
     });
   };
@@ -96,18 +96,18 @@ export default function Page() {
         免费注册，立即体验
       </p>
 
-      {/* 注册方式切换 Tab — 使用 shadcn Tabs 组件 */}
+      {/* 注册方式切换 Tab — 使用 default 变体（胶囊式），激活态有明显背景，视觉差异强 */}
       <Tabs
         value={authMode}
         onValueChange={(v) => setAuthMode(v as "email" | "phone")}
         className="auth-slide-in mt-5 w-full"
         style={{ animationDelay: "0.24s" } as React.CSSProperties}
       >
-        <TabsList variant="line" className="w-full">
-          <TabsTrigger value="phone" className="flex-1">
+        <TabsList className="h-10 w-full">
+          <TabsTrigger value="phone" className="flex-1 text-sm">
             手机号注册
           </TabsTrigger>
-          <TabsTrigger value="email" className="flex-1">
+          <TabsTrigger value="email" className="flex-1 text-sm">
             邮箱注册
           </TabsTrigger>
         </TabsList>
