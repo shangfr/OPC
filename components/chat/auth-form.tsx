@@ -27,7 +27,7 @@ export function AuthForm({
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <Form action={action} className="flex w-full flex-col gap-4">
+    <Form action={action} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <Label className="text-[13px] font-medium text-foreground/80" htmlFor="email">
           邮箱

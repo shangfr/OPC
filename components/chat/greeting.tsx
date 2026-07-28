@@ -51,7 +51,6 @@ export const Greeting = ({
           width={64}
           sizes="64px"
           priority
-          unoptimized
         />
       </motion.div>
 

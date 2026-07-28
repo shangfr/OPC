@@ -106,7 +106,6 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                       src="/logo.jpg"
                       width={32}
                       sizes="32px"
-                      unoptimized
                     />
                   </Link>
                 </SidebarMenuButton>

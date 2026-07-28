@@ -15,11 +15,6 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
-      // 同时设置 data-horizontal / data-vertical 布尔属性，
-      // 让 Tailwind v4 的 data-horizontal: / group-data-horizontal/tabs: 等变体生效。
-      // （v4 默认 data-{name}: 匹配 [data-{name}] 属性存在性，
-      //  而非 [data-orientation="horizontal"]，需额外设置属性才能匹配）
-      {...(orientation === "horizontal" ? { "data-horizontal": "" } : { "data-vertical": "" })}
       className={cn(
         "group/tabs flex gap-2 data-horizontal:flex-col",
         className

@@ -127,7 +127,6 @@ export function MobileHome({ modelName = "GLM-4.1V", userName }: MobileHomeProps
               width={64}
               sizes="64px"
               priority
-              unoptimized
             />
           </div>
           <p className="mb-1 text-sm text-muted-foreground">

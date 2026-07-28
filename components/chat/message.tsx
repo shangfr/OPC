@@ -38,7 +38,6 @@ type PreviewMessageProps = {
   onEdit?: (message: ChatMessage) => void;
   selectedModelId: string;
   isLastAssistant?: boolean;
-  thinkingEnabled: boolean;
 };
 
 const PurePreviewMessage = ({
@@ -54,7 +53,6 @@ const PurePreviewMessage = ({
   onEdit,
   selectedModelId,
   isLastAssistant,
-  thinkingEnabled,
 }: PreviewMessageProps) => {
   const currentModel = chatModels.find((m) => m.id === selectedModelId);
   const attachmentsFromMessage = message.parts.filter(
@@ -107,12 +105,6 @@ const PurePreviewMessage = ({
     const key = `message-${message.id}-part-${index}`;
 
     if (type === "reasoning") {
-      // 思考模式关闭时，流式阶段不渲染 reasoning 部分。
-      // 历史消息（非流式）的 reasoning 已在 onFinish 中过滤，不会进入此处。
-      // 这样关闭思考模式后，前端既看不到流式思考过程，刷新后也不显示。
-      if (isLoading && !thinkingEnabled) {
-        return null;
-      }
       if (!mergedReasoning.rendered && mergedReasoning.text) {
         mergedReasoning.rendered = true;
         return (
@@ -492,8 +484,7 @@ const areEqual = (prev: PreviewMessageProps, next: PreviewMessageProps) => {
     prev.isLoading === next.isLoading &&
     prev.isReadonly === next.isReadonly &&
     prev.isLastAssistant === next.isLastAssistant &&
-    prev.selectedModelId === next.selectedModelId &&
-    prev.thinkingEnabled === next.thinkingEnabled
+    prev.selectedModelId === next.selectedModelId
   );
 };
 

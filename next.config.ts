@@ -47,42 +47,14 @@ const nextConfig: NextConfig = {
     incomingRequests: false,
   },
   images: {
-    /**
-     * 远程图片优化白名单。
-     *
-     * 项目已从 Vercel Blob 迁移到阿里云 OSS，移除了原有的
-     * avatar.vercel.sh / *.public.blob.vercel-storage.com 配置。
-     *
-     * 当前支持的图片来源：
-     * 1. 阿里云 OSS 默认域名 *.aliyuncs.com（如 oss-cn-hangzhou.aliyuncs.com）
-     * 2. OSS 自定义域名 / CDN（通过 OSS_PUBLIC_DOMAIN 环境变量配置，构建时读取）
-     */
     remotePatterns: [
-      // 阿里云 OSS 默认域名：https://{bucket}.{region}.aliyuncs.com/{key}
+      {
+        hostname: "avatar.vercel.sh",
+      },
       {
         protocol: "https",
-        hostname: "*.aliyuncs.com",
+        hostname: "*.public.blob.vercel-storage.com",
       },
-      // OSS 自定义域名 / CDN（如配置了 OSS_PUBLIC_DOMAIN 环境变量）
-      ...(process.env.OSS_PUBLIC_DOMAIN
-        ? (() => {
-            try {
-              const url = new URL(process.env.OSS_PUBLIC_DOMAIN!);
-              return [
-                {
-                  protocol: url.protocol.replace(
-                    ":",
-                    "",
-                  ) as "http" | "https",
-                  hostname: url.hostname,
-                  ...(url.port ? { port: url.port } : {}),
-                },
-              ];
-            } catch {
-              return [];
-            }
-          })()
-        : []),
     ],
   },
   // 允许的开发来源：通过环境变量 ALLOWED_DEV_ORIGINS 配置（逗号分隔），
