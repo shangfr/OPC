@@ -563,6 +563,14 @@ svg {
   text-overflow: ellipsis;
 }
 
+
+/* 折叠时图标容器填满按钮内容区 */
+[data-collapsible="icon"] [data-slot="sidebar-menu-button"] > span:first-child {
+  width: 100%;
+  height: 100%;
+}
+
+
 /* ===== 移动端专用优化（< 640px）===== */
 @media (max-width: 640px) {
   /* 移动端输入框字体不小于 16px，防止 iOS 自动缩放 */
