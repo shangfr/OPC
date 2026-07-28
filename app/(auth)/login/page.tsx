@@ -76,17 +76,17 @@ export default function Page() {
         登录您的账号以继续
       </p>
 
-      {/* 登录方式切换 Tab — 使用 shadcn Tabs 组件，line 变体 */}
+      {/* 登录方式切换 Tab — 使用 default 变体（胶囊式），激活态有明显背景 */}
       <Tabs
         value={authMode}
         onValueChange={(v) => setAuthMode(v as "email" | "phone")}
         className="auth-slide-in mt-5 w-full"
       >
-        <TabsList variant="line" className="w-full">
-          <TabsTrigger value="phone" className="flex-1">
+        <TabsList className="h-10 w-full">
+          <TabsTrigger value="phone" className="flex-1 text-sm">
             手机号登录
           </TabsTrigger>
-          <TabsTrigger value="email" className="flex-1">
+          <TabsTrigger value="email" className="flex-1 text-sm">
             邮箱登录
           </TabsTrigger>
         </TabsList>

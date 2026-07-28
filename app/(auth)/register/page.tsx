@@ -74,7 +74,7 @@ export default function Page() {
 
   const handleSocialRegister = (provider: string) => {
     toast({
-      type: "info",
+      type: "error",
       description: `${provider}注册暂未接入，请使用手机号或邮箱注册`,
     });
   };
@@ -96,18 +96,18 @@ export default function Page() {
         免费注册，立即体验
       </p>
 
-      {/* 注册方式切换 Tab — 使用 shadcn Tabs 组件 */}
+      {/* 注册方式切换 Tab — 使用 default 变体（胶囊式），激活态有明显背景 */}
       <Tabs
         value={authMode}
         onValueChange={(v) => setAuthMode(v as "email" | "phone")}
         className="auth-slide-in mt-5 w-full"
         style={{ animationDelay: "0.24s" } as React.CSSProperties}
       >
-        <TabsList variant="line" className="w-full">
-          <TabsTrigger value="phone" className="flex-1">
+        <TabsList className="h-10 w-full">
+          <TabsTrigger value="phone" className="flex-1 text-sm">
             手机号注册
           </TabsTrigger>
-          <TabsTrigger value="email" className="flex-1">
+          <TabsTrigger value="email" className="flex-1 text-sm">
             邮箱注册
           </TabsTrigger>
         </TabsList>
@@ -211,46 +211,42 @@ export default function Page() {
           </AuthForm>
         </TabsContent>
       </Tabs>
-
       {/* 第三方注册（Mock） */}
-      <div
-        className="auth-slide-in mt-6"
-        style={{ animationDelay: "0.32s" }}
-      >
+      <div className="auth-slide-in mt-6" style={{ animationDelay: "0.32s" }}>
         <div className="relative mb-4">
           <div className="absolute inset-0 flex items-center">
             <Separator className="w-full" />
           </div>
           <div className="relative flex justify-center text-[11px]">
-            <span className="bg-background px-3 text-muted-foreground">
-              其他注册方式
-            </span>
+            <span className="bg-background px-3 text-muted-foreground"> 其他注册方式 </span>
           </div>
         </div>
-
-        <div className="flex flex-col gap-2">
+        {/* 1. 改为 flex-row 横向排列，并居中 */}
+        <div className="flex flex-row justify-center gap-3">
+          {/* 2. 移除 w-full，改用 size-10 固定正方形，移除文字 */}
           <button
             type="button"
             onClick={() => handleSocialRegister("微信")}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-[#07c160]/30 bg-background text-sm font-medium transition-colors hover:border-[#07c160] hover:bg-[#07c160]/5"
+            className="flex size-10 items-center justify-center rounded-lg border border-[#07c160]/30 bg-background transition-colors hover:border-[#07c160] hover:bg-[#07c160]/5"
             aria-label="微信注册"
           >
-            <svg className="size-4 text-[#07c160]" viewBox="0 0 24 24" fill="currentColor">
+            {/* 3. 图标稍微放大一点 size-4 -> size-5，视觉更协调 */}
+            <svg className="size-5 text-[#07c160]" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8.691 2C4.768 2 1.5 4.85 1.5 8.34c0 2.02 1.05 3.81 2.68 5.02L3.5 16l2.66-1.42c.81.23 1.66.36 2.53.36.26 0 .51-.01.76-.04-.16-.53-.25-1.09-.25-1.67 0-3.5 3.27-6.34 7.3-6.34.26 0 .51.01.76.04C16.78 3.87 13.1 2 8.691 2zm-2.6 4.2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm5.2 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm4.91 4.5c-3.58 0-6.5 2.57-6.5 5.75 0 3.18 2.92 5.75 6.5 5.75.68 0 1.34-.1 1.96-.27L21.5 23l-.5-1.85c1.5-1.06 2.5-2.69 2.5-4.52 0-3.18-2.92-5.75-6.5-5.75zm-2.5 3.5c.41 0 .75.34.75.75s-.34.75-.75.75-.75-.34-.75-.75.34-.75.75-.75zm5 0c.41 0 .75.34.75.75s-.34.75-.75.75-.75-.34-.75-.75.34-.75.75-.75z"/>
             </svg>
-            微信注册
           </button>
           <button
             type="button"
             onClick={() => handleSocialRegister("GitHub")}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background text-sm font-medium transition-colors hover:border-foreground/30 hover:bg-muted"
+            className="flex size-10 items-center justify-center rounded-lg border border-border bg-background transition-colors hover:border-foreground/30 hover:bg-muted"
             aria-label="GitHub 注册"
           >
-            <Github className="size-4 text-foreground" />
-            GitHub 注册
+            <Github className="size-5 text-foreground" />
           </button>
         </div>
       </div>
+
+
     </>
   );
 }

@@ -49,12 +49,25 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        hostname: "avatar.vercel.sh",
-      },
-      {
         protocol: "https",
-        hostname: "*.public.blob.vercel-storage.com",
+        hostname: "*.aliyuncs.com",
       },
+      ...(process.env.OSS_PUBLIC_DOMAIN
+        ? (() => {
+            try {
+              const url = new URL(process.env.OSS_PUBLIC_DOMAIN!);
+              return [
+                {
+                  protocol: url.protocol.replace(":", "") as "http" | "https",
+                  hostname: url.hostname,
+                  ...(url.port ? { port: url.port } : {}),
+                },
+              ];
+            } catch {
+              return [];
+            }
+          })()
+        : []),
     ],
   },
   // 允许的开发来源：通过环境变量 ALLOWED_DEV_ORIGINS 配置（逗号分隔），

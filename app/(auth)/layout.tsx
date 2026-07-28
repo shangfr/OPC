@@ -45,9 +45,9 @@ export default function AuthLayout({
 
         {/* 表单内容居中 */}
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6">
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col gap-2">
             {/* Logo + 光环 */}
-            <div className="auth-slide-in relative mb-2">
+            <div className="auth-slide-in relative mb-2 self-center">
               <div className="auth-pulse-glow absolute -inset-3 rounded-2xl bg-blue-500/8 blur-md" />
               <Image
                 alt="OPC Bot"
@@ -57,6 +57,7 @@ export default function AuthLayout({
                 width={56}
                 sizes="56px"
                 priority
+                unoptimized
               />
             </div>
             {children}

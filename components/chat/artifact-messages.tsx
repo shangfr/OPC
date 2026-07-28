@@ -20,6 +20,7 @@ type ArtifactMessagesProps = {
   isReadonly: boolean;
   artifactStatus: UIArtifact["status"];
   selectedModelId: string;
+  thinkingEnabled: boolean;
 };
 
 function PureArtifactMessages({
@@ -32,6 +33,7 @@ function PureArtifactMessages({
   regenerate,
   isReadonly,
   selectedModelId,
+  thinkingEnabled,
 }: ArtifactMessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -62,6 +64,7 @@ function PureArtifactMessages({
           }
           selectedModelId={selectedModelId}
           setMessages={setMessages}
+          thinkingEnabled={thinkingEnabled}
           vote={
             votes
               ? votes.find((vote) => vote.messageId === message.id)
@@ -97,6 +100,7 @@ function PureArtifactMessages({
               requiresScrollPadding={false}
               selectedModelId={selectedModelId}
               setMessages={setMessages}
+              thinkingEnabled={thinkingEnabled}
               vote={undefined}
             />
           )}
@@ -130,6 +134,9 @@ function areEqual(
     return false;
   }
   if (!equal(prevProps.votes, nextProps.votes)) {
+    return false;
+  }
+  if (prevProps.thinkingEnabled !== nextProps.thinkingEnabled) {
     return false;
   }
 

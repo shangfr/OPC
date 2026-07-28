@@ -88,32 +88,33 @@ export default async function MarketplacePage({
           </div>
         </div>
       )}
-
       {/* 分类筛选 */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link
-          href={`/marketplace${params.search ? `?search=${encodeURIComponent(params.search)}` : ""}`}
-          className={`touch-target rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-            !params.categoryId
-              ? "border-primary bg-primary text-primary-foreground shadow-sm"
-              : "border-border bg-background text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+      <div className="mb-6 flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <Link 
+          href={`/marketplace${params.search ? `?search=${encodeURIComponent(params.search)}` : ""}`} 
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all sm:px-3.5 ${
+            !params.categoryId 
+              ? "bg-primary text-primary-foreground shadow-sm" 
+              : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
           }`}
         >
           全部
         </Link>
+        
         {categories.map((cat) => {
           const active = params.categoryId === cat.id;
-          const href = active
-            ? `/marketplace${params.search ? `?search=${encodeURIComponent(params.search)}` : ""}`
+          const href = active 
+            ? `/marketplace${params.search ? `?search=${encodeURIComponent(params.search)}` : ""}` 
             : `/marketplace?categoryId=${cat.id}${params.search ? `&search=${encodeURIComponent(params.search)}` : ""}`;
+          
           return (
-            <Link
-              key={cat.id}
-              href={href}
-              className={`touch-target rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                active
-                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                  : "border-border bg-background text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+            <Link 
+              key={cat.id} 
+              href={href} 
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all sm:px-3.5 ${
+                active 
+                  ? "bg-primary text-primary-foreground shadow-sm" 
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               {cat.name}
@@ -121,6 +122,7 @@ export default async function MarketplacePage({
           );
         })}
       </div>
+
 
       {/* 搜索 */}
       <form className="mb-6 flex gap-2">

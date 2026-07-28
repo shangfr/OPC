@@ -31,6 +31,7 @@ function PureMessages({
     isReadonly,
     isLoading,
     currentModelId: selectedModelId,
+    thinkingEnabled,
   } = useActiveChat();
   const { addToolApprovalResponse, setMessages, regenerate } = useActiveChat();
   const {
@@ -150,6 +151,7 @@ function PureMessages({
                           }
                           selectedModelId={selectedModelId}
                           setMessages={setMessages}
+                          thinkingEnabled={thinkingEnabled}
                           vote={
                             votes
                               ? votes.find(
@@ -198,6 +200,7 @@ function PureMessages({
                           requiresScrollPadding={false}
                           selectedModelId={selectedModelId}
                           setMessages={setMessages}
+                          thinkingEnabled={thinkingEnabled}
                           vote={undefined}
                         />
                       </div>
@@ -246,6 +249,7 @@ function PureMessages({
                   }
                   selectedModelId={selectedModelId}
                   setMessages={setMessages}
+                  thinkingEnabled={thinkingEnabled}
                   vote={
                     votes
                       ? votes.find((vote) => vote.messageId === message.id)
@@ -275,6 +279,7 @@ function PureMessages({
                     requiresScrollPadding={false}
                     selectedModelId={selectedModelId}
                     setMessages={setMessages}
+                    thinkingEnabled={thinkingEnabled}
                     vote={undefined}
                   />
                 )}

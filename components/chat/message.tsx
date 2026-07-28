@@ -38,6 +38,7 @@ type PreviewMessageProps = {
   onEdit?: (message: ChatMessage) => void;
   selectedModelId: string;
   isLastAssistant?: boolean;
+  thinkingEnabled: boolean;
 };
 
 const PurePreviewMessage = ({
@@ -53,6 +54,7 @@ const PurePreviewMessage = ({
   onEdit,
   selectedModelId,
   isLastAssistant,
+  thinkingEnabled,
 }: PreviewMessageProps) => {
   const currentModel = chatModels.find((m) => m.id === selectedModelId);
   const attachmentsFromMessage = message.parts.filter(
@@ -105,6 +107,11 @@ const PurePreviewMessage = ({
     const key = `message-${message.id}-part-${index}`;
 
     if (type === "reasoning") {
+      // 思考模式关闭时，流式阶段不渲染 reasoning 部分。
+      // 历史消息（非流式）的 reasoning 已在 onFinish 中过滤，不会进入此处。
+      if (isLoading && !thinkingEnabled) {
+        return null;
+      }
       if (!mergedReasoning.rendered && mergedReasoning.text) {
         mergedReasoning.rendered = true;
         return (
@@ -362,11 +369,19 @@ const PurePreviewMessage = ({
 
   // 流式输出时，判断是否还没有任何可见内容（text / reasoning / tool）
   // 此时显示 Skeleton 占位，但保持外层 DOM 结构与真实消息一致，避免切换闪烁
+  //
+  // 关闭思考模式时，不将 reasoning 计入可见内容：
+  // - 即使后端 sendReasoning: true 转发了 reasoning 事件，前端也不渲染 reasoning part
+  // - 若将 reasoning 计入 hasVisibleContent，会导致 showSkeleton=false，
+  //   TypewriterText 提前挂载但 text 为空，出现"光标闪烁但无内容"的现象
+  // - 关闭思考时应等到 text part 有内容才取消骨架屏
   const hasVisibleContent = message.parts?.some((part) => {
     if (part.type === "text") {
       return (part as { text?: string }).text?.trim();
     }
     if (part.type === "reasoning") {
+      // 关闭思考时不将 reasoning 计入可见内容
+      if (!thinkingEnabled) return false;
       return (part as { text?: string }).text?.trim();
     }
     // 动态工具（webSearch / codeInterpreter / generateImage 等）类型为 "dynamic-tool"
@@ -484,7 +499,8 @@ const areEqual = (prev: PreviewMessageProps, next: PreviewMessageProps) => {
     prev.isLoading === next.isLoading &&
     prev.isReadonly === next.isReadonly &&
     prev.isLastAssistant === next.isLastAssistant &&
-    prev.selectedModelId === next.selectedModelId
+    prev.selectedModelId === next.selectedModelId &&
+    prev.thinkingEnabled === next.thinkingEnabled
   );
 };
 
