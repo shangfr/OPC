@@ -179,9 +179,11 @@ export const ModelSelectorLogo = ({
   className,
   ...props
 }: ModelSelectorLogoProps) => {
-  const localLogos: Record<string, string> = {
-    "glm-4.7-flash": "/images/glm-4.7-flash.svg",
-  };
+	const localLogos: Record<string, string> = {
+	  deepseek: "/images/models/deepseek.svg",
+	  zhipuai: "/images/models/zhipuai.svg",
+	};
+
 
   const src = localLogos[provider] ?? `https://models.dev/logos/${provider}.svg`;
 
