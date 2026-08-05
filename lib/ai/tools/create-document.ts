@@ -20,10 +20,14 @@ export const createDocument = ({
   dataStream,
   modelId,
   chatId,
-}: CreateDocumentProps) =>
-  tool({
+}: CreateDocumentProps) => {
+  // 防重入守卫：streamText 多步调用中，LLM 可能重复调用 createDocument
+  // 导致生成 2-3 个重复文档。用闭包标志确保一轮只创建一次。
+  let hasCreated = false;
+
+  return tool({
     description:
-      "创建文档/网页/代码/表格并显示在侧边面板。kind: 'html'=网页, 'code'=代码, 'text'=文档, 'sheet'=表格。一次包含全部内容，不要先创建再编辑。",
+      "创建文档/网页/代码/表格并显示在侧边面板。kind: 'html'=网页, 'code'=代码, 'text'=文档, 'sheet'=表格。一次包含全部内容，不要先创建再编辑。一轮对话中只能调用一次，重复调用将被拒绝。",
     inputSchema: z.object({
       title: z.string().describe("The title of the artifact"),
       kind: z
@@ -33,6 +37,14 @@ export const createDocument = ({
         ),
     }),
     execute: async ({ title, kind }) => {
+      if (hasCreated) {
+        return {
+          error:
+            "已创建过文档，请勿重复调用 createDocument。如需修改已有文档，请使用 editDocument（局部修改）或 updateDocument（全量重写）。",
+        };
+      }
+      hasCreated = true;
+
       const id = generateUUID();
 
       dataStream.write({
@@ -93,3 +105,4 @@ export const createDocument = ({
       };
     },
   });
+};

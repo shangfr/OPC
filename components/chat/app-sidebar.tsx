@@ -359,6 +359,20 @@ export function AppSidebar({ user, isAdmin }: { user: SidebarUser | undefined; i
                   </SidebarMenuItem>
                   )}
 
+                  {/* 工单审核 — 仅平台管理员 */}
+                  {isAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname?.startsWith("/admin/tickets")} className="h-9 gap-2.5 rounded-lg text-[15px] text-sidebar-foreground/65 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-foreground data-[active=true]:font-medium" tooltip="工单审核" >
+                      <Link href="/admin/tickets" onClick={() => setOpenMobile(false)}>
+                        <span className="flex size-7 items-center justify-center rounded-md bg-orange-500/10">
+                          <ClipboardList className="size-4 text-orange-500" />
+                        </span>
+                        <span>工单审核</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  )}
+
                   {/* 订单流水 — 仅平台管理员 */}
                   {isAdmin && (
                   <SidebarMenuItem>

@@ -1,15 +1,19 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/app/(auth)/auth";
-import { TicketCards } from "./ticket-cards";
+import { TicketManager } from "./ticket-manager";
 
-export default async function TicketsPage() {
+/**
+ * /admin/tickets 页面（工单管理后台）
+ *
+ * 仅平台管理员可访问（由 proxy.ts 中间件拦截）。
+ * 渲染 TicketManager：含审核队列、看板视图、统计面板。
+ */
+export default async function AdminTicketsPage() {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  // 恢复为 TicketCards 视图：所有登录用户均通过卡片视图浏览/发布供需信息
-  // 管理员如需完整 CRUD，可通过 /admin/tickets/manager 单独访问 TicketManager
-  return <TicketCards />;
+  return <TicketManager />;
 }

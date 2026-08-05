@@ -24,6 +24,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
 
 
 import { toast } from "sonner";
@@ -74,6 +75,7 @@ function getPageMeta(pathname: string): { title: string; description: string; ic
 export function GlobalHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { actions } = useHeaderActions();
 
   const shouldShowHeader =
     !EXCLUDED_PATHS.some(
@@ -108,8 +110,12 @@ export function GlobalHeader() {
       {/* 移动端侧边栏触发器：桌面端由侧边栏自身控制 */}
       <SidebarTrigger className="-ml-1 md:hidden" />
       <Separator orientation="vertical" className="mr-1 h-4 md:hidden" />
+      {/* 页面操作按钮区（由各页面通过 useHeaderActions 注册） */}
+      <div className="flex flex-1 items-center justify-center gap-2 min-w-0">
+        {actions}
+      </div>
       {/* 图标 + 标题 + 描述：整体靠右对齐 */}
-      <div className="ml-auto flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-2">
 
         {!isHome && (
           <div className="flex min-w-0 flex-col items-end gap-0.5 text-right">

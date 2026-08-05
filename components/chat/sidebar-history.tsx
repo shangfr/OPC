@@ -125,9 +125,22 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   // 搜索关键词：用于在侧边栏历史列表中实时过滤对话标题
   const [searchQuery, setSearchQuery] = useState("");
 
-  const allChats: Chat[] = paginatedChatHistories
-    ? paginatedChatHistories.flatMap((page) => page.chats)
-    : [];
+  const allChats: Chat[] = useMemo(() => {
+    if (!paginatedChatHistories) return [];
+    // SWR keepPreviousData + mutate 重新验证时，新旧分页可能重叠导致同一条 chat
+    // 出现在多个 page 中。按 id 去重，避免 React key 冲突。
+    const seen = new Set<string>();
+    const result: Chat[] = [];
+    for (const page of paginatedChatHistories) {
+      for (const chat of page.chats) {
+        if (!seen.has(chat.id)) {
+          seen.add(chat.id);
+          result.push(chat);
+        }
+      }
+    }
+    return result;
+  }, [paginatedChatHistories]);
 
   // 当用户输入搜索关键词时，对已加载的历史对话按标题进行模糊匹配。
   // 仅在前端过滤已加载数据，避免额外请求；当关键词为空时返回全部。
