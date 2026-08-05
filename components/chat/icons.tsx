@@ -477,9 +477,16 @@ export const MoreIcon = ({ size = 16 }: { size?: number }) => {
   );
 };
 
-export const TrashIcon = ({ size = 16 }: { size?: number }) => {
+export const TrashIcon = ({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => {
   return (
     <svg
+      className={className}
       height={size}
       strokeLinejoin="round"
       style={{ color: "currentcolor" }}
@@ -584,9 +591,16 @@ export const PaperclipIcon = ({
   );
 };
 
-export const MoreHorizontalIcon = ({ size = 16 }: { size?: number }) => {
+export const MoreHorizontalIcon = ({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => {
   return (
     <svg
+      className={className}
       height={size}
       strokeLinejoin="round"
       style={{ color: "currentcolor" }}
@@ -909,9 +923,16 @@ export const SparklesIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-export const CheckCircleFillIcon = ({ size = 16 }: { size?: number }) => {
+export const CheckCircleFillIcon = ({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => {
   return (
     <svg
+      className={className}
       height={size}
       strokeLinejoin="round"
       style={{ color: "currentcolor" }}
@@ -928,9 +949,16 @@ export const CheckCircleFillIcon = ({ size = 16 }: { size?: number }) => {
   );
 };
 
-export const GlobeIcon = ({ size = 16 }: { size?: number }) => {
+export const GlobeIcon = ({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => {
   return (
     <svg
+      className={className}
       height={size}
       strokeLinejoin="round"
       style={{ color: "currentcolor" }}
@@ -947,9 +975,16 @@ export const GlobeIcon = ({ size = 16 }: { size?: number }) => {
   );
 };
 
-export const LockIcon = ({ size = 16 }: { size?: number }) => {
+export const LockIcon = ({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => {
   return (
     <svg
+      className={className}
       height={size}
       strokeLinejoin="round"
       style={{ color: "currentcolor" }}
@@ -1004,9 +1039,16 @@ export const EyeOffIcon = ({ size = 16 }: { size?: number }) => {
   );
 };
 
-export const ShareIcon = ({ size = 16 }: { size?: number }) => {
+export const ShareIcon = ({
+  size = 16,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) => {
   return (
     <svg
+      className={className}
       height={size}
       strokeLinejoin="round"
       style={{ color: "currentcolor" }}

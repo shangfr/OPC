@@ -71,6 +71,12 @@ export function useTypewriter({
     speedRef.current = speed;
   }, [speed]);
 
+  // keep textLengthRef in sync（供 flushImmediately 使用，避免 skip 依赖 text 变化）
+  const textLengthRef = useRef(text.length);
+  useEffect(() => {
+    textLengthRef.current = text.length;
+  }, [text]);
+
   // messageId 变化时重置所有状态
   useEffect(() => {
     if (messageIdRef.current !== messageId) {
@@ -95,10 +101,10 @@ export function useTypewriter({
     // 将队列中所有字符一次性输出
     const remaining = queueRef.current.join("");
     queueRef.current = [];
-    enqueuedLenRef.current = text.length;
+    enqueuedLenRef.current = textLengthRef.current;
     setDisplayedText((prev) => prev + remaining);
     setIsTyping(false);
-  }, [text]);
+  }, []);
 
   const skip = useCallback(() => {
     flushImmediately();

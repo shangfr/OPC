@@ -63,7 +63,8 @@ function PureTypewriterText({
       style={isTyping ? { cursor: "pointer" } : undefined}
     >
       <MessageResponse>{displayedText}</MessageResponse>
-      {isTyping && !isUser && (
+      {/* 流式期间 text 为空时也显示光标（text-start 创建空 part，等待 text-delta） */}
+      {(isTyping || (isStreaming && !displayedText)) && !isUser && (
         <span className="ml-0.5 inline-block h-[1.1em] w-[2.5px] animate-pulse rounded-full bg-primary/80 align-middle shadow-[0_0_6px_var(--primary)]" />
       )}
     </MessageContent>

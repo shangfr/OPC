@@ -61,7 +61,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 // 扩展 User 类型以包含 SaaS 多租户字段（与 auth.ts 中的 Session 声明一致）
 type SidebarUser = User & {
   type?: "guest" | "regular";
-  accountType?: "personal" | "enterprise" | "platform";
+  accountType?: "personal" | "enterprise" | "platform" | null;
   teamRole?: "owner" | "admin" | "member" | null;
   planName?: string | null;
 };

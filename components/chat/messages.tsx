@@ -1,12 +1,11 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDownIcon } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { cardVariants } from "@/components/ui/card";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import { useChatNotification } from "@/hooks/use-chat-notification";
 import { useMessages } from "@/hooks/use-messages";
 import type { ChatMessage } from "@/lib/types";
-import { generateUUID } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useDataStream } from "./data-stream-provider";
 import { Greeting } from "./greeting";
@@ -46,6 +45,19 @@ function PureMessages({
   });
 
   useDataStream();
+
+  // 占位消息：submitted 阶段渲染空的 assistant 消息（显示 Skeleton）
+  // 用 useMemo 固定 id + createdAt，避免每次渲染重建导致 PreviewMessage memo 失效
+  const placeholderMessage = useMemo<ChatMessage>(
+    () =>
+      ({
+        id: "thinking-placeholder",
+        role: "assistant",
+        parts: [],
+        metadata: { createdAt: new Date().toISOString() },
+      }) as ChatMessage,
+    [],
+  );
 
   // 计算最后一条助手消息的索引，用于显示"重新生成"按钮
   const lastAssistantIndex = (() => {
@@ -171,7 +183,7 @@ function PureMessages({
                     // submitted 阶段：渲染一个空的 assistant PreviewMessage（内部会显示 Skeleton）
                     // 保持与真实消息相同的 DOM 结构，避免切换闪烁
                     const placeholderMessage: ChatMessage = {
-                      id: generateUUID(),
+                      id: "thinking-placeholder",
                       role: "assistant",
                       parts: [],
                       metadata: { createdAt: new Date().toISOString() },
@@ -267,14 +279,7 @@ function PureMessages({
                     isLoading={true}
                     isReadonly={isReadonly}
                     key="thinking-placeholder"
-                    message={
-                      {
-                        id: generateUUID(),
-                        role: "assistant",
-                        parts: [],
-                        metadata: { createdAt: new Date().toISOString() },
-                      } as ChatMessage
-                    }
+                    message={placeholderMessage}
                     regenerate={regenerate}
                     requiresScrollPadding={false}
                     selectedModelId={selectedModelId}

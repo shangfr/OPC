@@ -370,13 +370,16 @@ const PurePreviewMessage = ({
   // 流式输出时，判断是否还没有任何可见内容（text / reasoning / tool）
   // 此时显示 Skeleton 占位，但保持外层 DOM 结构与真实消息一致，避免切换闪烁
   //
-  // 关闭思考模式时，不将 reasoning 计入可见内容：
-  // - 即使后端 sendReasoning: true 转发了 reasoning 事件，前端也不渲染 reasoning part
-  // - 若将 reasoning 计入 hasVisibleContent，会导致 showSkeleton=false，
-  //   TypewriterText 提前挂载但 text 为空，出现"光标闪烁但无内容"的现象
-  // - 关闭思考时应等到 text part 有内容才取消骨架屏
+  // 关闭思考模式时的关键修复：
+  // - 后端 sendReasoning: true 仍会转发 reasoning 事件，前端创建 reasoning part 但不渲染
+  // - 若仅等 text part 有内容才取消骨架屏，骨架屏会一直显示到第一个 text-delta，
+  //   期间 text part 已创建但 text 为空，用户看到的是"正在思考..."而非流式输出
+  // - 修复：text part 存在（即使 text 为空）就取消骨架屏，TypewriterText 提前挂载，
+  //   text 为空时显示光标（表示正在输入），text-delta 到达后开始打字机
   const hasVisibleContent = message.parts?.some((part) => {
     if (part.type === "text") {
+      // 关闭思考模式时，text part 存在就取消骨架屏（即使 text 为空）
+      if (!thinkingEnabled) return true;
       return (part as { text?: string }).text?.trim();
     }
     if (part.type === "reasoning") {
@@ -410,7 +413,7 @@ const PurePreviewMessage = ({
           <span className="size-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:-0.15s]" />
           <span className="size-1.5 animate-bounce rounded-full bg-primary/60" />
         </div>
-        <span className="text-xs">正在思考...</span>
+        <span className="text-xs">{thinkingEnabled ? "正在思考..." : "正在生成回复..."}</span>
       </div>
       <Skeleton className="h-3.5 w-16" />
       <Skeleton className="h-3.5 w-full" />

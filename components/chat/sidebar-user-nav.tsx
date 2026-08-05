@@ -28,7 +28,7 @@ import { signOutAction } from "./sign-out-action";
 
 type SidebarUser = User & {
   type?: "guest" | "regular";
-  accountType?: "personal" | "enterprise" | "platform";
+  accountType?: "personal" | "enterprise" | "platform" | null;
   role?: string | null;
   teamRole?: "owner" | "admin" | "member" | null;
   planName?: string | null;

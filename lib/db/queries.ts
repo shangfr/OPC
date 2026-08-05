@@ -1496,13 +1496,20 @@ export async function getTeamMembersForAdmin({
         accountType: user.accountType, enterpriseId: user.enterpriseId, role: user.role,
         phone: user.phone, bannedAt: user.bannedAt, bannedReason: user.bannedReason,
         createdAt: user.createdAt, teamRole: teamMember.role, joinedAt: teamMember.createdAt,
+        planName: team.planName, subscriptionStatus: team.subscriptionStatus,
+        enterpriseName: enterprise.name, enterpriseVerifyStatus: enterprise.verifyStatus,
       })
       .from(teamMember)
       .innerJoin(user, eq(user.id, teamMember.userId))
+      .leftJoin(team, eq(team.id, teamMember.teamId))
+      .leftJoin(enterprise, eq(enterprise.id, user.enterpriseId))
       .where(eq(teamMember.teamId, teamId))
       .orderBy(desc(teamMember.createdAt));
 
-    return rows;
+    return rows.map((r) => ({
+      ...r,
+      planName: r.planName ?? "free",
+    }));
   } catch (_error) {
     if (_error instanceof ChatbotError) throw _error;
     throw new ChatbotError("bad_request:database", "Failed to get team members");

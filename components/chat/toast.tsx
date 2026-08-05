@@ -6,9 +6,10 @@ import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { CheckCircleFillIcon, WarningIcon } from "./icons";
 
-const iconsByType: Record<"success" | "error", ReactNode> = {
+const iconsByType: Record<"success" | "error" | "info", ReactNode> = {
   success: <CheckCircleFillIcon />,
   error: <WarningIcon />,
+  info: <WarningIcon />,
 };
 
 export function toast(props: Omit<ToastProps, "id">) {
@@ -76,6 +77,6 @@ function Toast(props: ToastProps) {
 
 type ToastProps = {
   id: string | number;
-  type: "success" | "error";
+  type: "success" | "error" | "info";
   description: string;
 };
