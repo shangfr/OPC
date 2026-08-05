@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Download,
   FolderTree,
-  Home,
   LayoutGrid,
   LayoutList,
   Loader2,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   UserCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import type { Ticket } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
+import { useHeaderActions } from "@/components/chat/header-actions-context";
 import {
   PRIORITY_LABELS,
   STATUS_LABELS,
@@ -93,6 +92,41 @@ export function TicketManager() {
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Ticket | null>(null);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
+
+  // 将操作按钮注册到 GlobalHeader，和其他页面保持一致
+  const { setActions } = useHeaderActions();
+  useEffect(() => {
+    setActions(
+      <>
+        <Button
+          key="group-mgr"
+          onClick={() => setGroupDialogOpen(true)}
+          size="sm"
+          variant="ghost"
+        >
+          <FolderTree className="size-3.5" />
+          <span className="hidden sm:inline">管理分类</span>
+        </Button>
+        <Button
+          key="export"
+          className="gap-1.5"
+          onClick={() => handleExport([])}
+          size="sm"
+          variant="ghost"
+        >
+          <Download className="size-3.5" />
+          <span className="hidden sm:inline">导出全部</span>
+        </Button>
+        <Button key="create" className="gap-1.5" onClick={openCreate} size="sm">
+          <Plus className="size-4" />
+          <span className="hidden sm:inline">新建发布</span>
+          <span className="sm:hidden">新建</span>
+        </Button>
+      </>
+    );
+    return () => setActions(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tickets]);
 
   // 优化项：状态 & 优先级筛选
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -248,40 +282,6 @@ export function TicketManager() {
   return (
     <TicketCategoryProvider value={ctxValue}>
       <div className="page-container">
-        {/* 顶部操作栏 */}
-        <div className="mb-6 flex flex-wrap items-center justify-end gap-2 sm:mb-10">
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild className="gap-1.5" size="sm" variant="ghost">
-              <Link href="/">
-                <Home className="size-3.5" />
-                <span className="hidden sm:inline">返回主页</span>
-              </Link>
-            </Button>
-            <Button
-              className="gap-1.5"
-              onClick={() => setGroupDialogOpen(true)}
-              size="sm"
-              variant="ghost"
-            >
-              <FolderTree className="size-3.5" />
-              <span className="hidden sm:inline">管理分类</span>
-            </Button>
-            <Button
-              className="gap-1.5"
-              onClick={() => handleExport([])}
-              size="sm"
-              variant="ghost"
-            >
-              <Download className="size-3.5" />
-              <span className="hidden sm:inline">导出全部</span>
-            </Button>
-            <Button className="gap-2" onClick={openCreate}>
-              <Plus className="size-4" />
-              新建发布
-            </Button>
-          </div>
-        </div>
-
         {/* 🆕 产品优化：Tab 切换 —— 我的发布 / 审核队列 / 全部信息 */}
         <div className="mb-6 flex items-center gap-1 rounded-xl border bg-muted/30 p-1">
           <button
